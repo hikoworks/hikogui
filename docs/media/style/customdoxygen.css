@@ -39,9 +39,12 @@
     font-style: normal;
 }
 
-body {
-    background: #252525;
-    color: #dddddd;
+@media (prefers-color-scheme: dark) {
+    html {
+        --page-foreground-color: #dddddd;
+        --page-background-color: #252525;
+        --fragment-background-color: #111;
+    }
 }
 
 div.textblock {
@@ -57,12 +60,10 @@ div.textblock {
 }
 
 .alphachar a {
-    color: #dddddd;
     text-decoration: none;
 }
 
     .alphachar a:visited {
-        color: #dddddd;
         text-decoration: none;
     }
 
@@ -107,18 +108,15 @@ div hr {
 }
 
 div.header {
-    background: #252525;
     border: 0;
 }
 
 div.fragment {
-    background: #111111;
     padding: 5px;
     border: 1px solid #444444;
 }
 
 span.lineno {
-    background: #000000;
 }
 
 span.stringliteral {
@@ -159,12 +157,10 @@ a.codeRef, a.codeRef:visited, a.lineRef, a.lineRef:visited {
 }
 
 a.elRef {
-    color: #cccccc;
     text-decoration-color: blue;
 }
 
     a.elRef:visited {
-        color: #cccccc;
         text-decoration-color: blue;
     }
 
@@ -247,7 +243,6 @@ div.PageDoc h6::before {
     font-family: Montserrat;
     font-size: 32px;
     font-weight: bold;
-    color: #ffffff;
 }
 
 h2.groupheader {
@@ -285,15 +280,12 @@ code {
     border-right: 1px solid #444444;
     background: #1c1c1c;
     text-shadow: unset;
-    color: #dddddd;
 }
 
     .memproto a.el {
-        color: #dddddd;
     }
 
         .memproto a.el:visited {
-            color: #dddddd;
         }
 
 .paramtype {
