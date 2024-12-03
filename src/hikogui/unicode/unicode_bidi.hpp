@@ -1225,8 +1225,10 @@ constexpr void unicode_bidi_L1(std::span<unicode_bidi_char_info> work_pad, int8_
     }
 }
 
-[[nodiscard]] constexpr std::vector<size_t> unicode_bidi_L2(std::span<unicode_bidi_char_info> work_pad) noexcept
+[[nodiscard]] constexpr void unicode_bidi_L2(std::span<unicode_bidi_char_info const> work_pad, std::span<size_t> display_order) noexcept
 {
+    assert(work_pad.size() == display_order.size());
+
     auto highest = int8_t{0};
     auto lowest_odd = int8_t{127};
     for (auto const info : work_pad) {
@@ -1236,14 +1238,8 @@ constexpr void unicode_bidi_L1(std::span<unicode_bidi_char_info> work_pad, int8_
         }
     }
 
-    auto r = std::vector<size_t>{};
-    r.reserve(work_pad.size());
-    for (auto i = size_t{0}; i != work_pad.size(); ++i) {
-        r.push_back(i);
-    }
-
     if (highest < lowest_odd) {
-        return r;
+        return;
     }
 
     auto const null = work_pad.size();
@@ -1263,17 +1259,22 @@ constexpr void unicode_bidi_L1(std::span<unicode_bidi_char_info> work_pad, int8_
                 }
 
             } else if (info.level < level) {
-                std::reverse(r.begin() + start, r.begin() + i);
+                std::reverse(display_order.begin() + start, display_order.begin() + i);
                 start = null;
             }
         }
 
         // Reverse the last sequence if it was not closed.
         if (start != null) {
-            std::reverse(r.begin() + start, r.end());
+            std::reverse(display_order.begin() + start, display_order.end());
         }
     }
+}
 
+[[nodiscard]] constexpr std::vector<size_t> unicode_bidi_L2(std::span<unicode_bidi_char_info const> work_pad) noexcept
+{
+    auto r = std::ranges::to<std::vector>(std::views::iota(size_t{0}, work_pad.size()));
+    unicode_bidi_L2(work_pad, r);
     return r;
 }
 
@@ -1385,4 +1386,33 @@ unicode_bidi_on_paragraphs(std::span<char32_t const> code_points, unicode_bidi_c
 
     return {std::move(work_pad), std::move(paragraph_embedding_levels)};
 }
+
+struct unicode_bidi_on_lines_result {
+    std::vector<size_t> display_order;
+};
+
+[[nodiscard]] constexpr unicode_bidi_on_lines_result
+unicode_bidi_on_lines(unicode_bidi_on_paragraphs_result& context, std::span<size_t const> line_sizes)
+{
+    auto r = unicode_bidi_on_lines_result{};
+    r.display_order = std::ranges::to<std::vector>(std::views::iota(size_t{0}, context.work_pad.size()));
+
+    auto work_pad = std::span{context.work_pad};
+    auto display_order = std::span{r.display_order};
+    auto i = size_t{0};
+    auto paragraph_i = size_t{0};
+    for (auto line_size : line_sizes) {
+        auto l_work_pad = work_pad.subspan(i, line_size);
+        auto l_display_order = display_order.subspan(i, line_size);
+
+        unicode_bidi_L1(l_work_pad, context.paragraph_embedding_levels[i]);
+        unicode_bidi_L2(l_work_pad, l_display_order);
+
+        i += line_size;
+        ++paragraph_i;
+    }
+
+    return r;
+}
+
 }

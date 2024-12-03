@@ -182,9 +182,10 @@ TEST_CASE(bidi_test)
         }
 
 #ifndef NDEBUG
-        // if (test.line_nr > 10'000) {
-        //     break;
-        // }
+        // The full test with debugging takes 51 seconds.
+        if (test.line_nr > 10'000) {
+            break;
+        }
 #endif
     }
 }
@@ -266,7 +267,15 @@ std::generator<unicode_bidi_character_test> parse_bidi_character_test(int test_l
 TEST_CASE(bidi_character_test)
 {
     for (auto test : parse_bidi_character_test()) {
+        //if (test.line_nr < 254) {
+        //    continue;
+        //}
+
+        auto line_sizes = std::vector<size_t>{};
+        line_sizes.push_back(test.characters.size());
+
         auto paragraph_results = unicode_bidi_on_paragraphs(test.characters, test.paragraph_direction);
+        auto line_results = unicode_bidi_on_lines(paragraph_results, line_sizes);
 
         REQUIRE(paragraph_results.paragraph_embedding_levels.size() == 1);
         REQUIRE(paragraph_results.paragraph_embedding_levels[0] == test.resolved_paragraph_embedding_level);
@@ -278,23 +287,20 @@ TEST_CASE(bidi_character_test)
             }
         }
 
-        // We are using the index from the iterator to find embedded levels
-        // in input-order. We ignore all elements that where removed by X9.
-        // for (auto it = first; it != last; ++it) {
-        //    auto const expected_embedding_level = test.levels[it->index];
-        //
-        //    ASSERT_TRUE(expected_embedding_level == -1 || expected_embedding_level == it->embedding_level);
-        //}
-        // REQUIRE(std::distance(first, last) == std::ssize(test.resolved_order));
-        // auto index = 0;
-        // for (auto it = first; it != last; ++it, ++index) {
-        //    auto const expected_input_index = test.resolved_order[index];
-        //    REQUIRE((expected_input_index == -1 or expected_input_index == it->index));
-        //}
+        REQUIRE(line_results.display_order.size() >= test.resolved_order.size());
+        auto t_i = size_t{0};
+        for (auto r_i = size_t{0}; r_i != line_results.display_order.size(); ++r_i) {
+            auto const index = line_results.display_order[r_i];
+            if (test.resolved_levels[index] != -1) {
+                REQUIRE(index == test.resolved_order[t_i++]);
+            }
+        }
+
 #ifndef NDEBUG
-        // if (test.line_nr > 10'000) {
-        //     break;
-        // }
+        // The full test with debugging takes 17 seconds.
+        if (test.line_nr > 10'000) {
+            break;
+        }
 #endif
     }
 }
