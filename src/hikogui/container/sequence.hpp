@@ -37,7 +37,9 @@ class sequence : public std::vector<Pair> {
 private:
     [[nodiscard]] consteval static auto pair_index_type() noexcept
     {
-        auto const [first, second] = Pair{};
+        auto const first = get_data_member<0>(Pair{});
+        auto const second = get_data_member<1>(Pair{});
+
         static_assert(std::is_integral_v<decltype(first)>);
         static_assert(std::is_same_v<decltype(first), decltype(second)>);
         return first;
@@ -77,7 +79,10 @@ public:
         [[nodiscard]] constexpr index_type operator*() const
         {
             assert(_sequence != nullptr);
-            auto const [first, last] = _sequence->at(_major_index);
+            auto const& item = _sequence->at(_major_index);
+            auto const first = get_data_member<0>(item);
+            auto const last = get_data_member<1>(item);
+            
             auto const r = first + _minor_index;
             assert(r < last);
             return r;
@@ -148,7 +153,10 @@ public:
         {
             assert(_sequence != nullptr);
             while (n != 0) {
-                auto const [first, last] = _sequence->at(_major_index);
+                auto const& item = _sequence->at(_major_index);
+                auto const first = get_data_member<0>(item);
+                auto const last = get_data_member<1>(item);
+
                 auto const size = last - first;
                 auto const remaining = size - _minor_index;
                 auto const m = std::min(n, remaining);
@@ -169,7 +177,10 @@ public:
                 if (_minor_index == 0) {
                     assert(_major_index != 0);
                     --_major_index;
-                    auto const [first, last] = _sequence->at(_major_index);
+                    auto const &item = _sequence->at(_major_index);
+                    auto const first = get_data_member<0>(item);
+                    auto const last = get_data_member<1>(item);
+
                     _minor_index = last - first;
                 }
 
@@ -186,7 +197,9 @@ public:
     [[nodiscard]] constexpr size_t index_size() const
     {
         return std::accumulate(this->begin(), this->end(), size_t{0}, [](size_t acc, auto const& x) {
-            return acc + (x.second - x.first);
+            auto const first = get_data_member<0>(x);
+            auto const last = get_data_member<1>(x);
+            return acc + (last - first);
         });
     }
 

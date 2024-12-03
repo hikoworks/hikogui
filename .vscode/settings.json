@@ -139,7 +139,8 @@
         "util": "cpp",
         "assert": "cpp",
         "byte": "cpp",
-        "narrow": "cpp"
+        "narrow": "cpp",
+        "generator": "cpp"
     },
     "[python]": {
         "editor.defaultFormatter": "ms-python.autopep8"

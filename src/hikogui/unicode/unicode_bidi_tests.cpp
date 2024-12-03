@@ -14,6 +14,7 @@
 #include <span>
 #include <format>
 #include <ranges>
+#include <generator>
 
 TEST_SUITE(unicode_bidi) {
 
@@ -100,7 +101,7 @@ struct unicode_bidi_test {
     return r;
 }
 
-hi::generator<unicode_bidi_test> parse_bidi_test(int test_line_nr = -1)
+std::generator<unicode_bidi_test> parse_bidi_test(int test_line_nr = -1)
 {
     auto const view = hi::file_view(hi::library_test_data_dir() / "BidiTest.txt");
     auto const test_data = as_string_view(view);
@@ -133,88 +134,42 @@ hi::generator<unicode_bidi_test> parse_bidi_test(int test_line_nr = -1)
     }
 }
 
-[[nodiscard]] static char32_t get_code_point(hi::unicode_bidi_class x) noexcept
-{
-    switch (x) {
-    case hi::unicode_bidi_class::L:
-        return U'a'; // Left-to-right
-    case hi::unicode_bidi_class::R:
-        return U'\u05D0'; // Right-to-left
-    case hi::unicode_bidi_class::EN:
-        return U'\u06F0'; // Extended number
-    case hi::unicode_bidi_class::AN:
-        return U'\u0660'; // Arabic number
-    case hi::unicode_bidi_class::AL:
-        return U'\u0608'; // Arabic letter
-    case hi::unicode_bidi_class::NSM:
-        return U'\u0300'; // Non-spacing mark
-    case hi::unicode_bidi_class::CS:
-        return U','; // Common separator
-    case hi::unicode_bidi_class::ES:
-        return U'+'; // European separator
-    case hi::unicode_bidi_class::ET:
-        return U'$'; // European terminator
-    case hi::unicode_bidi_class::ON:
-        return U'!'; // Other neutral
-    case hi::unicode_bidi_class::BN:
-        return U'\0'; // Boundary neutral
-    case hi::unicode_bidi_class::S:
-        return U'\t'; // Segment separator
-    case hi::unicode_bidi_class::WS:
-        return U' '; // White space
-    case hi::unicode_bidi_class::B:
-        return U'\n'; // Paragraph separator
-    case hi::unicode_bidi_class::RLO:
-        return U'\u202E'; // Right-to-left override
-    case hi::unicode_bidi_class::RLE:
-        return U'\u202B'; // Right-to-left embedding
-    case hi::unicode_bidi_class::LRO:
-        return U'\u202D'; // Left-to-right override
-    case hi::unicode_bidi_class::LRE:
-        return U'\u202A'; // Left-to-right embedding
-    case hi::unicode_bidi_class::PDF:
-        return U'\u202C'; // Pop directional formatting
-    case hi::unicode_bidi_class::LRI:
-        return U'\u2066'; // Left-to-right isolate
-    case hi::unicode_bidi_class::RLI:
-        return U'\u2067'; // Right-to-left isolate
-    case hi::unicode_bidi_class::FSI:
-        return U'\u2068'; // First strong isolate
-    case hi::unicode_bidi_class::PDI:
-        return U'\u2069'; // Pop directional isolate
-    }
-    std::unreachable();
-}
-
 TEST_CASE(bidi_test)
 {
     for (auto const test : parse_bidi_test()) {
+        //if (test.line_nr < 21875) {
+        //    continue;
+        //}
+
         for (auto paragraph_direction : test.get_paragraph_directions()) {
             // This test will:
             // - Pretend that the input is a single paragraph.
             // - Pretend that the input is a single line.
             // - Pretend that the input contains no paired brackets.
-            auto const original_directions = test.input;
-            auto directions = original_directions;
-            auto embedding_levels = std::vector<int8_t>(directions.size(), int8_t{0});
-            auto brackets =
-                std::vector<hi::unicode_bidi_paired_bracket_type>(directions.size(), hi::unicode_bidi_paired_bracket_type::n);
-            auto code_points = std::vector<char32_t>(directions.size(), U'\0');
+            auto work_pad = std::vector<hi::unicode_bidi_char_info>(test.input.size(), hi::unicode_bidi_char_info{});
+            for (auto i = 0; i != test.input.size(); ++i) {
+                work_pad[i].original_class = test.input[i];
+                work_pad[i].direction = test.input[i];
+                work_pad[i].level = 0;
+                work_pad[i].paired_bracket_type = hi::unicode_bidi_paired_bracket_type::n;
+            }
 
-            auto paragraph_embedding_levels = unicode_bidi_P1(directions, embedding_levels, brackets, code_points, paragraph_direction);
+            auto code_points = std::vector<char32_t>(test.input.size(), U'\0');
+
+            auto paragraph_embedding_levels = unicode_bidi_P1(work_pad, code_points, paragraph_direction);
             REQUIRE(paragraph_embedding_levels.size() == 1);
-            unicode_bidi_L1(original_directions, embedding_levels, paragraph_embedding_levels[0]);
+            unicode_bidi_L1(work_pad, paragraph_embedding_levels[0]);
 
             // We are using the index from the iterator to find embedded levels
             // in input-order. We ignore all elements that where removed by X9.
-            REQUIRE(embedding_levels.size() == test.levels.size());
-            for (auto i = 0; i != embedding_levels.size(); ++i) {
+            REQUIRE(work_pad.size() == test.levels.size());
+            for (auto i = 0; i != work_pad.size(); ++i) {
                 if (test.levels[i] != -1) {
-                    REQUIRE(embedding_levels[i] == test.levels[i]);
+                    REQUIRE(work_pad[i].level == test.levels[i]);
                 }
             }
 
-            auto const display_order = hi::unicode_bidi_L2(embedding_levels);
+            auto const display_order = hi::unicode_bidi_L2(work_pad);
 
             REQUIRE(display_order.size() >= test.reorder.size());
             auto t_i = size_t{0};
@@ -238,26 +193,9 @@ struct unicode_bidi_character_test {
     int line_nr;
     std::vector<char32_t> characters;
     hi::unicode_bidi_class paragraph_direction;
-    hi::unicode_bidi_class resolved_paragraph_direction;
-    std::vector<int> resolved_levels;
-    std::vector<int> resolved_order;
-
-    struct input_character {
-        char32_t code_point;
-        int index;
-    };
-
-    [[nodiscard]] std::vector<input_character> get_input() const noexcept
-    {
-        auto r = std::vector<input_character>{};
-
-        int index = 0;
-        for (auto const c : characters) {
-            r.emplace_back(c, index++);
-        }
-
-        return r;
-    }
+    int8_t resolved_paragraph_embedding_level;
+    std::vector<int8_t> resolved_levels;
+    std::vector<size_t> resolved_order;
 };
 
 [[nodiscard]] static unicode_bidi_character_test parse_bidi_character_test_line(std::string_view line, int line_nr)
@@ -265,7 +203,7 @@ struct unicode_bidi_character_test {
     auto const split_line = hi::split_string(line, ";");
     auto const hex_characters = hi::split_string(split_line[0], " ");
     auto const paragraph_direction = hi::from_string<int>(split_line[1]);
-    auto const resolved_paragraph_direction = hi::from_string<int>(split_line[2]);
+    auto const resolved_paragraph_embedding_level = hi::from_string<int8_t>(split_line[2]);
     auto const int_resolved_levels = hi::split_string(split_line[3], " ");
     auto const int_resolved_order = hi::split_string(split_line[4], " ");
 
@@ -277,29 +215,30 @@ struct unicode_bidi_character_test {
 
     r.paragraph_direction = paragraph_direction == 0 ? hi::unicode_bidi_class::L :
         paragraph_direction == 1                     ? hi::unicode_bidi_class::R :
-                                                       hi::unicode_bidi_class::ON;
+                                                       hi::unicode_bidi_class::B;
 
-    r.resolved_paragraph_direction = resolved_paragraph_direction == 0 ? hi::unicode_bidi_class::L :
-        resolved_paragraph_direction == 1                              ? hi::unicode_bidi_class::R :
-                                                                         hi::unicode_bidi_class::ON;
+    assert(resolved_paragraph_embedding_level.has_value());
+    r.resolved_paragraph_embedding_level = *resolved_paragraph_embedding_level;
 
     std::transform(
-        begin(int_resolved_levels), end(int_resolved_levels), std::back_inserter(r.resolved_levels), [](auto const& x) {
+        begin(int_resolved_levels), end(int_resolved_levels), std::back_inserter(r.resolved_levels), [](auto const& x) -> int8_t {
             if (x == "x") {
                 return -1;
             } else {
-                return *hi::from_string<int>(x);
+                return *hi::from_string<int8_t>(x);
             }
         });
 
     std::transform(begin(int_resolved_order), end(int_resolved_order), std::back_inserter(r.resolved_order), [](auto const& x) {
-        return *hi::from_string<int>(x);
+        return *hi::from_string<size_t>(x);
     });
 
+    assert(r.characters.size() == r.resolved_levels.size());
+    assert(r.resolved_order.size() <= r.resolved_levels.size());
     return r;
 }
 
-hi::generator<unicode_bidi_character_test> parse_bidi_character_test(int test_line_nr = -1)
+std::generator<unicode_bidi_character_test> parse_bidi_character_test(int test_line_nr = -1)
 {
     auto const view = hi::file_view(hi::library_test_data_dir() / "BidiCharacterTest.txt");
     auto const test_data = as_string_view(view);
@@ -324,60 +263,40 @@ hi::generator<unicode_bidi_character_test> parse_bidi_character_test(int test_li
     }
 }
 
-// TEST_CASE(bidi_character_test)
-//{
-//     for (auto test : parse_bidi_character_test()) {
-//         auto test_parameters = hi::unicode_bidi_context{};
-//         test_parameters.enable_mirrored_brackets = true;
-//         test_parameters.enable_line_separator = true;
-//         test_parameters.remove_explicit_embeddings = false;
-//         // clang-format off
-//         test_parameters.direction_mode =
-//             test.paragraph_direction == hi::unicode_bidi_class::L ? hi::unicode_bidi_context::mode_type::LTR :
-//             test.paragraph_direction == hi::unicode_bidi_class::R ? hi::unicode_bidi_context::mode_type::RTL :
-//             hi::unicode_bidi_context::mode_type::auto_LTR;
-//         // clang-format on
-//
-//         auto input = test.get_input();
-//         auto first = begin(input);
-//         auto last = end(input);
-//
-//         auto const [new_last, paragraph_directions] = hi::unicode_bidi(
-//             first,
-//             last,
-//             [](auto const& x) {
-//                 return x.code_point;
-//             },
-//             [](auto& x, auto const& code_point) {
-//                 x.code_point = code_point;
-//             },
-//             [](auto& x, auto bidi_class) {},
-//             test_parameters);
-//
-//         last = new_last;
-//         // We are using the index from the iterator to find embedded levels
-//         // in input-order. We ignore all elements that where removed by X9.
-//         // for (auto it = first; it != last; ++it) {
-//         //    auto const expected_embedding_level = test.levels[it->index];
-//         //
-//         //    ASSERT_TRUE(expected_embedding_level == -1 || expected_embedding_level == it->embedding_level);
-//         //}
-//
-//         REQUIRE(std::distance(first, last) == std::ssize(test.resolved_order));
-//
-//         auto index = 0;
-//         for (auto it = first; it != last; ++it, ++index) {
-//             auto const expected_input_index = test.resolved_order[index];
-//
-//             REQUIRE((expected_input_index == -1 or expected_input_index == it->index));
-//         }
-//
-// #ifndef NDEBUG
-//         if (test.line_nr > 10'000) {
-//             break;
-//         }
-// #endif
-//     }
-// }
+TEST_CASE(bidi_character_test)
+{
+    for (auto test : parse_bidi_character_test()) {
+        auto paragraph_results = unicode_bidi_on_paragraphs(test.characters, test.paragraph_direction);
+
+        REQUIRE(paragraph_results.paragraph_embedding_levels.size() == 1);
+        REQUIRE(paragraph_results.paragraph_embedding_levels[0] == test.resolved_paragraph_embedding_level);
+
+        REQUIRE(paragraph_results.work_pad.size() == test.characters.size());
+        for (auto i = 0; i != paragraph_results.work_pad.size(); ++i) {
+            if (test.resolved_levels[i] != -1) {
+                REQUIRE(paragraph_results.work_pad[i].level == test.resolved_levels[i]);
+            }
+        }
+
+        // We are using the index from the iterator to find embedded levels
+        // in input-order. We ignore all elements that where removed by X9.
+        // for (auto it = first; it != last; ++it) {
+        //    auto const expected_embedding_level = test.levels[it->index];
+        //
+        //    ASSERT_TRUE(expected_embedding_level == -1 || expected_embedding_level == it->embedding_level);
+        //}
+        // REQUIRE(std::distance(first, last) == std::ssize(test.resolved_order));
+        // auto index = 0;
+        // for (auto it = first; it != last; ++it, ++index) {
+        //    auto const expected_input_index = test.resolved_order[index];
+        //    REQUIRE((expected_input_index == -1 or expected_input_index == it->index));
+        //}
+#ifndef NDEBUG
+        // if (test.line_nr > 10'000) {
+        //     break;
+        // }
+#endif
+    }
+}
 
 }; // TEST_SUITE(unicode_bidi)
