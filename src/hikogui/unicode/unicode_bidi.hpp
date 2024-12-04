@@ -1368,6 +1368,12 @@ struct unicode_bidi_on_paragraphs_result {
     std::vector<int8_t> paragraph_embedding_levels;
 };
 
+/** Apply the first phase of the bidi-algorithm, before line wrapping.
+ *
+ * @param code_points The code-points to apply the algorithm on.
+ * @param mode The default paragraph direction. L, R or B.
+ * @return The opaque result of the first phase.
+ */
 [[nodiscard]] constexpr unicode_bidi_on_paragraphs_result
 unicode_bidi_on_paragraphs(std::span<char32_t const> code_points, unicode_bidi_class mode)
 {
@@ -1388,16 +1394,43 @@ unicode_bidi_on_paragraphs(std::span<char32_t const> code_points, unicode_bidi_c
 }
 
 struct unicode_bidi_on_lines_result {
+    std::vector<unicode_bidi_char_info> work_pad;
     std::vector<size_t> display_order;
+
+    /** Check if the character is mirrored.
+     *
+     * @param i Index into the character array (logical ordering).
+     * @return .
+     */
+    [[nodiscard]] constexpr bool is_mirrorred(size_t i) const
+    {
+        assert(i < work_pad.size());
+        auto const& info = work_pad[i];
+
+        if (info.paired_bracket_type == unicode_bidi_paired_bracket_type::n) {
+            return false;
+        }
+        if (info.direction != unicode_bidi_class::R) {
+            return false;
+        }
+        return true;
+    }
 };
 
+/** Apply the second phase of the bidi-algorithm.
+ *
+ * @param context The result from phase 1 of the bidi-algorithm.
+ * @param line_sizes The length of each line, after line wrapping.
+ * @return The result of the bidi-algorithm: display-order and mirror-brackets.
+ */
 [[nodiscard]] constexpr unicode_bidi_on_lines_result
-unicode_bidi_on_lines(unicode_bidi_on_paragraphs_result& context, std::span<size_t const> line_sizes)
+unicode_bidi_on_lines(unicode_bidi_on_paragraphs_result const& context, std::span<size_t const> line_sizes)
 {
     auto r = unicode_bidi_on_lines_result{};
+    r.work_pad = context.work_pad;
     r.display_order = std::ranges::to<std::vector>(std::views::iota(size_t{0}, context.work_pad.size()));
 
-    auto work_pad = std::span{context.work_pad};
+    auto work_pad = std::span{r.work_pad};
     auto display_order = std::span{r.display_order};
     auto i = size_t{0};
     auto paragraph_i = size_t{0};

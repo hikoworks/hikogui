@@ -142,6 +142,29 @@ public:
         return true;
     }
 
+    /** Substitute a run glyphs in logical order.
+     *
+     * This function will change glyphs to better match the given script and language.
+     * Some glyphs may be replaced, or combined (ligature) into a single glyph.
+     * Glyphs that are removed will be replaced with empty glyphs (0xffff).
+     *
+     * The position of the glyphs will remain the same however, so that it is still
+     * possible to match the glyphs with the original grapheme, and know which glyphs
+     * are marks.
+     *
+     * @param inout A span of glyphs which may be replaced with glyphs that fit better
+     *              with the script and language.
+     * @param script The script of the glyph-run.
+     * @param language The language of the glyph-run.
+     */
+    virtual bool substitute_glyphs(std::span<lean_vector<glyph_id>> glyphs, iso script, iso language) const
+    {
+    }
+
+    virtual bool position_glyphs(std::vector<glyph_position> &out, std::span<lean_vector<glyph_id> const> glyphs, iso script, iso language) const
+    {
+    }
+
     /** Load a glyph into a path.
      * The glyph is directly loaded from the font file.
      *
