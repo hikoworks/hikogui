@@ -50,7 +50,7 @@ enum class text_widget_edit_mode {
  * On its own it can be used to edit multiple lines of text, but it will probably
  * be used embedded inside other widgets, like:
  *  - `label_widget` to display translated text together with an optional icon.
- *  - `text_field_widget` to edit a value of diffent types, includig integers, floating point, strings, etc.
+ *  - `text_field_widget` to edit a value of diffent types, including integers, floating point, strings, etc.
  *
  * Features:
  *  - Multiple paragraphs.
@@ -99,35 +99,11 @@ public:
         hi_assert_not_null(this->delegate);
 
         _delegate_cbt = this->delegate->subscribe(this, [this] {
-            // On every text edit, immediately/synchronously update the shaped text.
-            // This is needed for handling multiple edit commands before the next frame update.
-            if (layout()) {
-                auto new_layout = layout();
-                auto const old_constraints = _constraints_cache;
+            _text = this->delegate->get_text(this);
+            _selection.resize(_text.size());
 
-                // Constrain and layout according to the old layout.
-                auto const new_constraints = update_constraints();
-                new_layout.shape.rectangle = aarectangle{
-                    new_layout.shape.x(),
-                    new_layout.shape.y(),
-                    std::max(new_layout.shape.width(), new_constraints.minimum.width()),
-                    std::max(new_layout.shape.height(), new_constraints.minimum.height())};
-                set_layout(new_layout);
-
-                if (new_constraints.minimum != old_constraints.minimum or
-                    new_constraints.preferred != old_constraints.preferred or
-                    new_constraints.maximum != old_constraints.maximum) {
-                    // The constraints have changed, properly constrain and layout on the next frame.
-                    ++global_counter<"text_widget:delegate:constrain">;
-                    request_scroll();
-                    request_reconstrain();
-                }
-            } else {
-                // The layout is incomplete, properly constrain and layout on the next frame.
-                ++global_counter<"text_widget:delegate:constrain">;
-                request_scroll();
-                request_reconstrain();
-            }
+            ++global_counter<"text_widget:delegate:reconstrain">;
+            request_reconstrain();
         });
 
         _cursor_state_cbt = _cursor_state.subscribe([&](auto...) {
@@ -142,6 +118,7 @@ public:
         this->delegate->init(this);
 
         style.set_name("text");
+        _delegate_cbt();
     }
 
     /** Construct a text widget.
@@ -194,32 +171,38 @@ public:
         }();
 
         // Read the latest text from the delegate.
-        _phase1 =
-            shaper_phase1(delegate->get_text(this), style.font_size, style.text_style, maximum_width, style.vertical_alignment);
+        _phase1 = shaper_phase1(_text, style.font_size, style.text_style);
 
-        // Make sure that the current selection fits the new text.
-        _selection.resize(_phase1.text.size());
+        auto maximum_width = shaper_get_natural_width(_phase1);
+        auto maximum_height = shaper_get_natural_height(_phase1);
+        auto preferred_width = maximum_width;
+        auto preferred_height = maximum_height;
+        auto minimum_width = maximum_width;
+        auto minimum_height = maximum_height;
 
-        _shaped_text = text_shaper{
-            _phase1.text,
-            style.font_size,
-            style.text_style,
-            window()->pixel_density,
-            os_settings::alignment(style.horizontal_alignment),
-            os_settings::left_to_right()};
+        if (maximum_width > style.width) {
+            preferred_width = style.width;
+            preferred_height = shaper_get_maximum_height(_phase1, maximum_width);
+            // The preferred-height may become larger than the maximum-height.
+            maximum_height = preferred_height;
+        }
 
-        auto const text_size =
-            extent2{ceil_in(unit::pixels, _phase1.text_metrics.width), ceil_in(unit::pixels, _phase1.text_metrics.height)};
-        auto const minimum_spacing = ceil_as(unit::pixels, _phase1.text_metrics.overhang + _phase1.text_metrics.underhang);
-        _margins =
-            max(style.margins_px, hi::margins(0.0f, minimum_spacing.in(unit::pixels), 0.0f, minimum_spacing.in(unit::pixels)));
+        if (maximum_height < style.height) {
+            maximum_height = style.height;
+            preferred_height = maximum_height;
 
-        return _constraints_cache = {
-                   text_size,
-                   text_size,
-                   text_size,
-                   _margins,
-                   baseline{style.baseline_priority, _phase1.text_metrics.baseline_function}};
+            // XXX try different widths to find the smallest width that fits the
+            // height.
+            minimum_width = preferred_width;
+            minimum_height = preferred_height;
+        }
+
+        return {
+            extent2{minimum_width, minimum_height},
+            extent2{preferred_width, preferred_height},
+            extent2{maximum_width, maximum_height},
+            style.margins_px,
+            baseline{style.baseline_priority, _phase1.text_metrics.baseline_function}};
     }
 
     void set_layout(widget_layout const& context) noexcept override
@@ -797,15 +780,14 @@ private:
 
     enum class cursor_state_type { off, on, busy, none };
 
+    gstring _text;
+
     shaper_phase1_result _phase1;
     shaper_phase2_result _phase2;
 
     std::vector<size_t> _line_lengths;
     std::vector<size_t> _display_order;
 
-    text_shaper _shaped_text;
-
-    mutable box_constraints _constraints_cache;
     hi::margins _margins;
 
     text_selection _selection;

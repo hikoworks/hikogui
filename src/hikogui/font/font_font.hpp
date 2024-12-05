@@ -157,13 +157,13 @@ public:
      * @param script The script of the glyph-run.
      * @param language The language of the glyph-run.
      */
-    virtual bool substitute_glyphs(std::span<lean_vector<glyph_id>> glyphs, iso script, iso language) const
-    {
-    }
-
-    virtual bool position_glyphs(std::vector<glyph_position> &out, std::span<lean_vector<glyph_id> const> glyphs, iso script, iso language) const
-    {
-    }
+    //virtual bool substitute_glyphs(std::span<lean_vector<glyph_id>> glyphs, iso script, iso language) const
+    //{
+    //}
+//
+    //virtual bool position_glyphs(std::vector<glyph_position> &out, std::span<lean_vector<glyph_id> const> glyphs, iso script, iso language) const
+    //{
+    //}
 
     /** Load a glyph into a path.
      * The glyph is directly loaded from the font file.
