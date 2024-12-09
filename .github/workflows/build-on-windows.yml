@@ -58,7 +58,7 @@ jobs:
         uses: ilammy/msvc-dev-cmd@v1
     
       - name: 🔽 Install Vulkan SDK
-        uses: jakoch/install-vulkan-sdk-action@v1.0.4 # https://github.com/jakoch/install-vulkan-sdk-action/
+        uses: jakoch/install-vulkan-sdk-action@v1.0.5 # https://github.com/jakoch/install-vulkan-sdk-action/
         with: 
           vulkan_version: latest
           optional_components: com.lunarg.vulkan.vma
