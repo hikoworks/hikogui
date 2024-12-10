@@ -584,6 +584,20 @@ struct shaper_positioned_glyphs {
     return r;
 }
 
+/** Get the natural width and height of the text being shaped.
+ *
+ * @param context The result of the first phase of shaping.
+ * @return The size in pixels of the text.
+ */
+[[nodiscard]] extent2 shaper_get_natural_size(shaper_phase1_result const& context)
+{
+}
+
+[[nodiscard]] unit::pixels_f shaper_get_height(shaper_phase1_result const& context, unit::pixels_f width)
+{
+
+}
+
 struct shaper_phase2_result {
     std::vector<size_t> line_lengths;
     std::vector<shaper_line_metrics> line_metrics;
