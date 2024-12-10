@@ -371,10 +371,6 @@ shaper_display_order(std::vector<size_t> const& line_sizes, std::vector<int8_t> 
 }
 
 struct shaper_phase1_result {
-    /** The text, a list of graphemes in logical order.
-     */
-    gstring text;
-
     /** A list of break opportunities where lines are allowed to be broken.
      */
     unicode_line_break_vector line_break_opportunities;
