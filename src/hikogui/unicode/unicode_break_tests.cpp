@@ -111,10 +111,10 @@ TEST_CASE(sentence_break)
 TEST_CASE(line_break)
 {
     for (auto const& test : parse_tests(hi::library_test_data_dir() / "LineBreakTest.txt")) {
-        auto result =
-            hi::unicode_line_break(test.code_points.begin(), test.code_points.end(), [](auto const code_point) -> decltype(auto) {
-                return code_point;
-            });
+        auto lb = hi::unicode_line_break{};
+        lb.set_text(test.code_points);
+
+        auto result = std::ranges::to<std::vector<hi::unicode_break_opportunity>>(lb.opportunities());
 
         // The algorithm produces mandatory-break in the result, but LineBreakTest.txt only has break/no-break.
         for (auto& x : result) {

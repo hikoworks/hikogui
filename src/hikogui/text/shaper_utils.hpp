@@ -9,7 +9,7 @@
 #include "../font/font.hpp"
 #include "../macros.hpp"
 
-hi_export_module(hikogui.text : text_guess_size);
+hi_export_module(hikogui.text : shaper_utils);
 
 hi_export namespace hi::inline v1 {
 struct shaper_run_indices {
@@ -544,77 +544,77 @@ struct shaper_positioned_glyphs {
 //    }
 //}
 
-/** Precalculate text-shaping before knowing actual width of the text.
- *
- * @param text The text to shape.
- * @param font_size The base font size of the text.
- * @param style The text-style-set containing the styles of the text
- *              for different languages and phrasings.
- * @param maximumum_width The maximum width the text is allowed to be.
- * @param alignment The vertical alignment of the text.
- * @return pre-calculated information used mostly for phase 2.
- *         The text-metrics is used for the constraints of a text-widget.
- */
-[[nodiscard]] inline shaper_phase1_result shaper_phase1(
-    gstring text,
-    unit::pixels_per_em_f font_size,
-    text_style_set style,
-    unit::pixels_f maximum_width,
-    vertical_alignment alignment)
-{
-    auto r = shaper_phase1_result{};
-
-    r.text = std::move(text);
-    r.line_break_opportunities = unicode_line_break(r.text);
-    r.word_break_opportunities = unicode_word_break(r.text);
-    r.sentence_break_opportunities = unicode_sentence_break(r.text);
-    r.run_lengths = shaper_make_run_lengths(r.text, r.word_break_opportunities);
-    r.run_ids = shaper_make_run_ids(r.run_lengths);
-    r.grapheme_metrics = shaper_collect_grapheme_metrics(r.text, r.run_lengths, font_size, style);
-    r.embedding_levels = shaper_collect_embedding_levels(r.text);
-
-    // The calculations will be redone in phase 2, using the actual-width of the text.
-    auto const line_sizes = shaper_fold_lines(r.line_break_opportunities, r.grapheme_metrics, maximum_width);
-    auto const line_metrics = shaper_collect_line_metrics(r.grapheme_metrics, line_sizes);
-    r.text_metrics = shaper_collect_text_metrics(line_metrics, alignment);
-    return r;
-}
-
-/** Get the natural width and height of the text being shaped.
- *
- * @param context The result of the first phase of shaping.
- * @return The size in pixels of the text.
- */
-[[nodiscard]] extent2 shaper_get_natural_size(shaper_phase1_result const& context)
-{
-}
-
-[[nodiscard]] unit::pixels_f shaper_get_height(shaper_phase1_result const& context, unit::pixels_f width)
-{
-
-}
-
-struct shaper_phase2_result {
-    std::vector<size_t> line_lengths;
-    std::vector<shaper_line_metrics> line_metrics;
-    std::vector<size_t> display_order;
-    shaper_text_metrics text_metrics;
-};
-
-/** Calculate the final text-shaping.
- *
- * @param phase1 The pre-calculated information from phase 1.
- * @param actual_width The actual width of the text.
- * @return The final text-metrics and display-order.
- */
-[[nodiscard]] inline shaper_phase2_result shaper_phase2(shaper_phase1_result const& phase1, unit::pixels_f actual_width)
-{
-    auto r = shaper_phase2_result{};
-
-    r.line_lengths = shaper_fold_lines(phase1.line_break_opportunities, phase1.grapheme_metrics, actual_width);
-    r.line_metrics = shaper_collect_line_metrics(phase1.grapheme_metrics, r.line_lengths);
-    r.text_metrics = shaper_collect_text_metrics(r.line_metrics, vertical_alignment::top);
-    r.display_order = shaper_display_order(r.line_lengths, phase1.embedding_levels, phase1.text);
-    return r;
-}
+///** Precalculate text-shaping before knowing actual width of the text.
+// *
+// * @param text The text to shape.
+// * @param font_size The base font size of the text.
+// * @param style The text-style-set containing the styles of the text
+// *              for different languages and phrasings.
+// * @param maximumum_width The maximum width the text is allowed to be.
+// * @param alignment The vertical alignment of the text.
+// * @return pre-calculated information used mostly for phase 2.
+// *         The text-metrics is used for the constraints of a text-widget.
+// */
+//[[nodiscard]] inline shaper_phase1_result shaper_phase1(
+//    gstring text,
+//    unit::pixels_per_em_f font_size,
+//    text_style_set style,
+//    unit::pixels_f maximum_width,
+//    vertical_alignment alignment)
+//{
+//    auto r = shaper_phase1_result{};
+//
+//    //r.text = std::move(text);
+//    //r.line_break_opportunities = unicode_line_break(r.text);
+//    //r.word_break_opportunities = unicode_word_break(r.text);
+//    //r.sentence_break_opportunities = unicode_sentence_break(r.text);
+//    //r.run_lengths = shaper_make_run_lengths(r.text, r.word_break_opportunities);
+//    //r.run_ids = shaper_make_run_ids(r.run_lengths);
+//    //r.grapheme_metrics = shaper_collect_grapheme_metrics(r.text, r.run_lengths, font_size, style);
+//    //r.embedding_levels = shaper_collect_embedding_levels(r.text);
+//
+//    // The calculations will be redone in phase 2, using the actual-width of the text.
+//    //auto const line_sizes = shaper_fold_lines(r.line_break_opportunities, r.grapheme_metrics, maximum_width);
+//    //auto const line_metrics = shaper_collect_line_metrics(r.grapheme_metrics, line_sizes);
+//    //r.text_metrics = shaper_collect_text_metrics(line_metrics, alignment);
+//    return r;
+//}
+//
+///** Get the natural width and height of the text being shaped.
+// *
+// * @param context The result of the first phase of shaping.
+// * @return The size in pixels of the text.
+// */
+//[[nodiscard]] extent2 shaper_get_natural_size(shaper_phase1_result const& context)
+//{
+//}
+//
+//[[nodiscard]] unit::pixels_f shaper_get_height(shaper_phase1_result const& context, unit::pixels_f width)
+//{
+//
+//}
+//
+//struct shaper_phase2_result {
+//    std::vector<size_t> line_lengths;
+//    std::vector<shaper_line_metrics> line_metrics;
+//    std::vector<size_t> display_order;
+//    shaper_text_metrics text_metrics;
+//};
+//
+///** Calculate the final text-shaping.
+// *
+// * @param phase1 The pre-calculated information from phase 1.
+// * @param actual_width The actual width of the text.
+// * @return The final text-metrics and display-order.
+// */
+//[[nodiscard]] inline shaper_phase2_result shaper_phase2(shaper_phase1_result const& phase1, unit::pixels_f actual_width)
+//{
+//    auto r = shaper_phase2_result{};
+//
+//    r.line_lengths = shaper_fold_lines(phase1.line_break_opportunities, phase1.grapheme_metrics, actual_width);
+//    r.line_metrics = shaper_collect_line_metrics(phase1.grapheme_metrics, r.line_lengths);
+//    r.text_metrics = shaper_collect_text_metrics(r.line_metrics, vertical_alignment::top);
+//    r.display_order = shaper_display_order(r.line_lengths, phase1.embedding_levels, phase1.text);
+//    return r;
+//}
 }
