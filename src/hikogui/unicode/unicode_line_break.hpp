@@ -165,7 +165,7 @@ private:
                 }
             }();
 
-            _infos[i] = info_type{
+            _infos[i++] = info_type{
                 resolved_break_class,
                 general_category == unicode_general_category::Cn,
                 grapheme_cluster_break == unicode_grapheme_cluster_break::Extended_Pictographic,

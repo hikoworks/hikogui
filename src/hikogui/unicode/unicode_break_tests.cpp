@@ -110,8 +110,13 @@ TEST_CASE(sentence_break)
 
 TEST_CASE(line_break)
 {
+    auto lb = hi::unicode_line_break{};
+
     for (auto const& test : parse_tests(hi::library_test_data_dir() / "LineBreakTest.txt")) {
-        auto lb = hi::unicode_line_break{};
+        //if (test.line_nr < 29) {
+        //    continue;
+        //}
+
         lb.set_text(test.code_points);
 
         auto result = std::ranges::to<std::vector<hi::unicode_break_opportunity>>(lb.opportunities());

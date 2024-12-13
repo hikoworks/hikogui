@@ -85,8 +85,10 @@ inline void shaper::execute_word_breaks()
     return {};
 }
 
-[[nodiscard]] inline line_segment shaper::get_caret()
+[[nodiscard]] inline line_segment shaper::get_caret(text_cursor cursor)
 {
+    hi_not_implemented();
+    return {point2{}, point2{}};
 }
 
 [[nodiscard]] inline std::vector<aarectangle> shaper::get_rectangles(text_cursor first, text_cursor last)
@@ -161,66 +163,5 @@ inline void shaper::execute_word_breaks()
     return cursor;
 }
 
-} // namespace hi::inline v1
-
-[[nodiscard]] inline text_cursor shaper::go_left(text_cursor cursor)
-{
-    hi_not_implemented();
-    return cursor;
-}
-
-[[nodiscard]] inline text_cursor shaper::go_right(text_cursor cursor)
-{
-    hi_not_implemented();
-    return cursor;
-}
-
-[[nodiscard]] inline text_cursor shaper::go_word_left(text_cursor cursor)
-{
-    hi_not_implemented();
-    return cursor;
-}
-
-[[nodiscard]] inline text_cursor shaper::go_word_right(text_cursor cursor)
-{
-    hi_not_implemented();
-    return cursor;
-}
-
-[[nodiscard]] inline text_cursor shaper::go_sentence_left(text_cursor cursor)
-{
-    hi_not_implemented();
-    return cursor;
-}
-
-[[nodiscard]] inline text_cursor shaper::go_sentence_right(text_cursor cursor)
-{
-    hi_not_implemented();
-    return cursor;
-}
-
-[[nodiscard]] inline text_cursor shaper::go_paragraph_left(text_cursor cursor)
-{
-    hi_not_implemented();
-    return cursor;
-}
-
-[[nodiscard]] inline text_cursor shaper::go_paragraph_right(text_cursor cursor)
-{
-    hi_not_implemented();
-    return cursor;
-}
-
-[[nodiscard]] inline text_cursor shaper::go_up(text_cursor cursor, text_cursor start_cursor)
-{
-    hi_not_implemented();
-    return cursor;
-}
-
-[[nodiscard]] inline text_cursor shaper::go_down(text_cursor cursor, text_cursor start_cursor)
-{
-    hi_not_implemented();
-    return cursor;
-}
 
 } // namespace hi::inline v1

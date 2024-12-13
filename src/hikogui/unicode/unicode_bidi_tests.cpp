@@ -280,10 +280,10 @@ TEST_CASE(bidi_character_test)
         REQUIRE(paragraph_results.paragraph_embedding_levels.size() == 1);
         REQUIRE(paragraph_results.paragraph_embedding_levels[0] == test.resolved_paragraph_embedding_level);
 
-        REQUIRE(paragraph_results.work_pad.size() == test.characters.size());
+        REQUIRE(line_results.work_pad.size() == test.characters.size());
         for (auto i = 0; i != paragraph_results.work_pad.size(); ++i) {
             if (test.resolved_levels[i] != -1) {
-                REQUIRE(paragraph_results.work_pad[i].level == test.resolved_levels[i]);
+                REQUIRE(line_results.work_pad[i].level == test.resolved_levels[i]);
             }
         }
 
@@ -295,13 +295,6 @@ TEST_CASE(bidi_character_test)
                 REQUIRE(index == test.resolved_order[t_i++]);
             }
         }
-
-#ifndef NDEBUG
-        // The full test with debugging takes 17 seconds.
-        if (test.line_nr > 10'000) {
-            break;
-        }
-#endif
     }
 }
 

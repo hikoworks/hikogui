@@ -5,6 +5,7 @@
 #include "text_style_set.hpp"
 #include "text_style.hpp"
 #include "text_cursor.hpp"
+#include "../layout/layout.hpp"
 #include "../geometry/geometry.hpp"
 #include "../units/units.hpp"
 #include "../unicode/unicode.hpp"
@@ -49,17 +50,17 @@ enum class shaper_state {
     return static_cast<shaper_state>(~std::to_underlying(lhs));
 }
 
-[[nodiscard]] constexpr shaper_state& operator|=(shaper_state& lhs, shaper_state const& rhs) noexcept
+constexpr shaper_state& operator|=(shaper_state& lhs, shaper_state const& rhs) noexcept
 {
     return lhs = lhs | rhs;
 }
 
-[[nodiscard]] constexpr shaper_state& operator&=(shaper_state& lhs, shaper_state const& rhs) noexcept
+constexpr shaper_state& operator&=(shaper_state& lhs, shaper_state const& rhs) noexcept
 {
     return lhs = lhs & rhs;
 }
 
-[[nodiscard]] constexpr shaper_state& operator^=(shaper_state& lhs, shaper_state const& rhs) noexcept
+constexpr shaper_state& operator^=(shaper_state& lhs, shaper_state const& rhs) noexcept
 {
     return lhs = lhs ^ rhs;
 }

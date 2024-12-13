@@ -196,22 +196,22 @@ struct shaper_grapheme_metrics {
  * @param grapheme_metrics_range The sizing information of each grapheme.
  * @param maximum_line_width The maximum width of a line.
  */
-[[nodiscard]] inline std::vector<size_t> shaper_fold_lines(
-    unicode_line_break_vector const& break_opportunities,
-    std::vector<shaper_grapheme_metrics> const& grapheme_metrics_range,
-    unit::pixels_f maximum_line_width)
-{
-    return unicode_fold_lines(
-        break_opportunities,
-        grapheme_metrics_range,
-        maximum_line_width,
-        [](auto const& x) {
-            return x.advance;
-        },
-        [](auto const& x) {
-            return is_visible(x.general_category);
-        });
-}
+//[[nodiscard]] inline std::vector<size_t> shaper_fold_lines(
+//    unicode_line_break_vector const& break_opportunities,
+//    std::vector<shaper_grapheme_metrics> const& grapheme_metrics_range,
+//    unit::pixels_f maximum_line_width)
+//{
+//    return unicode_fold_lines(
+//        break_opportunities,
+//        grapheme_metrics_range,
+//        maximum_line_width,
+//        [](auto const& x) {
+//            return x.advance;
+//        },
+//        [](auto const& x) {
+//            return is_visible(x.general_category);
+//        });
+//}
 
 struct shaper_line_metrics {
     unit::pixels_f cap_height = unit::pixels(0.0f);
