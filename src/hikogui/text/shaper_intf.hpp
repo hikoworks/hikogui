@@ -16,60 +16,6 @@
 hi_export_module(hikogui.text : shaper_intf);
 
 hi_export namespace hi::inline v1 {
-// clang-format off
-enum class shaper_state {
-    none            = 0b0000'0000, ///< Nothing has been calculated.
-    word_breaks     = 0b0000'0001, ///< Word-breaks have been calculated.
-    sentence_breaks = 0b0000'0010, ///< Sentence-breaks have been calculated.
-    line_breaks     = 0b0000'0100, ///< Line-breaks have been calculated.
-    glyphs          = 0b0000'1000, ///< Graphemes are converted to glyphs.
-    bidi_1          = 0b0001'0000, ///< 1st pass of the bidirectional algorithm.
-    bidi_2          = 0b0010'0000, ///< 2nd pass of the bidirectional algorithm.
-    substitutions   = 0b0100'0000, ///< Glyph substitutions have been done.
-    positions       = 0b1000'0000, ///< Glyphs have been positioned.
-};
-// clang-format on
-
-[[nodiscard]] constexpr shaper_state operator|(shaper_state const& lhs, shaper_state const& rhs) noexcept
-{
-    return static_cast<shaper_state>(std::to_underlying(lhs) | std::to_underlying(rhs));
-}
-
-[[nodiscard]] constexpr shaper_state operator&(shaper_state const& lhs, shaper_state const& rhs) noexcept
-{
-    return static_cast<shaper_state>(std::to_underlying(lhs) & std::to_underlying(rhs));
-}
-
-[[nodiscard]] constexpr shaper_state operator^(shaper_state const& lhs, shaper_state const& rhs) noexcept
-{
-    return static_cast<shaper_state>(std::to_underlying(lhs) ^ std::to_underlying(rhs));
-}
-
-[[nodiscard]] constexpr shaper_state operator~(shaper_state const& lhs) noexcept
-{
-    return static_cast<shaper_state>(~std::to_underlying(lhs));
-}
-
-constexpr shaper_state& operator|=(shaper_state& lhs, shaper_state const& rhs) noexcept
-{
-    return lhs = lhs | rhs;
-}
-
-constexpr shaper_state& operator&=(shaper_state& lhs, shaper_state const& rhs) noexcept
-{
-    return lhs = lhs & rhs;
-}
-
-constexpr shaper_state& operator^=(shaper_state& lhs, shaper_state const& rhs) noexcept
-{
-    return lhs = lhs ^ rhs;
-}
-
-[[nodiscard]] constexpr bool to_bool(shaper_state const& rhs) noexcept
-{
-    return static_cast<bool>(std::to_underlying(rhs));
-}
-
 class shaper {
 public:
     constexpr shaper() noexcept = default;
@@ -86,7 +32,7 @@ public:
     void set_style(text_style_set const& style) noexcept
     {
         _style = style;
-        _state &= shaper_state::word_breaks | shaper_state::sentence_breaks | shaper_state::line_breaks | shaper_state::bidi_1;
+        _state.clear_lines();
     }
 
     /** Set the base font size of the text.
@@ -96,8 +42,17 @@ public:
     void set_font_size(unit::pixels_per_em_f font_size) noexcept
     {
         _font_size = font_size;
-        _state &= shaper_state::word_breaks | shaper_state::sentence_breaks | shaper_state::line_breaks | shaper_state::glyphs |
-            shaper_state::bidi_1;
+        _state.clear_lines();
+    }
+
+    /** Set the alignment of the text.
+     *
+     * @param alignment The horizontal and vertical alignment of the text.
+     */
+    void set_alignment(hi::alignment alignment) noexcept
+    {
+        _alignment = alignment;
+        _state.clear_layout();
     }
 
     /** Set the base color of the text.
@@ -110,17 +65,6 @@ public:
         // _state remains the same.
     }
 
-    /** Set the alignment of the text.
-     *
-     * @param alignment The horizontal and vertical alignment of the text.
-     */
-    void set_alignment(hi::alignment alignment) noexcept
-    {
-        _alignment = alignment;
-        _state &= shaper_state::word_breaks | shaper_state::sentence_breaks | shaper_state::line_breaks | shaper_state::bidi_1 |
-            shaper_state::bidi_2 | shaper_state::substitutions;
-    }
-
     /** Set the text to format.
      *
      * @note sets state: <= idle
@@ -129,7 +73,7 @@ public:
     void set_text(gstring_view const& text) noexcept
     {
         _text = text;
-        _state = shaper_state::none;
+        _state.clear();
     }
 
     /** Set the layout of the text.
@@ -150,7 +94,7 @@ public:
     {
         _origin = origin;
         _width = width;
-        _state &= shaper_state::word_breaks | shaper_state::sentence_breaks | shaper_state::line_breaks | shaper_state::bidi_1;
+        _state.clear_layout();
     }
 
     /** Get the bounds of the text.
@@ -361,7 +305,67 @@ public:
     [[nodiscard]] text_cursor go_down(text_cursor cursor, text_cursor start_cursor);
 
 private:
-    shaper_state _state = shaper_state::none;
+    struct state_type {
+        bool base_code_points : 1 = false;
+        bool word_breaks : 1 = false;
+        bool sentence_breaks : 1 = false;
+        bool line_breaks : 1 = false;
+        bool glyphs : 1 = false;
+        bool bidi_1 : 1 = false;
+        bool bidi_2 : 1 = false;
+        bool substitutions : 1 = false;
+        bool positions : 1 = false;
+
+        constexpr state_type() noexcept = default;
+        constexpr state_type(state_type const&) noexcept = default;
+        constexpr state_type(state_type&&) noexcept = default;
+        constexpr state_type& operator=(state_type const&) noexcept = default;
+        constexpr state_type& operator=(state_type&&) noexcept = default;
+
+        [[nodiscard]] constexpr friend bool operator==(state_type const&, state_type const&) noexcept = default;
+
+        [[nodiscard]] constexpr friend state_type operator&(state_type const& lhs, state_type const& rhs) noexcept
+        {
+            auto r = state_type{};
+            r.base_code_points = lhs.base_code_points & rhs.base_code_points;
+            r.word_breaks = lhs.word_breaks & rhs.word_breaks;
+            r.sentence_breaks = lhs.sentence_breaks & rhs.sentence_breaks;
+            r.line_breaks = lhs.line_breaks & rhs.line_breaks;
+            r.glyphs = lhs.glyphs & rhs.glyphs;
+            r.bidi_1 = lhs.bidi_1 & rhs.bidi_1;
+            r.bidi_2 = lhs.bidi_2 & rhs.bidi_2;
+            r.substitutions = lhs.substitutions & rhs.substitutions;
+            r.positions = lhs.positions & rhs.positions;
+            return r;
+        }
+
+        constexpr void clear() noexcept
+        {
+            base_code_points = false;
+            word_breaks = false;
+            sentence_breaks = false;
+            line_breaks = false;
+            glyphs = false;
+            bidi_1 = false;
+            bidi_2 = false;
+            substitutions = false;
+            positions = false;
+        }
+
+        constexpr void clear_lines() noexcept
+        {
+            bidi_2 = false;
+            substitutions = false;
+            positions = false;
+        }
+
+        constexpr void clear_layout() noexcept
+        {
+            positions = false;
+        }
+    };
+
+    state_type _state = {};
 
     text_style_set _style;
     unit::pixels_per_em_f _font_size = unit::pixels_per_em(0.0f);
@@ -371,9 +375,10 @@ private:
     point2 _origin;
     float _width = 0.0f;
 
-    std::vector<unicode_break_opportunity> _word_breaks;
-    std::vector<unicode_break_opportunity> _sentence_breaks;
-    std::vector<unicode_break_opportunity> _line_breaks;
+    std::vector<char32_t> _base_code_points;
+    unicode_line_break _line_breaks;
+    unicode_word_break _word_breaks;
+    //unicode_sentence_break _sentence_breaks;
 
     /** Progress the state to the given state.
      *
@@ -382,8 +387,9 @@ private:
      *
      * @param state The state to progress to.
      */
-    void progress_to(shaper_state state);
+    void progress_to(state_type state);
 
+    void execute_base_code_points();
     void execute_word_breaks();
     void execute_sentence_breaks();
     void execute_line_breaks();

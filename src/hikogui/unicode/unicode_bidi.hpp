@@ -1225,7 +1225,7 @@ constexpr void unicode_bidi_L1(std::span<unicode_bidi_char_info> work_pad, int8_
     }
 }
 
-[[nodiscard]] constexpr void unicode_bidi_L2(std::span<unicode_bidi_char_info const> work_pad, std::span<size_t> display_order) noexcept
+constexpr void unicode_bidi_L2(std::span<unicode_bidi_char_info const> work_pad, std::span<size_t> display_order) noexcept
 {
     assert(work_pad.size() == display_order.size());
 

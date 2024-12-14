@@ -86,13 +86,14 @@ TEST_CASE(grapheme_break)
 
 TEST_CASE(word_break)
 {
-    for (auto const& test : parse_tests(hi::library_test_data_dir() / "WordBreakTest.txt")) {
-        auto const result =
-            hi::unicode_word_break(test.code_points.begin(), test.code_points.end(), [](auto const code_point) -> decltype(auto) {
-                return code_point;
-            });
+    auto wb = hi::unicode_word_break{};
 
-        REQUIRE(test.expected == result, test.comment);
+    for (auto const& test : parse_tests(hi::library_test_data_dir() / "WordBreakTest.txt")) {
+        wb.set_text(test.code_points);
+
+        auto opportunities = std::ranges::to<std::vector<hi::unicode_break_opportunity>>(wb.opportunities());
+
+        REQUIRE(test.expected == opportunities, test.comment);
     }
 }
 

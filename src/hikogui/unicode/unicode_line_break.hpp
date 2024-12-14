@@ -34,7 +34,7 @@ public:
     constexpr unicode_line_break& operator=(unicode_line_break const&) noexcept = default;
     constexpr unicode_line_break& operator=(unicode_line_break&&) noexcept = default;
 
-    [[nodiscard]] constexpr unicode_line_break_vector const& opportunities() const noexcept
+    [[nodiscard]] constexpr std::span<unicode_break_opportunity const> opportunities() const noexcept
     {
         return _opportunities;
     }
@@ -140,7 +140,7 @@ private:
     std::vector<info_type> _infos;
     unicode_line_break_vector _opportunities;
 
-    [[nodiscard]] constexpr void LB1(std::span<char32_t const> code_points) noexcept
+    constexpr void LB1(std::span<char32_t const> code_points) noexcept
     {
         auto i = size_t{0};
         for (auto code_point : code_points) {
@@ -472,7 +472,7 @@ private:
      *
      * @return A list of line lengths.
      */
-    [[nodiscard]] constexpr void mandatory_lines(std::vector<size_t>& r)
+    constexpr void mandatory_lines(std::vector<size_t>& r)
     {
         r.clear();
 
