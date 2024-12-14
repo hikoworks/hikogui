@@ -99,13 +99,14 @@ TEST_CASE(word_break)
 
 TEST_CASE(sentence_break)
 {
-    for (auto const& test : parse_tests(hi::library_test_data_dir() / "SentenceBreakTest.txt")) {
-        auto const result =
-            hi::unicode_sentence_break(test.code_points.begin(), test.code_points.end(), [](auto const code_point) -> decltype(auto) {
-                return code_point;
-            });
+    auto sb = hi::unicode_sentence_break{};
 
-        REQUIRE(test.expected == result, test.comment);
+    for (auto const& test : parse_tests(hi::library_test_data_dir() / "SentenceBreakTest.txt")) {
+        sb.set_text(test.code_points);
+
+        auto opportunities = std::ranges::to<std::vector<hi::unicode_break_opportunity>>(sb.opportunities());
+
+        REQUIRE(test.expected == opportunities, test.comment);
     }
 }
 
