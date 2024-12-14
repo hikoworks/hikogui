@@ -20,6 +20,14 @@
 hi_export_module(hikogui.unicode.unicode_sentence_break);
 
 hi_export namespace hi::inline v1 {
+
+/** Unicode sentence-break algorithm.
+ * 
+ * See https://www.unicode.org/reports/tr29/ for the specification.
+ * 
+ * We are using a class so that it will be easy to reuse the allocations of
+ * the internal state of this algorithm across multiple calls.
+ */
 class unicode_sentence_break {
 public:
     constexpr unicode_sentence_break() noexcept = default;
@@ -28,11 +36,20 @@ public:
     constexpr unicode_sentence_break& operator=(unicode_sentence_break const&) noexcept = default;
     constexpr unicode_sentence_break& operator=(unicode_sentence_break&&) noexcept = default;
 
+    /** Get the break opportunities for the text.
+     * 
+     * @note See `set_text()` on how to set the text.
+     * @return A list of break opportunities.
+     */
     [[nodiscard]] constexpr std::span<unicode_break_opportunity const> opportunities() const noexcept
     {
         return _opportunities;
     }
 
+    /** Set the text to calculate the break opportunities for.
+     * 
+     * @param base_code_points The base code points of the text.
+     */
     constexpr void set_text(std::span<char32_t const> base_code_points)
     {
         clear_and_resize(_opportunities, base_code_points.size() + 1, unicode_break_opportunity::unassigned);
