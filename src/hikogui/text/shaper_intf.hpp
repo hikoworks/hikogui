@@ -378,7 +378,7 @@ private:
     std::vector<char32_t> _base_code_points;
     unicode_line_break _line_breaks;
     unicode_word_break _word_breaks;
-    //unicode_sentence_break _sentence_breaks;
+    unicode_sentence_break _sentence_breaks;
 
     /** Progress the state to the given state.
      *

@@ -36,12 +36,15 @@ inline void shaper::execute_word_breaks()
 inline void shaper::execute_sentence_breaks()
 {
     assert(_state.base_code_points);
-    //_sentence_breaks.set_text(_base_code_points);
+    _sentence_breaks.set_text(_base_code_points);
     _state.sentence_breaks = true;
 }
 
 inline void shaper::progress_to(state_type new_state)
 {
+    new_state.line_breaks |= new_state.bidi_2;
+    new_state.base_code_points |= new_state.line_breaks or new_state.word_breaks or new_state.sentence_breaks;
+
     if ((_state & new_state) == new_state) {
         return;
     }
@@ -62,13 +65,14 @@ inline void shaper::progress_to(state_type new_state)
         execute_sentence_breaks();
     }
 
+    if (new_state.bidi_1 and not _state.bidi_1) {
+        execute_bidi_1();
+    }
+
     if (new_state.glyphs and not _state.glyphs) {
         execute_glyphs();
     }
 
-    if (new_state.bidi_1 and not _state.bidi_1) {
-        execute_bidi_1();
-    }
 
     if (new_state.bidi_2 and not _state.bidi_2) {
         execute_bidi_2();
