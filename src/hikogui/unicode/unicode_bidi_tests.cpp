@@ -136,6 +136,8 @@ std::generator<unicode_bidi_test> parse_bidi_test(int test_line_nr = -1)
 
 TEST_CASE(bidi_test)
 {
+    auto bidi = hi::unicode_bidi{};
+
     for (auto const test : parse_bidi_test()) {
         //if (test.line_nr < 21875) {
         //    continue;
@@ -146,35 +148,28 @@ TEST_CASE(bidi_test)
             // - Pretend that the input is a single paragraph.
             // - Pretend that the input is a single line.
             // - Pretend that the input contains no paired brackets.
-            auto work_pad = std::vector<hi::unicode_bidi_char_info>(test.input.size(), hi::unicode_bidi_char_info{});
-            for (auto i = 0; i != test.input.size(); ++i) {
-                work_pad[i].original_class = test.input[i];
-                work_pad[i].direction = test.input[i];
-                work_pad[i].level = 0;
-                work_pad[i].paired_bracket_type = hi::unicode_bidi_paired_bracket_type::n;
-            }
 
-            auto code_points = std::vector<char32_t>(test.input.size(), U'\0');
+            auto const lines = std::vector<size_t>{test.input.size()};
 
-            auto paragraph_embedding_levels = unicode_bidi_P1(work_pad, code_points, paragraph_direction);
-            REQUIRE(paragraph_embedding_levels.size() == 1);
-            unicode_bidi_L1(work_pad, paragraph_embedding_levels[0]);
+            bidi.set_classes(test.input, paragraph_direction);
+            bidi.set_lines(lines);
+
+            auto const levels = bidi.embedding_levels();
+            auto const ordering = bidi.ordering();
 
             // We are using the index from the iterator to find embedded levels
             // in input-order. We ignore all elements that where removed by X9.
-            REQUIRE(work_pad.size() == test.levels.size());
-            for (auto i = 0; i != work_pad.size(); ++i) {
+            REQUIRE(levels.size() == test.levels.size());
+            for (auto i = 0; i != levels.size(); ++i) {
                 if (test.levels[i] != -1) {
-                    REQUIRE(work_pad[i].level == test.levels[i]);
+                    REQUIRE(levels[i] == test.levels[i]);
                 }
             }
 
-            auto const display_order = hi::unicode_bidi_L2(work_pad);
-
-            REQUIRE(display_order.size() >= test.reorder.size());
+            REQUIRE(ordering.size() >= test.reorder.size());
             auto t_i = size_t{0};
-            for (auto r_i = size_t{0}; r_i != display_order.size(); ++r_i) {
-                auto const index = display_order[r_i];
+            for (auto r_i = size_t{0}; r_i != ordering.size(); ++r_i) {
+                auto const index = ordering[r_i];
                 if (test.levels[index] != -1) {
                     REQUIRE(index == test.reorder[t_i++]);
                 }
@@ -266,31 +261,36 @@ std::generator<unicode_bidi_character_test> parse_bidi_character_test(int test_l
 
 TEST_CASE(bidi_character_test)
 {
+    auto bidi = hi::unicode_bidi{};
+
     for (auto test : parse_bidi_character_test()) {
         //if (test.line_nr < 254) {
         //    continue;
         //}
 
-        auto line_sizes = std::vector<size_t>{};
-        line_sizes.push_back(test.characters.size());
+        auto line_sizes = std::vector<size_t>{test.characters.size()};
 
-        auto paragraph_results = unicode_bidi_on_paragraphs(test.characters, test.paragraph_direction);
-        auto line_results = unicode_bidi_on_lines(paragraph_results, line_sizes);
+        bidi.set_text(test.characters, test.paragraph_direction);
+        bidi.set_lines(line_sizes);
 
-        REQUIRE(paragraph_results.paragraph_embedding_levels.size() == 1);
-        REQUIRE(paragraph_results.paragraph_embedding_levels[0] == test.resolved_paragraph_embedding_level);
+        auto const paragraph_embedding_levels = bidi.paragraph_embedding_levels();
+        auto const levels = bidi.embedding_levels();
+        auto const ordering = bidi.ordering();
 
-        REQUIRE(line_results.work_pad.size() == test.characters.size());
-        for (auto i = 0; i != paragraph_results.work_pad.size(); ++i) {
+        REQUIRE(paragraph_embedding_levels.size() == 1);
+        REQUIRE(paragraph_embedding_levels[0] == test.resolved_paragraph_embedding_level);
+
+        REQUIRE(levels.size() == test.characters.size());
+        for (auto i = 0; i != levels.size(); ++i) {
             if (test.resolved_levels[i] != -1) {
-                REQUIRE(line_results.work_pad[i].level == test.resolved_levels[i]);
+                REQUIRE(levels[i] == test.resolved_levels[i]);
             }
         }
 
-        REQUIRE(line_results.display_order.size() >= test.resolved_order.size());
+        REQUIRE(ordering.size() >= test.resolved_order.size());
         auto t_i = size_t{0};
-        for (auto r_i = size_t{0}; r_i != line_results.display_order.size(); ++r_i) {
-            auto const index = line_results.display_order[r_i];
+        for (auto r_i = size_t{0}; r_i != ordering.size(); ++r_i) {
+            auto const index = ordering[r_i];
             if (test.resolved_levels[index] != -1) {
                 REQUIRE(index == test.resolved_order[t_i++]);
             }
