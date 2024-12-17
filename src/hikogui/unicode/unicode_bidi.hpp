@@ -145,19 +145,23 @@ private:
     struct info_type {
         /** The current embedding level of the character.
          */
-        int8_t level;
+        int8_t level = 0;
+
+        /** Copy of the level before X10 is executed.
+         */
+        int8_t level_before_X10 = 0;
 
         /** The direction of the character.
          */
-        unicode_bidi_class direction;
+        unicode_bidi_class direction = unicode_bidi_class::BN;
 
         /** The original character class of the character.
          */
-        unicode_bidi_class original_class;
+        unicode_bidi_class original_class = unicode_bidi_class::BN;
 
         /** The paired bracket type of the character.
          */
-        unicode_bidi_paired_bracket_type paired_bracket_type;
+        unicode_bidi_paired_bracket_type paired_bracket_type = unicode_bidi_paired_bracket_type::n;
 
         [[nodiscard]] constexpr bool is_removed_by_X9() const noexcept
         {
@@ -597,6 +601,9 @@ private:
             default:
                 X6(info, context);
             }
+
+            // Make copy of the level before X10 is executed.
+            info.level_before_X10 = info.level;
         }
     }
 
@@ -619,7 +626,7 @@ private:
             return _BD7_runs;
         }
 
-        auto run = run_type{first, first + 1, _infos[first].level, _infos[first].direction, _infos[first].direction};
+        auto run = run_type{first, first + 1, _infos[first].level_before_X10, _infos[first].direction, _infos[first].direction};
         for (auto i = first + 1; i != last; ++i) {
             auto const& info = _infos[i];
 
@@ -630,16 +637,16 @@ private:
             // Get the information of the first character not removed by X9.
             // A character removed by X9 is assigned an embedding level of -1.
             if (run.embedding_level < 0) {
-                run.embedding_level = info.level;
+                run.embedding_level = info.level_before_X10;
                 run.first_class = info.direction;
             }
 
-            if (run.embedding_level != info.level) {
+            if (run.embedding_level != info.level_before_X10) {
                 run.last = i;
                 if (run.embedding_level >= 0) {
                     _BD7_runs.push_back(std::move(run));
                 }
-                run = run_type{i, i + 1, info.level, info.direction, info.direction};
+                run = run_type{i, i + 1, info.level_before_X10, info.direction, info.direction};
             }
 
             // Get the direction of the last character not removed by X9.
@@ -662,7 +669,7 @@ private:
             for (auto i = sequence.front().first; i != 0; --i) {
                 assert(i - 1 < _infos.size());
                 if (not _infos[i - 1].is_removed_by_X9()) {
-                    return _infos[i - 1].level;
+                    return _infos[i - 1].level_before_X10;
                 }
             }
             return paragraph_embedding_level;
@@ -680,7 +687,7 @@ private:
             for (auto i = sequence.back().last; i != _infos.size(); ++i) {
                 // X9. Retaining BNs and Explicit Formatting Characters.
                 if (not _infos[i].is_removed_by_X9()) {
-                    return _infos[i].level;
+                    return _infos[i].level_before_X10;
                 }
             }
 
@@ -1455,7 +1462,7 @@ private:
             auto const p_last = i + paragraph_size;
             i += paragraph_size;
 
-            assert(p_first < p_last);
+            assert(p_first <= p_last);
             assert(p_last <= _infos.size());
 
             auto const paragraph_direction = P2<false>(p_first, p_last, mode);
