@@ -177,10 +177,10 @@ TEST_CASE(bidi_test)
         }
 
 #ifndef NDEBUG
-        // The full test with debugging takes 51 seconds.
-        if (test.line_nr > 10'000) {
-            break;
-        }
+        // The full test with debugging takes 33 seconds.
+        //if (test.line_nr > 10'000) {
+        //    break;
+        //}
 #endif
     }
 }
@@ -264,9 +264,9 @@ TEST_CASE(bidi_character_test)
     auto bidi = hi::unicode_bidi{};
 
     for (auto test : parse_bidi_character_test()) {
-        if (test.line_nr < 160) {
-            continue;
-        }
+        // if (test.line_nr < 160) {
+        //     continue;
+        // }
 
         auto line_sizes = std::vector<size_t>{test.characters.size()};
 

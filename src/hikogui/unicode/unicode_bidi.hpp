@@ -616,11 +616,11 @@ private:
      * @param last index beyond the last character in the paragraph.
      * @return A vector of run-lengths of embedding-levels.
      */
-    [[nodiscard]] constexpr std::vector<run_type> const& BD7(size_t first, size_t last) noexcept
+    [[nodiscard]] constexpr std::vector<run_type>& BD7(size_t first, size_t last) noexcept
     {
         using enum unicode_bidi_class;
 
-        _BD7_runs.clear();
+        assert(_BD7_runs.empty());
 
         if (first == last) {
             return _BD7_runs;
@@ -660,13 +660,20 @@ private:
         return _BD7_runs;
     }
 
-    constexpr void BD13_sos_eos(run_sequence_type& sequence, int8_t paragraph_embedding_level)
+    /** Determine the sos and eos of a run sequence.
+     * 
+     * @param sequence The isolated run sequence.
+     * @param first index to the first character in the paragraph.
+     * @param last index beyond the last character in the paragraph.
+     * @param paragraph_embedding_level The embedding level of the paragraph.
+     */
+    constexpr void BD13_sos_eos(run_sequence_type& sequence, size_t first, size_t last, int8_t paragraph_embedding_level)
     {
         using enum unicode_bidi_class;
 
-        // Calculate the sos and eos for the isolated run sequence.
         auto const before_embedding_level = [&] {
-            for (auto i = sequence.front().first; i != 0; --i) {
+            assert(sequence.front().first >= first);
+            for (auto i = sequence.front().first; i != first; --i) {
                 assert(i - 1 < _infos.size());
                 if (not _infos[i - 1].is_removed_by_X9()) {
                     return _infos[i - 1].level_before_X10;
@@ -683,8 +690,8 @@ private:
                 return paragraph_embedding_level;
             }
 
-            assert(sequence.back().last <= _infos.size());
-            for (auto i = sequence.back().last; i != _infos.size(); ++i) {
+            assert(sequence.back().last <= last);
+            for (auto i = sequence.back().last; i != last; ++i) {
                 // X9. Retaining BNs and Explicit Formatting Characters.
                 if (not _infos[i].is_removed_by_X9()) {
                     return _infos[i].level_before_X10;
@@ -704,14 +711,17 @@ private:
     run_sequence_type _BD13_run_sequence;
     /** Determine isolated run sequences.
      *
-     * @pre _runs are initialized by `BD7()`.
+     * @param first index to the first character in the paragraph.
+     * @param last index beyond the last character in the paragraph.
      * @param paragraph_embedding_level The embedding level of the paragraph.
      * @param Function A callable object that will be called for each isolated run sequence.
      * @return A vector of isolated run sequences.
      */
     template<std::invocable<run_sequence_type const&> Function>
-    constexpr void BD13(int8_t paragraph_embedding_level, std::vector<run_type> runs, Function const& function) noexcept
+    constexpr void BD13(size_t first, size_t last, int8_t paragraph_embedding_level, Function const& function) noexcept
     {
+        auto& runs = BD7(first, last);
+
         std::reverse(runs.begin(), runs.end());
         while (not runs.empty()) {
             _BD13_run_sequence.clear();
@@ -747,7 +757,7 @@ private:
             }
 #endif
 
-            BD13_sos_eos(_BD13_run_sequence, paragraph_embedding_level);
+            BD13_sos_eos(_BD13_run_sequence, first, last, paragraph_embedding_level);
             function(_BD13_run_sequence);
         }
     }
@@ -1281,7 +1291,7 @@ private:
 
         assert(_infos.size() == code_points.size());
 
-        BD13(paragraph_embedding_level, BD7(first, last), [this, code_points](run_sequence_type const& sequence) {
+        BD13(first, last, paragraph_embedding_level, [this, code_points](run_sequence_type const& sequence) {
             W1(sequence);
             W2(sequence);
             W3(sequence);
