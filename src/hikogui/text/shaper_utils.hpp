@@ -24,16 +24,17 @@ struct shaper_run_indices {
  * can be shaped together. A sequence of whitespace is considered a run.
  *
  * @param text The text to get the runs of.
- * @param word_breaks The word breaks in the text.
- * @return A vector of number of graphemes in each run.
+ * @param word_breaks The word break opportunities between each grapheme.
+ * @param [out] r The length of each run.
  */
-[[nodiscard]] inline std::vector<size_t> shaper_make_run_lengths(gstring_view text, unicode_word_break_vector word_breaks)
+inline void shaper_make_run_lengths(
+    std::span<grapheme const> text, std::span<unicode_break_opportunity const> word_breaks, std::vector<size_t>& r)
 {
-    auto r = std::vector<size_t>{};
+    r.clear();
 
     // If the text is empty, then word_breaks is also empty.
     if (text.empty()) {
-        return r;
+        return;
     }
 
     assert(text.size() + 1 == word_breaks.size());
@@ -53,8 +54,6 @@ struct shaper_run_indices {
             run_start = i + 1;
         }
     }
-
-    return r;
 }
 
 /** Get a identifier for each run.
@@ -63,14 +62,12 @@ struct shaper_run_indices {
  * identify when a new run starts.
  *
  * @param run_lengths The number of graphemes in each run.
- * @return A vector of run identifiers, one for each grapheme in logical order.
+ * @param text_size The number of graphemes in the text.
+ * @param [out] r An id per grapheme to identify the run the grapheme belongs to.
  */
-[[nodiscard]] inline std::vector<size_t> shaper_make_run_ids(std::vector<size_t> const& run_lengths)
+inline void shaper_make_run_ids(std::span<size_t const> run_lengths, size_t text_size, std::vector<size_t>& r)
 {
-    auto size = std::accumulate(run_lengths.begin(), run_lengths.end(), size_t{0});
-
-    auto r = std::vector<size_t>{};
-    r.resize(size);
+    clear_and_resize(r, text_size, size_t{0});
 
     auto id = 0;
     auto r_it = r.begin();
@@ -82,7 +79,6 @@ struct shaper_run_indices {
     }
 
     assert(r_it == r.end());
-    return r;
 }
 
 /** Information gathered from a grapheme in preparation for shaping.
@@ -103,6 +99,86 @@ struct shaper_grapheme_metrics {
     unicode_general_category general_category = unicode_general_category::Cn;
     unicode_bidi_paired_bracket_type bracket_type = unicode_bidi_paired_bracket_type::n;
 };
+
+/** Get information of each grapheme in preparation for shaping.
+ *
+ * @param text The graphemes to collect glyphs for.
+ * @param run_lengths The length of each run.
+ * @param style_set The style of the text.
+ * @param [out] r The glyphs (and font) for each grapheme.
+ */
+[[nodiscard]] inline void shaper_collect_glyphs(
+    std::span<grapheme const> text,
+    std::vector<size_t> const& run_lengths,
+    text_style_set const& style_set,
+    unit::pixels_per_em_f font_size,
+    std::vector<font_glyph_ids>& glyphs,
+    std::vector<shaper_grapheme_metrics>& metrics,
+    std::vector<unit::pixels_f>& advances)
+{
+    // A scratch pad to share the allocation of this vector between calls to
+    // find_glyphs() to improve the performance.
+    auto find_glyphs_scratch = std::vector<lean_vector<glyph_id>>{};
+
+    clear_and_resize(glyphs, text.size(), font_glyph_ids{});
+    clear_and_resize(metrics, text.size(), shaper_grapheme_metrics{});
+    clear_and_resize(advances, text.size(), unit::pixels(0.0f));
+
+    auto attributes = grapheme_attributes{};
+    text_style style = text_style{};
+    auto style_font_size = font_size;
+    auto i = size_t{0};
+    for (auto run_length : run_lengths) {
+        assert(run_length != 0);
+
+        auto const run_of_graphemes = text.subspan(i, run_length);
+        auto const run_of_glyphs = std::span{glyphs}.subspan(i, run_length);
+        auto const run_of_metrics = std::span{metrics}.subspan(i, run_length);
+        auto const run_of_advances = std::span{advances}.subspan(i, run_length);
+
+        if (style.empty() or run_of_graphemes.front().attributes() != attributes) {
+            attributes = run_of_graphemes.front().attributes();
+            style = style_set[attributes];
+            style_font_size = font_size * style.scale();
+        }
+
+        find_glyphs(run_of_graphemes, style.font_chain(), run_of_glyphs);
+
+        auto font_id = hi::font_id{};
+        hi::font* font = nullptr;
+        auto font_metrics = hi::font_metrics_px{};
+        for (auto& [g, glyph_ids, metrics, advance] : std::views::zip(run_of_graphemes, run_of_glyphs, run_of_metrics, run_of_advances)) {
+            if (font == nullptr or font_id != glyph_ids.font) {
+                font_id = glyph_ids.font;
+                font = std::addressof(get_font(font_id));
+                font_metrics = style_font_size * font->metrics;
+            }
+
+            metrics.glyphs = glyph_ids;
+            metrics.advance = style_font_size * font->get_advance(glyph_ids.front());
+            metrics.cap_height = font_metrics.cap_height;
+            metrics.ascender = font_metrics.ascender;
+            metrics.descender = font_metrics.descender;
+            metrics.line_gap = font_metrics.line_gap;
+            metrics.line_spacing = style.line_spacing();
+            metrics.paragraph_spacing = style.paragraph_spacing();
+            metrics.general_category = ucd_get_general_category(g.starter());
+            metrics.bracket_type = ucd_get_bidi_paired_bracket_type(g.starter());
+
+            // If the grapheme is a bracket, then find the mirrored glyph.
+            // Only the base glyph is mirrored, the combining glyphs are not.
+            // The mirrored glyph is used when the grapheme is displayed in RTL.
+            if (metrics.bracket_type != unicode_bidi_paired_bracket_type::n) {
+                auto const mirror_cp = ucd_get_bidi_mirroring_glyph(g.starter());
+                metrics.mirrored_glyph = font->find_glyph(mirror_cp);
+            }
+
+            advance = metrics.advance;
+        }
+
+        i += run_length;
+    }
+}
 
 /** Get information of each grapheme in preparation for shaping.
  *

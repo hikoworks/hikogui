@@ -175,13 +175,6 @@ TEST_CASE(bidi_test)
                 }
             }
         }
-
-#ifndef NDEBUG
-        // The full test with debugging takes 33 seconds.
-        //if (test.line_nr > 10'000) {
-        //    break;
-        //}
-#endif
     }
 }
 

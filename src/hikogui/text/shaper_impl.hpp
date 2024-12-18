@@ -9,81 +9,71 @@ hi_export_module(hikogui.text : shaper_impl);
 
 hi_export namespace hi::inline v1 {
 
-inline void shaper::execute_base_code_points()
-{
-    clear_and_resize(_base_code_points, _text.size(), U'\u0000');
-    for (auto i = size_t{0}; i != _text.size(); ++i) {
-        _base_code_points[i] = _text[i].starter();
-    }
-
-    _state.base_code_points = true;
-}
-
-inline void shaper::execute_line_breaks()
-{
-    assert(_state.base_code_points);
-    _line_breaks.set_text(_base_code_points);
-    _state.line_breaks = true;
-}
-
-inline void shaper::execute_word_breaks()
-{
-    assert(_state.base_code_points);
-    _word_breaks.set_text(_base_code_points);
-    _state.word_breaks = true;
-}
-
-inline void shaper::execute_sentence_breaks()
-{
-    assert(_state.base_code_points);
-    _sentence_breaks.set_text(_base_code_points);
-    _state.sentence_breaks = true;
-}
 
 inline void shaper::progress_to(state_type new_state)
 {
     new_state.line_breaks |= new_state.bidi_2;
-    new_state.base_code_points |= new_state.line_breaks or new_state.word_breaks or new_state.sentence_breaks;
+    new_state.word_breaks |= new_state.runs;
+    new_state.base_code_points |= new_state.line_breaks or new_state.word_breaks or new_state.sentence_breaks or new_state.bidi_1;
 
     if ((_state & new_state) == new_state) {
         return;
     }
 
-    if (new_state.base_code_points and not _state.base_code_points) {
-        execute_base_code_points();
+    if (new_state.base_code_points and not std::exchange(_state.base_code_points, true)) {
+        clear_and_resize(_base_code_points, _text.size(), U'\u0000');
+        for (auto i = size_t{0}; i != _text.size(); ++i) {
+            _base_code_points[i] = _text[i].starter();
+        }
     }
     
-    if (new_state.line_breaks and not _state.line_breaks) {
-        execute_line_breaks();
+    if (new_state.line_breaks and not std::exchange(_state.line_breaks, true)) {
+        assert(_state.base_code_points);
+        _line_breaks.set_text(_base_code_points);
     }
 
-    if (new_state.word_breaks and not _state.word_breaks) {
-        execute_word_breaks();
+    if (new_state.word_breaks and not std::exchange(_state.word_breaks, true)) {
+        assert(_state.base_code_points);
+        _word_breaks.set_text(_base_code_points);
     }
 
-    if (new_state.sentence_breaks and not _state.sentence_breaks) {
-        execute_sentence_breaks();
+    if (new_state.sentence_breaks and not std::exchange(_state.sentence_breaks, true)) {
+        assert(_state.base_code_points);
+        _sentence_breaks.set_text(_base_code_points);
     }
 
-    if (new_state.bidi_1 and not _state.bidi_1) {
-        execute_bidi_1();
+    if (new_state.bidi_1 and not std::exchange(_state.bidi_1, true)) {
+        assert(_state.base_code_points);
+        _bidi.set_text(_base_code_points, _paragraph_direction);
     }
 
-    if (new_state.glyphs and not _state.glyphs) {
-        execute_glyphs();
+    if (new_state.runs and not std::exchange(_state.runs, true)) {
+        assert(_state.word_breaks);
+        shaper_make_run_lengths(_text, _word_breaks.opportunities(), _run_lengths);
+        shaper_make_run_ids(_run_lengths, _text.size(), _run_ids);
     }
 
-
-    if (new_state.bidi_2 and not _state.bidi_2) {
-        execute_bidi_2();
+    if (new_state.glyphs and not std::exchange(_state.glyphs, true)) {
+        assert(_state.runs);
+        shaper_collect_glyphs(_text, _run_lengths, _style, _font_size, _glyphs, _metrics, _advances);
     }
 
-    if (new_state.substitutions and not _state.substitutions) {
-        execute_substitutions();
+    if (new_state.fold and not std::exchange(_state.fold, true)) {
+        assert(_state.line_breaks);
+        assert(_state.glyphs);
+        _width_after_folding = _line_breaks.fold(_advances, _width, _line_lengths);
     }
 
-    if (new_state.positions and not _state.positions) {
-        execute_positions();
+    if (new_state.bidi_2 and not std::exchange(_state.bidi_2, true)) {
+        assert(_state.bidi_1);
+        assert(_state.fold);
+        _bidi.set_lines(_line_lengths);
+    }
+
+    if (new_state.substitutions and not std::exchange(_state.substitutions, true)) {
+    }
+
+    if (new_state.positions and not std::exchange(_state.positions, true)) {
     }
 
     assert((_state & new_state) == new_state);

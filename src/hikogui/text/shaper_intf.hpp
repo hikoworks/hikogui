@@ -5,6 +5,7 @@
 #include "text_style_set.hpp"
 #include "text_style.hpp"
 #include "text_cursor.hpp"
+#include "shaper_utils.hpp"
 #include "../layout/layout.hpp"
 #include "../geometry/geometry.hpp"
 #include "../units/units.hpp"
@@ -52,6 +53,19 @@ public:
     void set_alignment(hi::alignment alignment) noexcept
     {
         _alignment = alignment;
+        _paragraph_direction = [&] {
+            switch (_alignment.horizontal()) {
+            case hi::horizontal_alignment::left:
+                return hi::unicode_bidi_class::L;
+            case hi::horizontal_alignment::right:
+                return hi::unicode_bidi_class::R;
+            case hi::horizontal_alignment::center:
+                return hi::unicode_bidi_class::B;
+            case hi::horizontal_alignment::justified:
+                return hi::unicode_bidi_class::B;
+            }
+            std::unreachable();
+        }();
         _state.clear_layout();
     }
 
@@ -90,7 +104,7 @@ public:
      * @param origin The origin of the text.
      * @param width The width of the text, or infinity if the text is not wrapped.
      */
-    void set_layout(point2 origin, float width)
+    void set_layout(point2 origin, unit::pixels_f width)
     {
         _origin = origin;
         _width = width;
@@ -306,15 +320,17 @@ public:
 
 private:
     struct state_type {
-        bool base_code_points : 1 = false;
-        bool word_breaks : 1 = false;
-        bool sentence_breaks : 1 = false;
-        bool line_breaks : 1 = false;
-        bool glyphs : 1 = false;
-        bool bidi_1 : 1 = false;
-        bool bidi_2 : 1 = false;
-        bool substitutions : 1 = false;
-        bool positions : 1 = false;
+        bool base_code_points = false;
+        bool word_breaks = false;
+        bool sentence_breaks = false;
+        bool line_breaks = false;
+        bool runs = false;
+        bool glyphs = false;
+        bool fold = false;
+        bool bidi_1 = false;
+        bool bidi_2 = false;
+        bool substitutions = false;
+        bool positions = false;
 
         constexpr state_type() noexcept = default;
         constexpr state_type(state_type const&) noexcept = default;
@@ -331,7 +347,9 @@ private:
             r.word_breaks = lhs.word_breaks & rhs.word_breaks;
             r.sentence_breaks = lhs.sentence_breaks & rhs.sentence_breaks;
             r.line_breaks = lhs.line_breaks & rhs.line_breaks;
+            r.runs = lhs.runs & rhs.runs;
             r.glyphs = lhs.glyphs & rhs.glyphs;
+            r.fold = lhs.fold & rhs.fold;
             r.bidi_1 = lhs.bidi_1 & rhs.bidi_1;
             r.bidi_2 = lhs.bidi_2 & rhs.bidi_2;
             r.substitutions = lhs.substitutions & rhs.substitutions;
@@ -345,7 +363,9 @@ private:
             word_breaks = false;
             sentence_breaks = false;
             line_breaks = false;
+            runs = false;
             glyphs = false;
+            fold = false;
             bidi_1 = false;
             bidi_2 = false;
             substitutions = false;
@@ -354,6 +374,7 @@ private:
 
         constexpr void clear_lines() noexcept
         {
+            fold = false;
             bidi_2 = false;
             substitutions = false;
             positions = false;
@@ -371,14 +392,23 @@ private:
     unit::pixels_per_em_f _font_size = unit::pixels_per_em(0.0f);
     hi::color _color;
     hi::alignment _alignment;
+    unicode_bidi_class _paragraph_direction = unicode_bidi_class::B;
     gstring _text;
     point2 _origin;
-    float _width = 0.0f;
+    unit::pixels_f _width = unit::pixels(0.0f);
 
     std::vector<char32_t> _base_code_points;
     unicode_line_break _line_breaks;
     unicode_word_break _word_breaks;
     unicode_sentence_break _sentence_breaks;
+    unicode_bidi _bidi;
+    std::vector<size_t> _run_lengths;
+    std::vector<size_t> _run_ids;
+    std::vector<font_glyph_ids> _glyphs;
+    std::vector<shaper_grapheme_metrics> _metrics;
+    std::vector<unit::pixels_f> _advances;
+    std::vector<size_t> _line_lengths;
+    unit::pixels_f _width_after_folding = unit::pixels(0.0f);
 
     /** Progress the state to the given state.
      *
@@ -389,14 +419,5 @@ private:
      */
     void progress_to(state_type state);
 
-    void execute_base_code_points();
-    void execute_word_breaks();
-    void execute_sentence_breaks();
-    void execute_line_breaks();
-    void execute_glyphs();
-    void execute_bidi_1();
-    void execute_bidi_2();
-    void execute_substitutions();
-    void execute_positions();
 };
 }
