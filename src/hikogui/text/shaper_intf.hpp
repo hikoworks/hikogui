@@ -59,6 +59,8 @@ public:
                 return hi::unicode_bidi_class::L;
             case hi::horizontal_alignment::right:
                 return hi::unicode_bidi_class::R;
+            case hi::horizontal_alignment::flush:
+                return hi::unicode_bidi_class::B;
             case hi::horizontal_alignment::center:
                 return hi::unicode_bidi_class::B;
             case hi::horizontal_alignment::justified:

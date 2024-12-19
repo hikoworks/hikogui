@@ -59,7 +59,7 @@ public:
         }
 
         auto const font_id = hi::font_id{gsl::narrow_cast<font_id::value_type>(_fonts.size())};
-        auto const& font = *_fonts.emplace_back(std::make_unique<true_type_font>(path));
+        auto const& font = *_fonts.emplace_back(std::make_unique<true_type_font>(font_id, path));
 
         hi_log_info("Parsed font id={} {}: {}", *font_id, path.string(), to_string(font));
 
@@ -160,9 +160,11 @@ public:
      */
     [[nodiscard]] font_glyph_ids find_glyph(font_id font, hi::grapheme grapheme) const noexcept
     {
+        auto const& f = get_font(font);
+
         // First try the selected font.
-        if (auto const glyph_ids = font->find_glyphs(grapheme); not glyph_ids.empty()) {
-            return {font, std::move(glyph_ids)};
+        if (auto const glyphs = f.find_glyphs(grapheme); not glyphs.empty()) {
+            return glyphs;
         }
 
         // If all everything has failed, use the tofu block of the original font.
@@ -196,11 +198,6 @@ inline font_book& font_book::global() noexcept
 [[nodiscard]] inline font& get_font(font_id id)
 {
     return font_book::global().get_font(id);
-}
-
-[[nodiscard]] inline font* font_id::operator->() const
-{
-    return std::addressof(get_font(*this));
 }
 
 /** Register a font.
@@ -303,8 +300,8 @@ inline void register_font_directories(Range&& range) noexcept
 {
     for (auto const& font_id : font_chain) {
         auto const& font = get_font(font_id);
-        if (auto glyph_ids = font.find_glyphs(g); not glyph_ids.empty()) {
-            return {font_id, std::move(glyph_ids)};
+        if (auto ids = font.find_glyphs(g); not ids.empty()) {
+            return ids;
         }
     }
 
@@ -313,50 +310,45 @@ inline void register_font_directories(Range&& range) noexcept
 
 /** Find a combination of glyphs matching the given text.
  *
- * This function will be called often, therefor we use scratch_pad inout parameter.
+ * For performance reasons, this function returns the glyphs through an
+ * output parameter.
  *
- * @param text The text to find the glyphs for.
+ * @param text A run of graphemes to find the glyphs for.
  * @param font_chain The chain of fonts to use to find the glyphs.
- * @param scratch_pad A scratch pad to use for temporary storage.
- * @return True if all glyphs were found, false if some glyphs were not found
- *         and replaced with the tofu block.
+ * @param [out] r The font and the glyphs that match the grapheme.
  */
-inline std::vector<font_glyph_ids> find_glyphs(
-    gstring_view text,
+inline void find_glyphs(
+    std::span<grapheme const> graphemes,
     lean_vector<font_id> const& font_chain,
-    std::vector<lean_vector<glyph_id>>& scratch_pad) noexcept
+    std::span<font_glyph_ids> r) noexcept
 {
     assert(not font_chain.empty());
+    assert(graphemes.size() == r.size());
 
-    auto r = std::vector<font_glyph_ids>{};
-    r.reserve(font_chain.size());
-
-    // First try to find the glyphs for the complete text.
+    // First try to find the glyphs for the complete text, using a single font.
     for (auto const& font_id : font_chain) {
         auto const& font = get_font(font_id);
 
-        if (font.find_glyphs(text, scratch_pad)) {
-            for (auto&& glyph_ids : scratch_pad) {
-                r.emplace_back(font_id, std::move(glyph_ids));
-            }
-            return r;
+        if (font.find_glyphs(graphemes, r)) {
+            return;
         }
     }
 
     // As a fallback, try different fonts for each grapheme separately.
     // And use the tofu block from the first font in the chain when a grapheme
     // is not found in any of the fonts.
-    for (auto const& g : text) {
-        if (auto glyph_ids = find_glyphs(g, font_chain); not glyph_ids.empty()) {
-            r.push_back(std::move(glyph_ids));
+    for (auto i = size_t{0}; i != graphemes.size(); ++i) {
+        auto const& g = graphemes[i];
+        auto& glyph_ids = r[i];
+
+        glyph_ids = find_glyphs(g, font_chain);
+        if (not glyph_ids.empty()) {
             continue;
         }
 
         // Use the tofu block from the first font in the chain.
-        r.emplace_back(font_chain.front(), lean_vector{glyph_id{0}});
+        glyph_ids = font_glyph_ids{font_chain.front(), lean_vector{glyph_id{0}}};
     }
-
-    return r;
 }
 
 } // namespace hi::inline v1

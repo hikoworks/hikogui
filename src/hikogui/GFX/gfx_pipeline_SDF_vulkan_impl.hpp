@@ -320,8 +320,10 @@ inline void gfx_pipeline_SDF::device_shared::prepare_atlas_for_rendering()
  */
 inline void gfx_pipeline_SDF::device_shared::add_glyph_to_atlas(hi::font_id font, glyph_id glyph, glyph_atlas_info& info) noexcept
 {
-    auto const glyph_metrics = font->get_metrics(glyph);
-    auto const glyph_path = font->get_path(glyph);
+    auto const& font_ref = get_font(font);
+
+    auto const glyph_metrics = font_ref.get_metrics(glyph);
+    auto const glyph_path = font_ref.get_path(glyph);
     auto const glyph_bounding_box = glyph_metrics.bounding_rectangle;
 
     auto const draw_scale = scale2{drawfontSize, drawfontSize};

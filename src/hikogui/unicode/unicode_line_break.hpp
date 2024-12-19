@@ -61,12 +61,13 @@ public:
      * @param [out] r The number of code points in each line.
      * @return The maximum width of the text after folding.
      */
-    template<typename T>
-    [[nodiscard]] constexpr T fold(std::span<T const> advances, T maximum_width, std::vector<size_t>& r) const
+    template<typename T, std::ranges::random_access_range R>
+    [[nodiscard]] constexpr T fold(R const& advances, T maximum_width, std::vector<size_t>& r) const
+        requires (std::convertible_to<std::ranges::range_value_t<R>, T>)
     {
         r.clear();
 
-        auto width = T{0};
+        auto width = T{};
         auto i = size_t{0};
         while (i != advances.size()) {
             auto const [next_i, line_width] = fit_line(advances, i, maximum_width);
@@ -494,8 +495,9 @@ private:
      * @param maximum_width The maximum width of the line.
      * @return Index beyond the last character of the line. And the width of the line.
      */
-    template<typename T>
-    [[nodiscard]] constexpr std::pair<size_t, T> fit_line(std::span<T const> advances, size_t first, T maximum_width) noexcept
+    template<typename T, std::ranges::random_access_range R>
+    [[nodiscard]] constexpr std::pair<size_t, T> fit_line(R const& advances, size_t first, T maximum_width) const noexcept
+        requires (std::convertible_to<std::ranges::range_value_t<R>, T>)
     {
         using enum unicode_break_opportunity;
 

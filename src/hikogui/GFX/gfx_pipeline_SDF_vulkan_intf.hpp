@@ -256,7 +256,8 @@ public:
          */
         hi_force_inline std::pair<glyph_atlas_info const*, bool> get_glyph_from_atlas(hi::font_id font, glyph_id glyph) noexcept
         {
-            auto& info = font->atlas_info(glyph);
+            auto const& font_ref = hi::get_font(font);
+            auto& info = font_ref.atlas_info(glyph);
 
             if (info) [[likely]] {
                 return {&info, false};

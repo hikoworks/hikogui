@@ -11,6 +11,7 @@
 #include "font_metrics.hpp"
 #include "font_char_map.hpp"
 #include "font_id.hpp"
+#include "font_glyph_ids.hpp"
 #include "../unicode/unicode.hpp"
 #include "../i18n/i18n.hpp"
 #include "../graphic_path/graphic_path.hpp"
@@ -31,6 +32,10 @@ hi_export namespace hi::inline v1 {
  */
 hi_export class font {
 public:
+    /** The id of the font.
+     */
+    font_id id;
+
     /** The family name as parsed from the font file.
      *
      * Examples: "Helvetica", "Times New Roman"
@@ -59,12 +64,14 @@ public:
      */
     font_metrics_em metrics;
 
-    font() = default;
+    constexpr font() noexcept = default;
     virtual ~font() = default;
     font(font const&) = delete;
     font& operator=(font const&) = delete;
     font(font&&) = delete;
     font& operator=(font&&) = delete;
+
+    constexpr font(font_id id) noexcept : id(id) {}
 
     /** Return if the font is loaded.
      *
@@ -83,10 +90,10 @@ public:
      * @return a set of glyph-ids, or empty when the grapheme is not found in
      *         the font.
      */
-    [[nodiscard]] lean_vector<glyph_id> find_glyphs(grapheme g) const
+    [[nodiscard]] font_glyph_ids find_glyphs(grapheme g) const
     {
         // Create a glyph_ids object for a single grapheme.
-        auto r = lean_vector<glyph_id>{};
+        auto r = font_glyph_ids{};
 
         // First try composed normalization
         for (auto const c : g.composed()) {
@@ -94,19 +101,17 @@ public:
                 r.push_back(glyph_id);
             } else {
                 r.clear();
-                break;
+                return r;
             }
         }
 
-        if (r.empty()) {
-            // Now try decomposed normalization
-            for (auto const c : g.decomposed()) {
-                if (auto const glyph_id = find_glyph(c)) {
-                    r.push_back(glyph_id);
-                } else {
-                    r.clear();
-                    break;
-                }
+        // Now try decomposed normalization
+        for (auto const c : g.decomposed()) {
+            if (auto const glyph_id = find_glyph(c)) {
+                r.push_back(glyph_id);
+            } else {
+                r.clear();
+                return r;
             }
         }
 
@@ -120,25 +125,25 @@ public:
      * on multiple fonts. This is why this function returns the glyphs as an
      * output argument, being able to reuse the allocation.
      * 
-     * @param text The text to get the glyphs for from the same font.
-     * @param out Glyphs for each grapheme in the text.
+     * @param graphemes The text to get the glyphs for from the same font.
+     * @param r The glyphs for each grapheme.
      * @return true on success, false when not all graphemes could be found in
      *         the font.
      */
-    bool find_glyphs(gstring_view text, std::vector<lean_vector<glyph_id>> &out) const
+    bool find_glyphs(std::span<grapheme const> graphemes, std::span<font_glyph_ids> r) const
     {
-        out.clear();
-        out.reserve(text.size());
+        assert(graphemes.size() == r.size());
+        assert(not id.empty());
 
-        for (auto g : text) {
-            if (auto glyph_ids = find_glyphs(g); not glyph_ids.empty()) {
-                out.push_back(std::move(glyph_ids));
-            } else {
+        for (auto i = size_t{0}; i != graphemes.size(); ++i) {
+            auto const& g = graphemes[i];
+
+            r[i] = find_glyphs(g);
+            if (r[i].empty()) {
                 return false;
             }
         }
 
-        assert(text.size() == out.size());
         return true;
     }
 

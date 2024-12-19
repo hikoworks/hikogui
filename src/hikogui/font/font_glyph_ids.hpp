@@ -6,7 +6,6 @@
 
 #include "glyph_id.hpp"
 #include "font_id.hpp"
-#include "font_metrics.hpp"
 #include "../container/container.hpp"
 #include "../macros.hpp"
 
@@ -39,6 +38,12 @@ struct font_glyph_ids {
         }
     }
 
+    void clear() noexcept
+    {
+        glyphs.clear();
+        font = {};
+    }
+
     [[nodiscard]] constexpr size_t size() const noexcept
     {
         return glyphs.size();
@@ -46,7 +51,7 @@ struct font_glyph_ids {
 
     [[nodiscard]] constexpr bool empty() const noexcept
     {
-        return font.empty();
+        return size() == 0 or font.empty();
     }
 
     constexpr explicit operator bool() const noexcept
@@ -106,22 +111,9 @@ struct font_glyph_ids {
         return glyphs[i];
     }
 
-    [[nodiscard]] font_metrics_em const& font_metrics() const
+    void push_back(glyph_id glyph)
     {
-        hi_axiom(not font.empty());
-        return font->metrics;
-    }
-
-    [[nodiscard]] hi::glyph_metrics glyph_metrics(size_t i) const
-    {
-        hi_axiom(i < glyphs.size());
-        hi_axiom(not font.empty());
-        return font->get_metrics(glyphs[i]);
-    }
-
-    [[nodiscard]] hi::glyph_metrics front_glyph_metrics() const
-    {
-        return glyph_metrics(0);
+        glyphs.push_back(glyph);
     }
 };
 

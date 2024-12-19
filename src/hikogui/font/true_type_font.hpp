@@ -31,7 +31,7 @@ hi_export_module(hikogui.font.true_type_font);
 hi_export namespace hi::inline v1 {
 hi_export class true_type_font final : public font {
 public:
-    true_type_font(std::filesystem::path const& path) : _path(path), _view(file_view{path})
+    true_type_font(font_id id, std::filesystem::path const& path) : font(id), _path(path), _view(file_view{path})
     {
         ++global_counter<"ttf:map">;
         try {

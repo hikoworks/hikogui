@@ -856,8 +856,9 @@ private:
         _font_size = narrow_cast<float>(parse_int(data, "font-size"));
 
         auto const base_font = _text_style_set.front().font_chain()[0];
+        auto const& base_f = get_font(base_font);
         auto const base_scale = _text_style_set.front().scale();
-        auto const base_cap_height = unit::points_per_em(_font_size * base_scale) * base_font->metrics.cap_height;
+        auto const base_cap_height = unit::points_per_em(_font_size * base_scale) * base_f.metrics.cap_height;
         _baseline_adjustment = round_in(unit::points, base_cap_height);
     }
 
