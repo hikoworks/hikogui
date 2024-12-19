@@ -28,7 +28,9 @@ struct shaper_run_indices {
  * @param [out] r The length of each run.
  */
 inline void shaper_make_run_lengths(
-    std::span<grapheme const> text, std::span<unicode_break_opportunity const> word_breaks, std::vector<size_t>& r)
+    std::span<grapheme const> text,
+    std::span<unicode_break_opportunity const> word_breaks,
+    std::vector<size_t>& r)
 {
     r.clear();
 
@@ -107,7 +109,7 @@ struct shaper_grapheme_metrics {
  * @param style_set The style of the text.
  * @param [out] r The glyphs (and font) for each grapheme.
  */
-inline void shaper_collect_glyphs(
+inline void shaper_collect_glyph_metrics(
     std::span<grapheme const> graphemes,
     std::vector<size_t> const& run_lengths,
     text_style_set const& style_set,
@@ -185,14 +187,38 @@ inline void shaper_collect_glyphs(
     }
 }
 
-
-[[nodiscard]] inline std::vector<int8_t> shaper_collect_embedding_levels(gstring_view text)
+/** Collect the metrics of each line.
+ *
+ * @param metrics The metrics of each grapheme.
+ * @param line_lengths The number of graphemes on each line.
+ * @param [out] r The metrics of each line.
+ */
+inline void shaper_collect_line_metrics(
+    std::span<shaper_grapheme_metrics const> metrics,
+    std::span<size_t const> line_lengths,
+    std::vector<shaper_grapheme_metrics>& r)
 {
-    //return unicode_bidi_get_embedding_levels(text.begin(), text.end(), unicode_bidi_class::B, [](auto const& g) {
-    //    return g.starter();
-    //});
-    hi_not_implemented();
-    return {};
+    clear_and_resize(r, line_lengths.size(), shaper_grapheme_metrics{});
+
+    auto line_nr = size_t{0};
+    auto i_first = size_t{0};
+    for (auto const line_length : line_lengths) {
+        auto const i_last = i_first + line_length;
+
+        auto& line_metrics = r[line_nr];
+        for (auto i = i_first; i != i_last; ++i) {
+            auto const& grapheme_metrics = metrics[i];
+            line_metrics.cap_height = std::max(line_metrics.cap_height, grapheme_metrics.cap_height);
+            line_metrics.ascender = std::max(line_metrics.ascender, grapheme_metrics.ascender);
+            line_metrics.descender = std::max(line_metrics.descender, grapheme_metrics.descender);
+            line_metrics.line_gap = std::max(line_metrics.line_gap, grapheme_metrics.line_gap);
+            line_metrics.line_spacing = std::max(line_metrics.line_spacing, grapheme_metrics.line_spacing);
+            line_metrics.paragraph_spacing = std::max(line_metrics.paragraph_spacing, grapheme_metrics.paragraph_spacing);
+        }
+
+        ++line_nr;
+        i_first = i_last;
+    }
 }
 
 /** Fold lines of a text.
@@ -368,9 +394,9 @@ shaper_collect_text_metrics(std::vector<shaper_line_metrics> const& line_metrics
 [[nodiscard]] inline std::vector<size_t>
 shaper_display_order(std::vector<size_t> const& line_sizes, std::vector<int8_t> const& embedding_levels, gstring_view text)
 {
-    //return unicode_bidi_to_display_order(line_sizes, embedding_levels.begin(), text.begin(), [](auto const& g) {
-    //    return ucd_get_bidi_class(g.starter());
-    //})
+    // return unicode_bidi_to_display_order(line_sizes, embedding_levels.begin(), text.begin(), [](auto const& g) {
+    //     return ucd_get_bidi_class(g.starter());
+    // })
     hi_not_implemented();
     return {};
 }
@@ -599,7 +625,7 @@ struct shaper_positioned_glyphs {
 //
 //}
 //
-//struct shaper_phase2_result {
+// struct shaper_phase2_result {
 //    std::vector<size_t> line_lengths;
 //    std::vector<shaper_line_metrics> line_metrics;
 //    std::vector<size_t> display_order;

@@ -12,7 +12,10 @@ hi_export namespace hi::inline v1 {
 
 inline void shaper::progress_to(state_type new_state)
 {
-    new_state.line_breaks |= new_state.bidi_2;
+    // Add prerequisites to new_state.
+    new_state.bidi_1 |= new_state.bidi_2;
+    new_state.fold |= new_state.bidi_2;
+    new_state.line_breaks |= new_state.bidi_2 or new_state.fold;
     new_state.word_breaks |= new_state.runs;
     new_state.base_code_points |= new_state.line_breaks or new_state.word_breaks or new_state.sentence_breaks or new_state.bidi_1;
 
@@ -53,14 +56,14 @@ inline void shaper::progress_to(state_type new_state)
         shaper_make_run_ids(_run_lengths, _text.size(), _run_ids);
     }
 
-    if (new_state.glyphs and not std::exchange(_state.glyphs, true)) {
+    if (new_state.glyph_metrics and not std::exchange(_state.glyph_metrics, true)) {
         assert(_state.runs);
-        shaper_collect_glyphs(_text, _run_lengths, _style, _font_size, _glyphs, _metrics, _advances);
+        shaper_collect_glyph_metrics(_text, _run_lengths, _style, _font_size, _glyphs, _metrics, _advances);
     }
 
     if (new_state.fold and not std::exchange(_state.fold, true)) {
         assert(_state.line_breaks);
-        assert(_state.glyphs);
+        assert(_state.glyph_metrics);
         _width_after_folding = _line_breaks.fold(_advances, _width, _line_lengths);
     }
 
@@ -85,8 +88,21 @@ inline void shaper::progress_to(state_type new_state)
     return {};
 }
 
-[[nodiscard]] inline extent2 shaper::get_size(float maximum_width)
+[[nodiscard]] inline extent2 shaper::get_size(std::optional<unit::pixels_f> width, std::optional<unit::pixels_f> height)
 {
+    progress_to(state_type::make_glyph_metrics());
+
+    if (width.has_value() and height.has_value()) {
+        auto const width_ = *width;
+        auto const height_ = *height;
+        std::vector<size_t> line_lengths;
+        auto const width_after_folding = _line_breaks.fold(_advances, width_, line_lengths);
+
+        std::vector<shaper_line_metrics> line_metrics;
+        shaper_collect_line_metrics(_metrics, line_lengths, line_metrics);
+
+    }
+
     hi_not_implemented();
     return {};
 }

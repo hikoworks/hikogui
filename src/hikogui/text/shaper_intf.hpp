@@ -142,7 +142,7 @@ public:
      * @param maximum_width The maximum width the text is allowed to be, or
      *                      infinity if the text is not wrapped.
      */
-    [[nodiscard]] extent2 get_size(float maximum_width = std::numeric_limits<float>::infinity());
+    [[nodiscard]] extent2 get_size(std::optional<unit::pixels_f> width, std::optional<unit::pixels_f> height)
 
     /** Return the baseline of the text.
      *
@@ -327,7 +327,7 @@ private:
         bool sentence_breaks = false;
         bool line_breaks = false;
         bool runs = false;
-        bool glyphs = false;
+        bool glyph_metrics = false;
         bool fold = false;
         bool bidi_1 = false;
         bool bidi_2 = false;
@@ -350,7 +350,7 @@ private:
             r.sentence_breaks = lhs.sentence_breaks & rhs.sentence_breaks;
             r.line_breaks = lhs.line_breaks & rhs.line_breaks;
             r.runs = lhs.runs & rhs.runs;
-            r.glyphs = lhs.glyphs & rhs.glyphs;
+            r.glyph_metrics = lhs.glyph_metrics & rhs.glyph_metrics;
             r.fold = lhs.fold & rhs.fold;
             r.bidi_1 = lhs.bidi_1 & rhs.bidi_1;
             r.bidi_2 = lhs.bidi_2 & rhs.bidi_2;
@@ -366,7 +366,7 @@ private:
             sentence_breaks = false;
             line_breaks = false;
             runs = false;
-            glyphs = false;
+            glyph_metrics = false;
             fold = false;
             bidi_1 = false;
             bidi_2 = false;
