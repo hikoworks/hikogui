@@ -88,30 +88,19 @@ inline void shaper::progress_to(state_type new_state)
     return {};
 }
 
-[[nodiscard]] inline extent2 shaper::get_size(std::optional<unit::pixels_f> width, std::optional<unit::pixels_f> height)
+[[nodiscard]] inline box_constraints shaper::get_constraints(unit::length_f width, unit::length_f height)
 {
     progress_to(state_type::make_glyph_metrics());
 
-    if (width.has_value() and height.has_value()) {
-        auto const width_ = *width;
-        auto const height_ = *height;
-        std::vector<size_t> line_lengths;
-        auto const width_after_folding = _line_breaks.fold(_advances, width_, line_lengths);
+    auto r = box_constraints{};
 
-        std::vector<shaper_line_metrics> line_metrics;
-        shaper_collect_line_metrics(_metrics, line_lengths, line_metrics);
+    auto natural_line_lengths = std::vector<size_t>{};
+    auto const natural_width = _line_breaks.fold(_advances, unit::pixels(std::numeric_limits<float>::max()), natural_line_lengths);
 
-    }
 
-    hi_not_implemented();
-    return {};
+    return r;
 }
 
-[[nodiscard]] inline baseline shaper::baseline()
-{
-    hi_not_implemented();
-    return {};
-}
 
 [[nodiscard]] inline line_segment shaper::get_caret(text_cursor cursor)
 {

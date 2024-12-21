@@ -126,42 +126,39 @@ public:
      */
     [[nodiscard]] aarectangle get_bounds();
 
-    /** Get the size of the text.
+    /** Get the constraints of the text.
      *
-     * This function will return the size of the text, with an optional maximum
-     * width. If the maximum width is set, the text will be wrapped to fit the
-     * width.
+     * This function will return the minimum, preferred and maximum size of the
+     * text and the baseline. The @a width and @a height arguments are used to
+     * add extra constraints to the natural layout of the text.
      *
-     * The returned width is the width of the text, and the height is the height
-     * of the text. The height is from cap-height of the first line of text to
-     * the baseline of the last line of text. This means the ascender and
-     * descender may go beyond the height of the text, it is recommended to use
-     * margins to prevent clipping of the text.
+     * The width constraints are the natural width of the text, unless the @a
+     * width is set, then the text will be wrapped to fit the @a width; the
+     * resulting width constraints are:
+     *  - the minimum width will be the size of the wrapped text,
+     *  - the preferred width will be the @a width parameter or the size of the
+     *    wrapped text, whichever is larger,
+     *  - the maximum width will be the natural width of the text.
      *
-     * @note sets state: >= metrics
-     * @param maximum_width The maximum width the text is allowed to be, or
-     *                      infinity if the text is not wrapped.
+     * The height constraints are the height of the optionally folded text,
+     * unless the @a height is set; the resulting height constraints are:
+     *  - the minimum height will be the height of the optionally folded text,
+     *  - the preferred height will be the @a height parameter or the height of
+     *    the optionally folded text, whichever is larger,
+     *  - the maximum height will be the same as the preferred height.
+     *
+     * The baseline returned is based on the vertical alignment and the
+     * cap-height of the first and middle line of natural layout of the text,
+     * not taking into account paragraph-spacing.
+     *
+     * @param width The given width from the theme. The width must be in pixels,
+     *              or mono-state if the width is not set.
+     * @param height The given height from the theme. The height must be in
+     *              pixels, or mono-state if the height is not set.
+     * @return The minimum, preferred and maximum size of the text and the
+     *         baseline.
      */
-    [[nodiscard]] extent2 get_size(std::optional<unit::pixels_f> width, std::optional<unit::pixels_f> height)
-
-    /** Return the baseline of the text.
-     *
-     * The baseline is a function that takes the height of the text and returns
-     * the baseline of the text. The baseline is the position where the text is
-     * placed on the screen.
-     *
-     * This function uses the alignment set by set_alignment() to determine the
-     * baseline. The baseline uses the cap-height of the first and middle line
-     * of text to determine the baseline.
-     *
-     * The middle line is always based on the natural layout of the text, i.e.
-     * the text is not wrapped. Even when the text is wrapped, the baseline is
-     * calculated based on the natural layout.
-     *
-     * @note sets state: >= metrics
-     * @return The baseline function.
-     */
-    [[nodiscard]] hi::baseline baseline();
+    [[nodiscard]] box_constraints get_constraints(unit::length_f width, unit::length_f height);
 
     /** Get rectangles for a piece of text.
      *
@@ -339,6 +336,13 @@ private:
         constexpr state_type(state_type&&) noexcept = default;
         constexpr state_type& operator=(state_type const&) noexcept = default;
         constexpr state_type& operator=(state_type&&) noexcept = default;
+
+        [[nodiscard]] constexpr static state_type make_glyph_metrics() noexcept
+        {
+            auto r = state_type{};
+            r.glyph_metrics = true;
+            return r;
+        }
 
         [[nodiscard]] constexpr friend bool operator==(state_type const&, state_type const&) noexcept = default;
 

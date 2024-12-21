@@ -20,6 +20,7 @@ inline namespace v1 { namespace unit {
 
 template<typename T>
 using length_variant = std::variant<
+    std::monostate,
     au::Quantity<Points, T>,
     au::Quantity<Pixels, T>,
     au::Quantity<Dips, T>,
@@ -29,6 +30,7 @@ using length_variant = std::variant<
 /** A length in different kinds of quantities.
  *
  * This length is a variant of the following quantities:
+ *  - monostate: No length.
  *  - Points: A SI length 1/72 inch. Often used for a font-size.
  *  - Pixels: The width/height of a square pixel on the screen.
  *  - Dips: The width/height of a square device-independent pixel,
