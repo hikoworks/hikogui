@@ -8,8 +8,6 @@
 hi_export_module(hikogui.text : shaper_impl);
 
 hi_export namespace hi::inline v1 {
-
-
 inline void shaper::progress_to(state_type new_state)
 {
     // Add prerequisites to new_state.
@@ -29,7 +27,7 @@ inline void shaper::progress_to(state_type new_state)
             _base_code_points[i] = _text[i].starter();
         }
     }
-    
+
     if (new_state.line_breaks and not std::exchange(_state.line_breaks, true)) {
         assert(_state.base_code_points);
         _line_breaks.set_text(_base_code_points);
@@ -73,11 +71,9 @@ inline void shaper::progress_to(state_type new_state)
         _bidi.set_lines(_line_lengths);
     }
 
-    if (new_state.substitutions and not std::exchange(_state.substitutions, true)) {
-    }
+    if (new_state.substitutions and not std::exchange(_state.substitutions, true)) {}
 
-    if (new_state.positions and not std::exchange(_state.positions, true)) {
-    }
+    if (new_state.positions and not std::exchange(_state.positions, true)) {}
 
     assert((_state & new_state) == new_state);
 }
@@ -94,13 +90,16 @@ inline void shaper::progress_to(state_type new_state)
 
     auto r = box_constraints{};
 
-    auto natural_line_lengths = std::vector<size_t>{};
-    auto const natural_width = _line_breaks.fold(_advances, unit::pixels(std::numeric_limits<float>::max()), natural_line_lengths);
+    auto const natural_width =
+        _line_breaks.fold(_advances, unit::pixels(std::numeric_limits<float>::max()), _get_constraints_natural_line_lengths);
+    shaper_collect_line_metrics(_metrics, _get_constraints_natural_line_lengths, _get_constraints_natural_line_metrics);
+    auto const first_cap_height = _get_constraints_natural_line_metrics.front().cap_height;
 
+    assert(not _get_constraints_natural_line_metrics.empty());
+    auto const middle_cap_height = _get_constraints_natural_line_metrics[_get_constraints_natural_line_metrics.size() / 2].cap_height;
 
     return r;
 }
-
 
 [[nodiscard]] inline line_segment shaper::get_caret(text_cursor cursor)
 {
@@ -179,6 +178,5 @@ inline void shaper::progress_to(state_type new_state)
     hi_not_implemented();
     return cursor;
 }
-
 
 } // namespace hi::inline v1

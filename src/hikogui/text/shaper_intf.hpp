@@ -159,6 +159,8 @@ public:
      *         baseline.
      */
     [[nodiscard]] box_constraints get_constraints(unit::length_f width, unit::length_f height);
+    std::vector<size_t> _get_constraints_natural_line_lengths = {};
+    std::vector<shaper_grapheme_metrics> _get_constraints_natural_line_metrics = {};
 
     /** Get rectangles for a piece of text.
      *
