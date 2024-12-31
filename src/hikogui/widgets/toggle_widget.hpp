@@ -111,15 +111,6 @@ public:
     }
 
     /// @privatesection
-    [[nodiscard]] box_constraints update_constraints() noexcept override
-    {
-        assert(std::holds_alternative<unit::pixels_f>(style.height));
-        return {
-            style.size_px,
-            style.margins_px,
-            baseline::from_middle_of_object(style.baseline_priority, style.cap_height, std::get<unit::pixels_f>(style.height))};
-    }
-
     void set_layout(widget_layout const& context) noexcept override
     {
         super::set_layout(context);

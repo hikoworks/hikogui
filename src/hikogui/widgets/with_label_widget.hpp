@@ -80,6 +80,38 @@ public:
 
         _button_widget_cbt();
 
+        _style_cbt = style.subscribe([&](style_modify_mask mask, bool restyle) {
+            if (not restyle and not to_bool(mask & style_modify_mask::layout)) {
+                return;
+            }
+
+            // Resolve as if in left-to-right mode, the grid will flip itself.
+            auto const resolved_alignment = resolve(style.alignment, true);
+
+            _grid.clear();
+            if (resolved_alignment == horizontal_alignment::left) {
+                // button label
+                _grid.add_cell(0, 0, grid_cell_type::button);
+                _grid.add_cell(1, 0, grid_cell_type::label, true);
+            } else if (resolved_alignment == horizontal_alignment::right) {
+                // label button
+                _grid.add_cell(0, 0, grid_cell_type::label, true);
+                _grid.add_cell(1, 0, grid_cell_type::button);
+            } else if (resolved_alignment == vertical_alignment::top) {
+                // button
+                // label
+                _grid.add_cell(0, 0, grid_cell_type::button);
+                _grid.add_cell(0, 1, grid_cell_type::label, true);
+            } else if (resolved_alignment == vertical_alignment::bottom) {
+                // label
+                // button
+                _grid.add_cell(0, 0, grid_cell_type::label, true);
+                _grid.add_cell(0, 1, grid_cell_type::button);
+            } else {
+                hi_no_default("alignment is not allowed to be middle-center.");
+            }
+        });
+
         style.set_name("with-label");
     }
 
@@ -94,50 +126,38 @@ public:
     }
 
     /// @privatesection
-    [[nodiscard]] box_constraints update_constraints() noexcept override
+    [[nodiscard]] unit::pixels_f height(bool minimum) const override
     {
-        // Resolve as if in left-to-right mode, the grid will flip itself.
-        auto const resolved_alignment = resolve(style.alignment, true);
+        return _grid.height(minimum, [](auto const& cell, bool minimum) {
+            switch (cell.value) {
+            case grid_cell_type::button:
+                return _button_widget->height(minimum);
 
-        _grid.clear();
-        if (resolved_alignment == horizontal_alignment::left) {
-            // button label
-            _grid.add_cell(0, 0, grid_cell_type::button);
-            _grid.add_cell(1, 0, grid_cell_type::label, true);
-        } else if (resolved_alignment == horizontal_alignment::right) {
-            // label button
-            _grid.add_cell(0, 0, grid_cell_type::label, true);
-            _grid.add_cell(1, 0, grid_cell_type::button);
-        } else if (resolved_alignment == vertical_alignment::top) {
-            // button
-            // label
-            _grid.add_cell(0, 0, grid_cell_type::button);
-            _grid.add_cell(0, 1, grid_cell_type::label, true);
-        } else if (resolved_alignment == vertical_alignment::bottom) {
-            // label
-            // button
-            _grid.add_cell(0, 0, grid_cell_type::label, true);
-            _grid.add_cell(0, 1, grid_cell_type::button);
-        } else {
-            hi_no_default("alignment is not allowed to be middle-center.");
-        }
-
-        for (auto& cell : _grid) {
-            if (cell.value == grid_cell_type::button) {
-                cell.set_constraints(_button_widget->update_constraints());
-
-            } else if (cell.value == grid_cell_type::label) {
-                auto const on_label_constraints = _on_label_widget->update_constraints();
-                auto const off_label_constraints = _off_label_widget->update_constraints();
-                auto const other_label_constraints = _other_label_widget->update_constraints();
-                cell.set_constraints(max(on_label_constraints, off_label_constraints, other_label_constraints));
-
-            } else {
-                hi_no_default();
+            case grid_cell_type::label:
+                return std::max({
+                    _on_label_widget->height(minimum),
+                    _off_label_widget->height(minimum),
+                    _other_label_widget->height(minimum)});
             }
-        }
+            std::unreachable();
+        });
+    }
 
-        return _grid.constraints(os_settings::left_to_right(), style.vertical_alignment);
+    [[nodiscard]] unit::pixels_f width(unit::pixels_f height) const override
+    {
+        return _grid.width(height, [](auto const& cell, auto height) {
+            switch (cell.value) {
+            case grid_cell_type::button:
+                return _button_widget->width(height);
+
+            case grid_cell_type::label:
+                return std::max({
+                    _on_label_widget->width(height),
+                    _off_label_widget->width(height),
+                    _other_label_widget->width(height)});
+            }
+            std::unreachable();
+        });
     }
 
     void set_layout(widget_layout const& context) noexcept override

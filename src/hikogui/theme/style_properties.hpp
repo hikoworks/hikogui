@@ -93,6 +93,8 @@ public:
         HIX_COPY(object_fit);
         HIX_COPY(text_style);
         HIX_COPY(baseline_priority);
+        HIX_COPY(width_weight);
+        HIX_COPY(height_weight);
 #undef HIX_COPY
 
         return r;
@@ -156,6 +158,8 @@ public:
     HIX_GETSET(hi::object_fit, object_fit)
     HIX_GETSET(hi::text_style_set, text_style)
     HIX_GETSET(hi::baseline_priority, baseline_priority)
+    HIX_GETSET(float, width_weight)
+    HIX_GETSET(float, height_weight)
 #undef HIX_GETSET
 
     void set_margin(unit::length_f margin, style_priority priority) noexcept
@@ -250,6 +254,8 @@ public:
         HIX_APPLY(object_fit)
         HIX_APPLY(text_style)
         HIX_APPLY(baseline_priority)
+        HIX_APPLY(width_weight)
+        HIX_APPLY(height_weight)
 #undef HIX_APPLY
     }
 
@@ -279,6 +285,8 @@ private:
     hi::object_fit _object_fit = hi::object_fit::none;
     hi::text_style_set _text_style = {};
     hi::baseline_priority _baseline_priority = hi::baseline_priority::none;
+    float _width_weight = 0.0f;
+    float _height_weight = 0.0f;
 
     bool _width_inherit : 1 = true;
     bool _height_inherit : 1 = true;
@@ -305,6 +313,8 @@ private:
     bool _object_fit_inherit : 1 = true;
     bool _text_style_inherit : 1 = true;
     bool _baseline_priority_inherit : 1 = true;
+    bool _width_weight_inherit : 1 = true;
+    bool _height_weight_inherit : 1 = true;
 
     style_priority _width_priority;
     style_priority _height_priority;
@@ -331,6 +341,8 @@ private:
     style_priority _object_fit_priority;
     style_priority _text_style_priority;
     style_priority _baseline_priority_priority;
+    style_priority _width_weight_priority;
+    style_priority _height_weight_priority;
 };
 
 } // namespace v1

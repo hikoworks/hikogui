@@ -327,26 +327,96 @@ public:
         }
     }
 
-    /** Update the constraints of the widget.
+    /** Get the height of a widget.
      *
-     * Typically the implementation of this function starts with recursively calling update_constraints()
-     * on its children.
+     * This by default returns the style's height of the widget.
      *
-     * If the container, due to a change in constraints, wants the window to resize to the minimum size
-     * it should call `request_resize()`.
-     *
-     * @post This function will change what is returned by `widget::minimum_size()`, `widget::preferred_size()`
-     *       and `widget::maximum_size()`.
+     * @param minimum When false this function returns the preferred height, when
+     *                true this function returns the minimum height.
+     * @return The height in pixels.
      */
-    [[nodiscard]] virtual box_constraints update_constraints() noexcept
+    [[nodiscard]] virtual unit::pixels_f height(bool minimum) const
     {
-        assert(std::holds_alternative<unit::pixels_f>(style.height));
-        return {
-            style.size_px,
-            style.size_px,
-            style.size_px,
-            style.margins_px,
-            baseline::from_middle_of_object(style.baseline_priority, style.cap_height, std::get<unit::pixels_f>(style.height))};
+        assert(std::holds_alternative<unit::pixles_f>(style.height);
+        return std::get<unit::pixels_f>(style.height);
+    }
+
+    /** Get the minimum width for a certain height.
+     *
+     * The height for widgets in a row are calculated first and may be
+     * larger than the minimum and preferred height of the widget itself.
+     * This allows a widget to be more precise with its width.
+     *
+     * @param height The height to calculate the minimum width for.
+     * @return The width in pixels.
+     */
+    [[nodiscard]] virtual unit::pixels_f width(unit::pixels_f height) const
+    {
+        assert(std::holds_alternative<unit::pixels_f>(style.width));
+        return std::get<unit::pixels_f>(style.width);
+    }
+
+    /** The default baseline for this widget at a certain height.
+     *
+     * The default baseline is based on the vertical alignment and cap-height
+     * of the text.
+     *
+     * @note May be overriden when more accurate alignment is required, or
+     *       when embedding widgets.
+     * @param height The height of the widget during layout.
+     * @returm The location of the baseline.
+     */
+    [[nodiscard]] virtual unit::pixels_f baseline(unit::pixels_f height) const
+    {
+        switch (style.vertical_alignment) {
+        case vertical_alignment::top:
+            return height - style.cap_height;
+        case vertical_alignment::middle:
+            return height * 0.5f - style.cap_height * 0.5f;
+        case vertical_alignemnt::bottom:
+            return unit::pixels(0.0f);
+        }
+        std::unreachable();
+    }
+
+    /** The priority for selecting baselines between widgets in a row.
+     *
+     * @return baseline priority, higher value is higher priority.
+     */
+    [[nodiscard]] virtual int baseline_priority() const
+    {
+        return style.baseline_priority;
+    }
+
+    /** The margins around this widget.
+     *
+     * @return The margins that needs to be put around a widget.
+     *         Some widgets like labels may actually draw into their margin,
+     *         so this is important.
+     */
+    [[nodiscard]] virtual hi::margins margins() const
+    {
+        return style.margins;
+    }
+
+    /** The weight for extra height distribution.
+     *
+     * @return The weight used to distribute extra height.
+     * @retval 0.0 This widget should not get extra height distributed to it.
+     */
+    [[nodiscard]] virtual float height_weight() const
+    {
+        return style.height_weight;
+    }
+
+    /** The weight for extra width distribution.
+     *
+     * @return The weight used to distribute extra width.
+     * @retval 0.0 This widget should not get extra width distributed to it.
+     */
+    [[nodiscard]] virtual float width_weight() const
+    {
+        return style.width_weight;
     }
 
     /** Update the internal layout of the widget.

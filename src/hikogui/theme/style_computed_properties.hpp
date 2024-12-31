@@ -42,6 +42,8 @@ struct style_computed_properties {
     hi::color accent_color = {};
     text_style_set text_style = {};
     hi::baseline_priority baseline_priority = {};
+    float width_weight = 0.0f;
+    float height_weight = 0.0f;
 
     bool _width_inherit : 1 = false;
     bool _height_inherit : 1 = false;
@@ -68,6 +70,8 @@ struct style_computed_properties {
     bool _accent_color_inherit : 1 = false;
     bool _text_style_inherit : 1 = false;
     bool _baseline_priority_inherit : 1 = false;
+    bool _width_weight_inherit : 1 = false;
+    bool _height_weight_inherit : 1 = false;
 
     void inherit(style_computed_properties const& rhs) noexcept
     {
@@ -103,6 +107,8 @@ struct style_computed_properties {
         HIX_INHERIT(accent_color);
         HIX_INHERIT(text_style);
         HIX_INHERIT(baseline_priority);
+        HIX_INHERIT(width_weight);
+        HIX_INHERIT(height_weight);
 
 #undef HIX_INHERIT
     }
@@ -122,6 +128,8 @@ struct style_computed_properties {
             font_size = rhs.font_size;
             text_style = rhs.text_style;
             object_fit = rhs.object_fit;
+            width_weight = rhs.width_weight;
+            height_weight = rhs.height_weight;
         }
 
         if (to_bool(mask & style_modify_mask::margin)) {
@@ -186,6 +194,8 @@ struct style_computed_properties {
         HIX_COMPARE(object_fit, style_modify_mask::size)
         HIX_COMPARE(text_style, style_modify_mask::size)
         HIX_COMPARE(baseline_priority, style_modify_mask::alignment)
+        HIX_COMPARE(width_weight, style_modify_mask::size)
+        HIX_COMPARE(height_weight, style_modify_mask::size)
 #undef HIX_COMPARE
         return r;
     }

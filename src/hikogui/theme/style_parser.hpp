@@ -135,6 +135,30 @@ template<std::input_iterator It, std::sentinel_for<It> ItEnd>
 }
 
 template<std::input_iterator It, std::sentinel_for<It> ItEnd>
+[[nodiscard]] constexpr expected_optional<float, std::string> parse_style_scalar(It& it, ItEnd last)
+{
+    hi_assert(it != last);
+
+    if (*it != token::integer and *it != token::real) {
+        return std::nullopt;
+    }
+
+    auto const value = static_cast<float>(*it);
+    ++it;
+
+    if (it == last or *it != token::id) {
+        // A numeric value without a suffix is the value.
+        return value;
+    } else if (*it == '%') {
+        ++it;
+        return value * 0.01f;
+    } else {
+        // Unknown suffix could be token for another part of the tag.
+        return value;
+    }
+}
+
+template<std::input_iterator It, std::sentinel_for<It> ItEnd>
 [[nodiscard]] constexpr expected_optional<unit::length_f, std::string> parse_style_length(It& it, ItEnd last)
 {
     hi_assert(it != last);
@@ -367,6 +391,8 @@ template<std::input_iterator It, std::sentinel_for<It> ItEnd>
     HIX_VALUE(parse_style_horizontal_alignment, "horizontal-alignment", horizontal_alignment)
     HIX_VALUE(parse_style_vertical_alignment, "vertical-alignment", vertical_alignment)
     HIX_VALUE(parse_style_object_fit, "object-fit", object_fit)
+    HIX_VALUE(parse_style_scalar, "width-weight", width_scalar)
+    HIX_VALUE(parse_style_scalar, "height-weight", height_scalar)
     {
         return std::unexpected(std::format("{}: Unknown attribute '{}'.", token_location(it, last), name));
     }
