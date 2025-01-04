@@ -28,7 +28,7 @@ struct layout_constraints {
      * A widget will never be laid out smaller than this height.
      * This height is used to determine the minimum height of the window.
      */
-    unit::pixels_f minimum_height = unit::pixels(0.0f);
+    unit::pixels_f minimum = unit::pixels(0.0f);
 
     /** The preferred height of the widget.
      * 
@@ -37,19 +37,7 @@ struct layout_constraints {
      * 
      * The preferred height should be greater or equal to the minimum height.
      */
-    unit::pixels_f preferred_height = unit::pixels(0.0f);
-
-    /** The weight for distributing extra width among widgets in the same row.
-     *
-     * When a widget has a weight of zero, then it will not grow in width when
-     * there is extra space available. Except when all widgets in the row have a
-     * weight of zero, then the extra space will be distributed evenly among the
-     * widgets.
-     * 
-     * If the layout as a whole has a weight of zero, then the window will not
-     * be allowed to be resized beyond the preferred width of the whole layout.
-     */
-    float weight_width = 0.0f;
+    unit::pixels_f preferred = unit::pixels(0.0f);
 
     /** The weight for distributing extra height among widgets in the same column.
      * 
@@ -61,7 +49,7 @@ struct layout_constraints {
      * If the layout as a whole has a weight of zero, then the window will not
      * be allowed to be resized beyond the preferred height of the whole layout.
      */
-    float weight_height = 0.0f;
+    float weight = 0.0f;
 
     /** The left margin of the widget.
      * 
@@ -72,7 +60,7 @@ struct layout_constraints {
      * right-to-left. This means that in a right-to-left layout the left margin
      * is by default taken from the theme's right margin.
      */
-    unit::pixels_f margin_left = unit::pixels(0.0f);
+    unit::pixels_f margin_before = unit::pixels(0.0f);
 
     /** The right margin of the widget.
      * 
@@ -83,21 +71,7 @@ struct layout_constraints {
      * right-to-left. This means that in a right-to-left layout the right margin
      * is by default taken from the theme's left margin.
      */
-    unit::pixels_f margin_right = unit::pixels(0.0f);
-
-    /** The bottom margin of the widget.
-     * 
-     * The margin is the space between the widget and the widget below, or
-     * the bottom edge of the window or bottom edge of a container.
-     */
-    unit::pixels_f margin_below = unit::pixels(0.0f);
-
-    /** The top margin of the widget.
-     * 
-     * The margin is the space between the widget and the widget above, or
-     * the top edge of the window or top edge of a container.
-     */
-    unit::pixels_f margin_above = unit::pixels(0.0f);
+    unit::pixels_f margin_after = unit::pixels(0.0f);
 
     constexpr layout_constraints() noexcept = default;
     constexpr layout_constraints(layout_constraints const&) noexcept = default;
@@ -107,23 +81,20 @@ struct layout_constraints {
 
     [[nodiscard]] constexpr bool holds_invariant() const noexcept
     {
-        return minimum_height <= preferred_height;
+        return minimum <= preferred and weight >= 0.0f and margin_before >= unit::pixels(0.0f) and margin_after >= unit::pixels(0.0f);
     }
 
     [[nodiscard]] constexpr friend layout_constraints max(layout_constraints const& lhs, layout_constraints const& rhs) noexcept
     {
         auto r = layout_constraints{};
-        r.minimum_height = std::max(lhs.minimum_height, rhs.minimum_height);
-        r.preferred_height = std::max(lhs.preferred_height, rhs.preferred_height);
-        r.weight_width = std::max(lhs.weight_width, rhs.weight_width);
-        r.weight_height = std::max(lhs.weight_height, rhs.weight_height);
-        r.margin_left = std::max(lhs.margin_left, rhs.margin_left);
-        r.margin_right = std::max(lhs.margin_right, rhs.margin_right);
-        r.margin_below = std::max(lhs.margin_below, rhs.margin_below);
-        r.margin_above = std::max(lhs.margin_above, rhs.margin_above);
+        r.minimum = std::max(lhs.minimum, rhs.minimum);
+        r.preferred = std::max(lhs.preferred, rhs.preferred);
+        r.weight = std::max(lhs.weight, rhs.weight);
+        r.margin_before = std::max(lhs.margin_before, rhs.margin_before);
+        r.margin_after = std::max(lhs.margin_after, rhs.margin_after);
 
-        if (r.minimum_height > r.preferred_height) {
-            r.preferred_height = r.minimum_height;
+        if (r.minimum > r.preferred) {
+            r.preferred = r.minimum;
         }
         assert(r.holds_invariant());
         return r;
