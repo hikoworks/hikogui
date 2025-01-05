@@ -122,6 +122,18 @@ public:
         return extent(0, size());
     }
 
+    [[nodiscatd]] layout_constraints constraints(bool mirror) const
+    {
+        auto r = layout_constraints{};
+        std::tie(r.minimum, r.preferred, r.weight) = _columns.extent();
+        r.margin_before = margin_before();
+        r.margin_after = margin_after();
+        if (mirror) {
+            std::swap(r.margin_before, r.marging_after);
+        }
+        return r;
+    }
+
     [[nodiscard]] void
     distribute_constraints(size_t first, size_t last, unit::pixels_f new_minimum, unit::pixels_f new_preferred, float new_weight)
     {
@@ -155,10 +167,34 @@ public:
         }
     }
 
-    [[nodiscard]] void distribute_constraints(unit::pixels_f new_minimum, unit::pixels_f new_preferred, float new_weight)
+    void distribute_constraints(unit::pixels_f new_minimum, unit::pixels_f new_preferred, float new_weight)
     {
         distribute_constraints(0, size(), new_minimum, new_preferred, new_weight);
     }
+
+
+    void distribute_constraints(
+        std::vector<grid_cell> const& cells,
+        size_t grid_cell::* first,
+        size_t grid_cell::* size,
+        layout_constraints grid_cell::* constraints)
+    {
+        for (auto& cell : cells) {
+            if (auto const size = cell.*size; size != 1) {
+                auto const first = cell.*first;
+                auto const last = first + size;
+                auto const& constraints = cell.*constraints;
+
+                // First distribute the extra weight among the rows in the span.
+                // The new weights will be used to determine how to distribute
+                // the extra size among the rows.
+                _rows.distribute_constraints(first, last, unit::pixels(0.0f), unit::pixels(0.0f), constraints.weight);
+                _rows.distribute_constraints(first, last, constraints.minimum_height, constraints.preferred_height, 0.0f);
+            }
+        }
+        assert(_rows.holds_invariant());
+    }
+
 
     [[nodiscard]] bool holds_invariant() const noexcept
     {
@@ -215,7 +251,7 @@ public:
         _columns.resize(_cells.num_columns());
 
         for (auto& cell : _cells) {
-            cell.constraints = f(cell.value);
+            cell.vertical_constraints = f(cell.value);
 
             inplace_max(_rows[cell.row_nr].margin_before, cell.constraints.margin_above);
             inplace_max(_rows[cell.row_nr + cell.row_span - 1].margin_after, cell.constraints.margin_below);
@@ -232,26 +268,13 @@ public:
         // columns. If we are lucky the single-span cells have already added
         // enough weight and size to the rows and columns, for the multi-span
         // cells to fit.
-        for (auto& cell : cells) {
-            if (cell.row_span != 1) {
-                auto const first = cell.row_nr;
-                auto const last = cell.row_nr + cell.row_span;
+        _rows.distribute_constraints(
+            cells,
+            &detail::grid_cell::row_nr,
+            &detail::grid_cell::row_span,
+            &detail::grid_cell::vertical_constraints);
 
-                // First distribute the extra weight among the rows in the span.
-                // The new weights will be used to determine how to distribute
-                // the extra size among the rows.
-                auto const& constraints = cell.constraints;
-                _rows.distribute_constraints(first, last, unit::pixels(0.0f), unit::pixels(0.0f), constraints.weight);
-                _rows.distribute_constraints(first, last, constraints.minimum_height, constraints.preferred_height, 0.0f);
-            }
-        }
-        assert(_rows.holds_invariant());
-
-        auto r = layout_constraints{};
-        std::tie(r.minimum, r.preferred, r.weight) = _rows.extent();
-        r.margin_before = _rows.margin_before();
-        r.margin_after = _rows.margin_after();
-        return r;
+        return _columns.constraints(false);
     }
 
     template<typename F>
@@ -261,45 +284,50 @@ public:
     {
         _rows.distribute_constraints(minimum_height, preferred_height, 0.0f);
 
+        _columns.set_constraints(
+            _cells,
+            &detail::grid_cell::col_nr,
+            &detail::grid_cell::col_span,
+            &detail::grid_cell::horizontal_constraints,
+            not _left_to_right,
+            [&_rows, &f](grid_cell& cell) {
+                auto const [row_minimum, row_preferred, _] = _rows.extent(cell.row_nr, cell.row_nr + cell.row_span);
+                cell.horizontal_constraints = f(cell.value, row_minimum, row_preferred);
+            });
+
         for (auto& cell : _cells) {
             auto const [row_minimum, row_preferred, _] = _rows.extent(cell.row_nr, cell.row_nr + cell.row_span);
             cell.horizontal_constraints = f(cell.value, row_minimum, row_preferred);
 
+            auto const first = cell.col_nr;
+            auto const size = cell.col_span;
+            auto const last = first + size;
             auto const& constraints = cell.horizontal_constraints;
 
-            if (_left_to_right) {
-                inplace_max(_columns[cell.column_nr].margin_before, constraints.margin_before);
-                inplace_max(_columns[cell.column_nr + cell.column_span - 1].margin_after, constraints.margin_after);
-            } else {
-                inplace_max(_columns[cell.column_nr + cell.column_span - 1].margin_before, constraints.margin_before);
-                inplace_max(_columns[cell.column_nr].margin_after, constraints.margin_after);
+            auto margin_before = constraints.margin_before;
+            auto margin_after = constraints.margin_after;
+            if (not _left_to_right) {
+                std::swap(margin_before, margin_after);
             }
 
-            if (cell.column_span == 1) {
-                inplace_max(_columns[cell.column_nr].weight, constraints.weight);
-                inplace_max(_columns[cell.column_nr].minimum, constraints.minimum);
-                inplace_max(_columns[cell.column_nr].preferred, constraints.preferred);
-            }
-        }
-        assert(_columns.holds_invariant());
+            inplace_max(_columns[first].margin_before, margin_before);
+            inplace_max(_columns[last - 1].margin_after, margin_after);
 
-        for (auto& cell : _cells) {
-            if (cell.column_span != 1) {
-                auto const first = cell.column_nr;
-                auto const last = cell.column_nr + cell.column_span;
-
-                auto const& constraints = cell.horizontal_constraints;
-                _columns.distribute_constraints(first, last, unit::pixels(0.0f), unit::pixels(0.0f), constraints.weight);
-                _columns.distribute_constraints(first, last, constraints.minimum, constraints.preferred, 0.0f);
+            if (size == 1) {
+                inplace_max(_columns[first].weight, constraints.weight);
+                inplace_max(_columns[first].minimum, constraints.minimum);
+                inplace_max(_columns[first].preferred, constraints.preferred);
             }
         }
         assert(_columns.holds_invariant());
 
-        auto r = layout_width_constraints{};
-        std::tie(r.minimum, r.preferred, r.weight) = _columns.extent();
-        r.margin_before = _left_to_right ? _columns.margin_before() : _columns.margin_after();
-        r.margin_after = _left_to_right ? _columns.margin_after() : _columns.margin_before();
-        return r;
+        _columns.distribute_constraints(
+            cells,
+            &detail::grid_cell::col_nr,
+            &detail::grid_cell::col_span,
+            &detail::grid_cell::horizontal_constraints);
+
+        return _columns.constraints(not _left_to_right);
     }
 
 private:
