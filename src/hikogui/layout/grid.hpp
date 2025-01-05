@@ -122,19 +122,7 @@ public:
         return extent(0, size());
     }
 
-    [[nodiscatd]] layout_constraints constraints(bool mirror) const
-    {
-        auto r = layout_constraints{};
-        std::tie(r.minimum, r.preferred, r.weight) = _columns.extent();
-        r.margin_before = margin_before();
-        r.margin_after = margin_after();
-        if (mirror) {
-            std::swap(r.margin_before, r.marging_after);
-        }
-        return r;
-    }
-
-    [[nodiscard]] void
+    void
     distribute_constraints(size_t first, size_t last, unit::pixels_f new_minimum, unit::pixels_f new_preferred, float new_weight)
     {
         assert(first <= last);
@@ -167,35 +155,60 @@ public:
         }
     }
 
+    /** Distribute the extra weight and size of multi-span cells.
+     *
+     * This function will distribute the extra minimum and preferred size which
+     * was calculated from parent widgets.
+     * 
+     * @param new_minimum The new minimum size of the rows or columns.
+     * @param new_preferred The new preferred size of the rows or columns.
+     * @param new_weight The new weight of the rows or columns.
+     */
     void distribute_constraints(unit::pixels_f new_minimum, unit::pixels_f new_preferred, float new_weight)
     {
         distribute_constraints(0, size(), new_minimum, new_preferred, new_weight);
     }
 
-
-    void distribute_constraints(
-        std::vector<grid_cell> const& cells,
-        size_t grid_cell::* first,
-        size_t grid_cell::* size,
-        layout_constraints grid_cell::* constraints)
+    /** Set the constraints from the cells in the grid.
+     * 
+     * This function will calculate the margins, weight, minimum and preferred
+     * size of the rows or columns in the grid.
+     * 
+     * @param cells The cells in the grid.
+     * @param first_member The member of the cell that contains the index of the
+     *                     first row or column.
+     * @param size_member The member of the cell that contains the size of the
+     *                    span of rows or columns.
+     * @param constraints_member The member of the cell that contains the
+     *                           vertical or horizontal constraints.
+     * @param mirror If true the grid is vertically or horizontally mirrored.
+     *               Used for right-to-left layout.
+     * @param f A function that sets the constraints of a cell, recursively
+     *          requesting the constraints of child widgets. The function's
+     *          signature is `void f(grid_cell&)`.
+     * @return The constraints of the grid as a whole.
+     */
+    template<typename F>
+    [[nodiscard]] layout_constraints constraints(
+        std::vector<grid_cell>& cells,
+        size_t grid_cell::*first_member,
+        size_t grid_cell::*size_member,
+        layout_constraints grid_cell::*constraints_member,
+        bool mirror,
+        F const& f) requires(std::is_invocable_r_v<void, F, grid_cell&>)
     {
-        for (auto& cell : cells) {
-            if (auto const size = cell.*size; size != 1) {
-                auto const first = cell.*first;
-                auto const last = first + size;
-                auto const& constraints = cell.*constraints;
+        set_constraints(cells, first_member, size_member, constraints_member, mirror, f);
 
-                // First distribute the extra weight among the rows in the span.
-                // The new weights will be used to determine how to distribute
-                // the extra size among the rows.
-                _rows.distribute_constraints(first, last, unit::pixels(0.0f), unit::pixels(0.0f), constraints.weight);
-                _rows.distribute_constraints(first, last, constraints.minimum_height, constraints.preferred_height, 0.0f);
-            }
-        }
-        assert(_rows.holds_invariant());
+        // Distribute the weight and size of multi-span cells to the rows and
+        // columns. If we are lucky the single-span cells have already added
+        // enough weight and size to the rows and columns, for the multi-span
+        // cells to fit.
+        distribute_constraints(cells, first_member, size_member, constraints_member);
+
+        return constraints(mirror);
     }
 
-
+private:
     [[nodiscard]] bool holds_invariant() const noexcept
     {
         for (auto const& col : *this) {
@@ -217,8 +230,110 @@ public:
         }
         return true;
     }
+
+    [[nodiscard]] layout_constraints constraints(bool mirror) const
+    {
+        auto r = layout_constraints{};
+        std::tie(r.minimum, r.preferred, r.weight) = extent();
+        r.margin_before = margin_before();
+        r.margin_after = margin_after();
+        if (mirror) {
+            std::swap(r.margin_before, r.marging_after);
+        }
+        return r;
+    }
+
+    /** Set the constraints from the cells in the grid.
+     *
+     * This function will set the margins of it's row or column. And for cells
+     * with a span of 1, it will set the weight, minimum and preferred size of
+     * it's row or column.
+     * 
+     * @param cells The cells in the grid.
+     * @param first_member The member of the cell that contains the index of the
+     *                     first row or column.
+     * @param size_member The member of the cell that contains the size of the
+     *                    span of rows or columns.
+     * @param constraints_member The member of the cell that contains the
+     *                           vertical or horizontal constraints.
+     * @param mirror If true the grid is vertically or horizontally mirrored.
+     *               Used for right-to-left layout.
+     * @param f A function that sets the constraints of a cell, recursively
+     *          requesting the constraints of child widgets. The function's
+     *          signature is `void f(grid_cell&)`.
+     */
+    template<typename F>
+    void set_constraints(
+        std::vector<grid_cell>& cells,
+        size_t grid_cell::*first_member,
+        size_t grid_cell::*size_member,
+        layout_constraints grid_cell::*constraints_member,
+        bool mirror,
+        F const& f) requires(std::is_invocable_r_v<void, F, grid_cell&>)
+    {
+        for (auto& cell : _cells) {
+            f(cell);
+
+            auto const first = cell.*first_member;
+            auto const size = cell.*size_member;
+            auto const last = first + size;
+            auto const& constraints = cell.*constraints_member;
+
+            auto margin_before = constraints.margin_before;
+            auto margin_after = constraints.margin_after;
+            if (mirror) {
+                std::swap(margin_before, margin_after);
+            }
+
+            inplace_max((*this)[first].margin_before, margin_before);
+            inplace_max((*this)[last - 1].margin_after, margin_after);
+
+            if (size == 1) {
+                inplace_max((*this)[first].weight, constraints.weight);
+                inplace_max((*this)[first].minimum, constraints.minimum);
+                inplace_max((*this)[first].preferred, constraints.preferred);
+            }
+        }
+        assert(holds_invariant());
+    }
+
+    /** Distribute the extra weight and size of multi-span cells.
+     * 
+     * This function will distribute the extra weight and size of multi-span
+     * cells to the rows or columns that the cell spans. This is done by
+     * distributing the extra weight first, and then distributing the extra
+     * size based on the new weights.
+     * 
+     * @param cells The cells in the grid.
+     * @param first_member The member of the cell that contains the index of the
+     *                     first row or column.
+     * @param size_member The member of the cell that contains the size of the
+     *                    span of rows or columns.
+     * @param constraints_member The member of the cell that contains the
+     *                           vertical or horizontal constraints.
+     */
+    void distribute_constraints(
+        std::vector<grid_cell> const& cells,
+        size_t grid_cell::*first_member,
+        size_t grid_cell::*size_member,
+        layout_constraints grid_cell::*constraints_member)
+    {
+        for (auto& cell : cells) {
+            if (auto const size = cell.*size_member; size != 1) {
+                auto const first = cell.*first_member;
+                auto const last = first + size;
+                auto const& constraints = cell.*constraints_member;
+
+                // First distribute the extra weight among the rows in the span.
+                // The new weights will be used to determine how to distribute
+                // the extra size among the rows.
+                _rows.distribute_constraints(first, last, unit::pixels(0.0f), unit::pixels(0.0f), constraints.weight);
+                _rows.distribute_constraints(first, last, constraints.minimum_height, constraints.preferred_height, 0.0f);
+            }
+        }
+        assert(_rows.holds_invariant());
+    }
 };
-   
 
 } // namespace detail
 
@@ -242,7 +357,7 @@ public:
     }
 
     template<typename F>
-    [[nodiscard]] layout_constraints get_vertical_constraints(F const& f)
+    [[nodiscard]] layout_constraints vertical_constraints(F const& f)
         requires(std::is_invocable_r_v<layout_constraints, F, value_type&>)
     {
         _rows.clear();
@@ -250,41 +365,28 @@ public:
         _columns.clear();
         _columns.resize(_cells.num_columns());
 
-        for (auto& cell : _cells) {
-            cell.vertical_constraints = f(cell.value);
-
-            inplace_max(_rows[cell.row_nr].margin_before, cell.constraints.margin_above);
-            inplace_max(_rows[cell.row_nr + cell.row_span - 1].margin_after, cell.constraints.margin_below);
-
-            if (cell.row_span == 1) {
-                inplace_max(_rows[cell.row_nr].weight, cell.constraints.weight_height);
-                inplace_max(_rows[cell.row_nr].minimum, cell.constraints.minimum_height);
-                inplace_max(_rows[cell.row_nr].preferred, cell.constraints.preferred_height);
-            }
-        }
-        assert(_rows.holds_invariant());
-
-        // Distribute the weight and size of multi-span cells to the rows and
-        // columns. If we are lucky the single-span cells have already added
-        // enough weight and size to the rows and columns, for the multi-span
-        // cells to fit.
-        _rows.distribute_constraints(
-            cells,
+        return _rows.constraints(
+            _cells,
             &detail::grid_cell::row_nr,
             &detail::grid_cell::row_span,
-            &detail::grid_cell::vertical_constraints);
-
-        return _columns.constraints(false);
+            &detail::grid_cell::vertical_constraints,
+            false,
+            [&f](grid_cell& cell) {
+                cell.vertical_constraints = f(cell.value);
+            });
     }
 
     template<typename F>
     [[nodiscard]] layout_constraints
-    get_horizontal_constraints(unit::pixels_f minimum_height, unit::pixels_f preferred_height, F const& f)
+    horizontal_constraints(unit::pixels_f minimum_height, unit::pixels_f preferred_height, F const& f)
         requires(std::is_invocable_r_v<void, F, value_type&, unit::pixels_f, unit::pixels_f>)
     {
+        // At this point we have a better idea of the minimum and preferred
+        // height of the rows. This would allow columns to be smaller than
+        // before.
         _rows.distribute_constraints(minimum_height, preferred_height, 0.0f);
 
-        _columns.set_constraints(
+        return _columns.constraints(
             _cells,
             &detail::grid_cell::col_nr,
             &detail::grid_cell::col_span,
@@ -294,40 +396,6 @@ public:
                 auto const [row_minimum, row_preferred, _] = _rows.extent(cell.row_nr, cell.row_nr + cell.row_span);
                 cell.horizontal_constraints = f(cell.value, row_minimum, row_preferred);
             });
-
-        for (auto& cell : _cells) {
-            auto const [row_minimum, row_preferred, _] = _rows.extent(cell.row_nr, cell.row_nr + cell.row_span);
-            cell.horizontal_constraints = f(cell.value, row_minimum, row_preferred);
-
-            auto const first = cell.col_nr;
-            auto const size = cell.col_span;
-            auto const last = first + size;
-            auto const& constraints = cell.horizontal_constraints;
-
-            auto margin_before = constraints.margin_before;
-            auto margin_after = constraints.margin_after;
-            if (not _left_to_right) {
-                std::swap(margin_before, margin_after);
-            }
-
-            inplace_max(_columns[first].margin_before, margin_before);
-            inplace_max(_columns[last - 1].margin_after, margin_after);
-
-            if (size == 1) {
-                inplace_max(_columns[first].weight, constraints.weight);
-                inplace_max(_columns[first].minimum, constraints.minimum);
-                inplace_max(_columns[first].preferred, constraints.preferred);
-            }
-        }
-        assert(_columns.holds_invariant());
-
-        _columns.distribute_constraints(
-            cells,
-            &detail::grid_cell::col_nr,
-            &detail::grid_cell::col_span,
-            &detail::grid_cell::horizontal_constraints);
-
-        return _columns.constraints(not _left_to_right);
     }
 
 private:
