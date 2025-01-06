@@ -86,14 +86,41 @@ public:
         }
     }
 
-    [[nodiscard]] auto extent(size_t first, size_t last) const
+    [[nodiscard]] layout_constraints constraints(size_t first, size_t last, bool mirror = false) const
     {
-        struct result_type {
-            unit::pixels_f minimum = unit::pixels(0.0f);
-            unit::pixels_f preferred = unit::pixels(0.0f);
-            float weight = 0.0f;
-        };
+        auto r = layout_constraints{};
 
+        if (first == last) {
+            return r;
+        }
+
+        r.minimum_height = (*this)[first].minimum;
+        r.preferred_height = (*this)[first].preferred;
+        r.weight = (*this)[first].weight;
+        for (auto row_nr = first + 1; row_nr != last; ++row_nr) {
+            auto& row = (*this)[row_nr];
+            auto& previous_row = (*this)[row_nr - 1];
+
+            r.minimum_height += row.minimum + std::max(previous_row.margin_after, row.margin_before);
+            r.preferred_height += row.preferred + std::max(previous_row.margin_after, row.margin_before);
+            r.weight += row.weight;
+        }
+
+        r.margin_before = margin_before();
+        r.margin_after = margin_after();
+        if (mirror) {
+            std::swap(r.margin_before, r.marging_after);
+        }
+        return r;
+    }
+
+    [[nodiscard]] layout_constraints constraints(bool mirror = false) const
+    {
+        return constraints(0, size(), mirror);
+    }
+
+    [[nodiscard]] unit::pixels_f extent(size_t first, size_t last) const
+    {
         assert(first <= last);
         assert(last <= size());
 
@@ -229,18 +256,6 @@ private:
             }
         }
         return true;
-    }
-
-    [[nodiscard]] layout_constraints constraints(bool mirror) const
-    {
-        auto r = layout_constraints{};
-        std::tie(r.minimum, r.preferred, r.weight) = extent();
-        r.margin_before = margin_before();
-        r.margin_after = margin_after();
-        if (mirror) {
-            std::swap(r.margin_before, r.marging_after);
-        }
-        return r;
     }
 
     /** Set the constraints from the cells in the grid.
