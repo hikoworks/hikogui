@@ -124,22 +124,20 @@ public:
         assert(first <= last);
         assert(last <= size());
 
-        auto r = result_type{};
+        auto r = value_type{};
 
-        if (first == last) {
-            return r;
-        }
+        if (first != last) {
+            r = (*this)[first].*member;
+            for (auto row_nr = first + 1; row_nr != last; ++row_nr) {
+                auto& row = (*this)[row_nr];
 
-        r.minimum = (*this)[first].minimum;
-        r.preferred = (*this)[first].preferred;
-        r.weight = (*this)[first].weight;
-        for (auto row_nr = first + 1; row_nr != last; ++row_nr) {
-            auto& row = (*this)[row_nr];
-            auto& previous_row = (*this)[row_nr - 1];
+                r += row.*member;
 
-            r.minimum += row.minimum + std::max(previous_row.margin_after, row.margin_before);
-            r.preferred += row.preferred + std::max(previous_row.margin_after, row.margin_before);
-            r.weight += row.weight;
+                if constexpr (std::same_as<decltype(r), unit::pixels_f>) {
+                    auto& previous_row = (*this)[row_nr - 1];
+                    r += std::max(previous_row.margin_after, row.margin_before);
+                }
+            }
         }
         return r;
     }
