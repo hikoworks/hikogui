@@ -342,3 +342,5 @@ zzyy
 SPIRV
 Willems
 saschawillems
+cvtss
+cvtsh
