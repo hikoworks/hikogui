@@ -79,7 +79,7 @@ void memswap(T& dst, U& src)
  *
  * If you want to access the object in dst, you should use the return value.
  *
- * @param src An interator to an object.
+ * @param src An iterator to an object.
  * @param dst A pointer to allocated memory.
  * @return The dst pointer with the new object who's lifetime was started.
  */

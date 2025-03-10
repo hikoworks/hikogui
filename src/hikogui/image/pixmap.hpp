@@ -52,7 +52,7 @@ public:
     using const_pointer = value_type const *;
     using reference = value_type&;
     using const_reference = value_type const&;
-    using interator = pointer;
+    using iterator = pointer;
     using const_iterator = const_pointer;
 
     /** The type for a row of pixels.
@@ -400,7 +400,7 @@ public:
         return _data;
     }
 
-    [[nodiscard]] constexpr interator begin() noexcept
+    [[nodiscard]] constexpr iterator begin() noexcept
     {
         return _data;
     }
@@ -415,7 +415,7 @@ public:
         return _data;
     }
 
-    [[nodiscard]] constexpr interator end() noexcept
+    [[nodiscard]] constexpr iterator end() noexcept
     {
         return _data + size();
     }
