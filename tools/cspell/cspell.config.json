@@ -32,6 +32,12 @@
     "LICENSE_1_0.txt",
     "tests/data/**",
     "data/ucd/**",
+    "tools/ucd/generate_scripts.py",
+    "tools/generate_unicode_data.sh",
+    "src/hikogui/unicode/unicode_plural.hpp",
+    "src/hikogui/unicode/ucd_scripts.hpp",
+    "src/hikogui/i18n/language_tag_impl.hpp",
+    "src/hikogui/i18n/iso_15924_impl.hpp",
     "docs/media/style/cppreference-doxygen-web.tag.xml",
     "docs/media/style/customdoxygen.css",
     "docs/media/style/DoxygenLayout.xml",
@@ -39,7 +45,8 @@
     "CMakeOverride.txt",
     "CMake/packaging/hikoguiResources.cmake.in",
     "examples/hikogui_demo/resources/nl.po",
-    "hikogui.natvis"
+    "hikogui.natvis",
+    "src/hikothird/au.hh"
   ],
   "dictionaryDefinitions": [
     {
