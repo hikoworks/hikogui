@@ -27,114 +27,135 @@ enum class baseline_priority : unsigned int {
     large_widget = 100, //< Priority for large widgets.
 };
 
-/** The negotiated baseline between multiple objects with different alignments.
+/** The negotiated baseline between multiple widgets with different alignments.
  *
  * This is used when multiple widgets are side by side, for example when they
  * are located in a row of a grid. Each widget will have the same height, but
  * the height will not yet be known when the negotiation starts.
  *
- * Once the negotiation is complete, the baseline will be calculated for each
- * widget based on the height of the row and the vertical alignment of the
- * widget.
+ * Once the negotiation is complete, a single baseline-offset will be calculated
+ * for the entire row of widgets; the offset is the distance from the bottom of
+ * the row to the baseline.
+ * 
+ * A widget may ignore the baseline if it is unable to draw within the height
+ * of the row. In this case the widget will use its natural baseline.
  *
- * Since the height is unknown each widget will supply a function that will
- * calculate the baseline based on the height of the row. The function will be
- * called with the height of the row and will return the baseline position in
- * pixels from the bottom of the row.
  */
 class baseline {
 public:
-    using baseline_function_type = std::function<unit::pixels_f(unit::pixels_f)>;
+    constexpr baseline() noexcept = default;
+    constexpr baseline(baseline const&) noexcept = default;
+    constexpr baseline(baseline&&) noexcept = default;
+    constexpr baseline& operator=(baseline const&) noexcept = default;
+    constexpr baseline& operator=(baseline&&) noexcept = default;
 
-    baseline(baseline const&) noexcept = default;
-    baseline(baseline&&) noexcept = default;
-    baseline& operator=(baseline const&) noexcept = default;
-    baseline& operator=(baseline&&) noexcept = default;
-
-    /**
-     * @brief Constructs a baseline object with default values.
-     *
-     * This constructor initializes the baseline object with a priority of 0 and a default lambda function.
-     * The lambda function calculates the baseline position based on the given height.
-     *
-     * @note The default lambda function returns a `baseline_function_result` object with a baseline position of 0,
-     *       a baseline offset of half the height, and the given height.
-     */
-    baseline() noexcept :
-        _priority(baseline_priority::none), _function([](unit::pixels_f height) {
-            return unit::pixels(0.0f);
-        })
-    {
-    }
-
-    /**
-     * Create a baseline function that calculates the baseline position based on
-     * the given height and alignment.
+    /** Construct a baseline.
      *
      * @param priority The priority of the baseline.
-     * @param function A function that calculates the baseline position based on
-     *                 the given height. The function will return a tuple with
-     *                 the baseline position for the bottom, middle and top of
-     *                 the object. The arguments of the function us the height
-     *                 of the box which contains the object to be aligned.
+     * @param offset The offset of the baseline from the bottom of the row.
+     * @param alignment The alignment of the baseline.
      */
-    baseline(baseline_priority priority, baseline_function_type function) noexcept :
-        _priority(priority), _function(std::move(function))
+    constexpr baseline(baseline_priority priority, float offset, vertical_alignment alignment) noexcept :
+        _priority(priority), _offset(offset), _alignment(alignment)
     {
     }
 
-    /**
-     * Calculates the baseline from the middle of an object.
+    /** Embed a child baseline into the current baseline.
      *
-     * @param priority The priority of the baseline.
-     * @param cap_height The cap height of the font in pixels.
-     * @param object_height The height of the object in pixels.
-     * @return The baseline.
+     * @param child The child baseline.
+     * @param padding The padding around the child baseline. The padding should
+     *                include the margins of the child widget.
+     * @return The new baseline.
      */
-    [[nodiscard]] static baseline
-    from_middle_of_object(baseline_priority priority, unit::pixels_f cap_height, unit::pixels_f object_height) noexcept
+    [[nodiscard]] constexpr static baseline embed(baseline const& child, margins padding) noexcept
     {
-        return hi::baseline{priority, [cap_height, object_height](unit::pixels_f height) {
-                                return height / 2.0f - cap_height / 2.0f;
-                            }};
+        auto r = child;
+
+        switch (child._alignment) {
+        case vertical_alignment::top:
+            r._offset -= padding.top();
+            break;
+        case vertical_alignment::middle:
+            r._offset -= padding.top() * 0.5f;
+            r._offset += padding.bottom() * 0.5f;
+            break;
+        case vertical_alignment::bottom:
+            r._offset += padding.bottom();
+            break;
+        }
+        return r;
     }
 
-    /**
-     * Embeds the given baseline function into a new baseline function with additional padding.
+    /** Embed a child baseline into the current baseline.
      *
-     * This is used when a object with a baseline is embedded inside an object
-     * which introduces padding around the object.
-     *
-     * @param other The baseline function to embed.
-     * @param bottom_padding The amount of bottom padding to add.
-     * @param top_padding The amount of top padding to add.
-     * @return The new embedded baseline function.
+     * @param child The child baseline.
+     * @param padding The padding around the child baseline. The padding should
+     *                include the margins of the child widget.
+     * @param new_priority The new priority of the baseline.
+     * @return The new baseline.
      */
-    [[nodiscard]] friend baseline embed(baseline const& other, unit::pixels_f bottom_padding, unit::pixels_f top_padding) noexcept
+    [[nodiscard]] constexpr static baseline embed(baseline const& child, margins padding, baseline_priority new_priority) noexcept
     {
-        return hi::baseline{other._priority, [embedded_function = other._function, bottom_padding, top_padding](unit::pixels_f height) {
-                                auto const unpadded_height = height - bottom_padding - top_padding;
-                                return bottom_padding + embedded_function(unpadded_height);
-                            }};
+        auto r = embed(child, padding);
+        r._priority = new_priority;
+        return r;
     }
 
-    /**
-     * Lifts the given baseline by applying bottom and top padding.
+    /** Return the baseline with the highest priority.
      *
-     * This is used when an embedded object is layed out, and the padding
-     * around the embedded object is removed.
+     * If the priorities are equal and the alignments are equal, the offset is:
+     * - top: The minimum of the two offsets.
+     * - middle: The average of the two offsets.
+     * - bottom: The maximum of the two offsets.
+     * 
+     * If the priorities are equal and the alignments are not equal, the first
+     * baseline will be returned.
      *
-     * @param other The baseline to lift.
-     * @param bottom_padding The amount of bottom padding to apply.
-     * @param top_padding The amount of top padding to apply.
-     * @return The lifted baseline.
+     * @param a The first baseline.
+     * @param b The second baseline.
+     * @return The baseline with the highest priority.
      */
-    [[nodiscard]] friend baseline lift(baseline const& other, unit::pixels_f bottom_padding, unit::pixels_f top_padding) noexcept
+    [[nodiscard]] constexpr friend baseline max(baseline const& a, baseline const& b) noexcept
     {
-        return hi::baseline{other._priority, [lifted_function = other._function, bottom_padding, top_padding](unit::pixels_f height) {
-                                auto const padded_height = height + bottom_padding + top_padding;
-                                return lifted_function(padded_height) - bottom_padding;
-                            }};
+        if (a._priority > b._priority) {
+            return a;
+        } else if (a._priority < b._priority) {
+            return b;
+        } else if (a._alignment == b._alignment) {
+            switch (a._alignment) {
+            case vertical_alignment::top:
+                return baseline{a._priority, std::min(a._offset, b._offset), a._alignment};
+            case vertical_alignment::middle:
+                return baseline{a._priority, (a._offset + b._offset) * 0.5f, a._alignment};
+            case vertical_alignment::bottom:
+                return baseline{a._priority, std::max(a._offset, b._offset), a._alignment};
+            }
+        } else {
+            return a;
+        }
+    }
+
+    /** Calculate the offset of the baseline from the bottom of the row.
+     * 
+     * @param height The height of the row.
+     * @return The offset of the baseline from the bottom of the row.
+     */
+    [[nodiscard]] constexpr float offset(float height) const
+    {
+        switch (_alignment) {
+        case vertical_alignment::top:
+            assert(_offset <= 0.0f);
+            assert(_offset >= -height);
+            return height + _offset;
+        case vertical_alignment::middle:
+            assert(_offset <= height * 0.5f);
+            assert(_offset >= -height * 0.5f);
+            return height * 0.5f + _offset;
+        case vertical_alignment::bottom:
+            assert(_offset >= 0.0f);
+            assert(_offset <= height);
+            return _offset;
+        }
     }
 
     [[nodiscard]] constexpr baseline_priority priority() const noexcept
@@ -142,53 +163,21 @@ public:
         return _priority;
     }
 
-    /** Calculates the baseline position based on the given height.
-     *
-     * @param height The height of the box in which an object must be aligned to
-     *               the baseline.
-     * @return The baseline position from the bottom of the box.
-     */
-    [[nodiscard]] unit::pixels_f get_baseline(unit::pixels_f height) const
+    constexpr baseline &set_priority(baseline_priority priority) noexcept
     {
-        assert(_function);
-        return _function(height);
+        _priority = priority;
+        return *this;
     }
 
-    /** Calculates the middle position of an element based on its height and cap-height.
-     *
-     * @param height The height of the element.
-     * @param cap_height The cap height of the font of the element.
-     * @return The middle position of text aligned to the @a alignment.
-     */
-    [[nodiscard]] unit::pixels_f get_middle(unit::pixels_f height, unit::pixels_f cap_height) const
+    [[nodiscard]] constexpr vertical_alignment alignment() const noexcept
     {
-        return get_baseline(height) + cap_height / 2.0f;
-    }
-
-    /**
-     * Returns the baseline object with the highest priority.
-     *
-     * @param lhs The first baseline object.
-     * @param rhs The second baseline object.
-     * @return The baseline object with the higher priority.
-     */
-    [[nodiscard]] friend baseline max(baseline const& a, baseline const& b) noexcept
-    {
-        if (a._priority > b._priority) {
-            return a;
-        } else {
-            return b;
-        }
-    }
-
-    template<std::convertible_to<baseline>... Rest>
-    [[nodiscard]] friend baseline max(baseline const& a, baseline const& b, baseline const& c, Rest const&... rest) noexcept
-    {
-        return max(a, max(b, c, rest...));
+        return _alignment;
     }
 
 private:
+    float _offset = 0.0f;
+    vertical_alignment _alignment = vertical_alignment::top;
     baseline_priority _priority = baseline_priority::none;
-    baseline_function_type _function = {};
 };
+
 }

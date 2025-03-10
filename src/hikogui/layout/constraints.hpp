@@ -11,99 +11,79 @@
 hi_export_module(hikogui.layout : constraints);
 
 hi_export namespace hi::inline v1 {
-
-/** Constraints for the layout of a widget. 
- * 
- * The constraints are used to calculate the size of a widget in a layout.
- * 
- * The layout gives priority to the height of a widget first, once the minimum
- * and preferred height are calculated for the layout of the window as a whole,
- * the minimum and preferred widths are calculated as a function of these
- * heights. This is the reason why there are no minimum or preferred widths in
- * this struct.
+/** Constraints for the layout of a widget.
+ *
  */
-struct layout_constraints {
-    /** The minimum height of the widget.
-     * 
-     * A widget will never be laid out smaller than this height.
-     * This height is used to determine the minimum height of the window.
-     */
-    unit::pixels_f minimum = unit::pixels(0.0f);
-
-    /** The preferred height of the widget.
-     * 
-     * A widget will be laid out at this height if there is enough space.
-     * This height is used to determine the initial height of the window.
-     * 
-     * The preferred height should be greater or equal to the minimum height.
-     */
-    unit::pixels_f preferred = unit::pixels(0.0f);
-
-    /** The weight for distributing extra height among widgets in the same column.
-     * 
-     * When a widget has a weight of zero, then it will not grow in height when
-     * there is extra space available. Except when all widgets in the column have
-     * a weight of zero, then the extra space will be distributed evenly among the
-     * widgets.
-     * 
-     * If the layout as a whole has a weight of zero, then the window will not
-     * be allowed to be resized beyond the preferred height of the whole layout.
-     */
-    float weight = 0.0f;
-
-    /** The left margin of the widget.
-     * 
-     * The margin is the space between the widget and the widget to the left, or
-     * the left edge of the window or left edge of a container.
-     * 
-     * Widgets should return the actual left margin, even when the layout is
-     * right-to-left. This means that in a right-to-left layout the left margin
-     * is by default taken from the theme's right margin.
-     */
-    unit::pixels_f margin_before = unit::pixels(0.0f);
-
-    /** The right margin of the widget.
-     * 
-     * The margin is the space between the widget and the widget to the right, or
-     * the right edge of the window or right edge of a container.
-     * 
-     * Widgets should return the actual right margin, even when the layout is
-     * right-to-left. This means that in a right-to-left layout the right margin
-     * is by default taken from the theme's left margin.
-     */
-    unit::pixels_f margin_after = unit::pixels(0.0f);
-
+class layout_constraints {
+public:
     constexpr layout_constraints() noexcept = default;
     constexpr layout_constraints(layout_constraints const&) noexcept = default;
     constexpr layout_constraints(layout_constraints&&) noexcept = default;
     constexpr layout_constraints& operator=(layout_constraints const&) noexcept = default;
     constexpr layout_constraints& operator=(layout_constraints&&) noexcept = default;
 
-    [[nodiscard]] constexpr bool holds_invariant() const noexcept
+    /** Construct layout constraints.
+     *
+     * @param size The size of the widget.
+     * @param weight The weight used to distribute extra size. When an axis has
+     *               a weight of 0.0f, the size of the widget will be the
+     *               minimum size.
+     * @param margins The margins around the widget.
+     * @param baseline The baseline of the widget.
+     */
+    constexpr layout_constraints(extent2 size, extent2 weight, hi::margins margins, hi::baseline baseline) noexcept :
+        _size(size), _weight(weight), _margins(margins), _baseline(baseline)
     {
-        return minimum <= preferred and weight >= 0.0f and margin_before >= unit::pixels(0.0f) and margin_after >= unit::pixels(0.0f);
     }
 
-    [[nodiscard]] constexpr friend layout_constraints max(layout_constraints const& lhs, layout_constraints const& rhs) noexcept
+    /** Construct layout constraints for embedding a single widget.
+     *
+     * @param child The layout constraints of the child widget.
+     * @param padding The padding around the child widget.
+     * @param margins The margins around the current widget.
+     * @return The layout constraints of the current widget.
+     */
+    [[nodiscard]] layout_constraints constexpr static embed(
+        layout_constraints const& child,
+        hi::margins padding,
+        hi::margins margins) noexcept
     {
-        auto r = layout_constraints{};
-        r.minimum = std::max(lhs.minimum, rhs.minimum);
-        r.preferred = std::max(lhs.preferred, rhs.preferred);
-        r.weight = std::max(lhs.weight, rhs.weight);
-        r.margin_before = std::max(lhs.margin_before, rhs.margin_before);
-        r.margin_after = std::max(lhs.margin_after, rhs.margin_after);
+        auto const child_padding = max(padding, child._margins);
 
-        if (r.minimum > r.preferred) {
-            r.preferred = r.minimum;
-        }
-        assert(r.holds_invariant());
+        auto r = layout_constraints{};
+        r._size = child._size + child_padding.size();
+        r._weight = child._weight;
+        r._margins = margins;
+        r._baseline = hi::baseline::embed(child._baseline, child_padding);
         return r;
     }
-};
 
-struct layout_width_constraints {
-    unit::pixels_f minimum = unit::pixels(0.0f);
-    unit::pixels_f preferred = unit::pixels(0.0f);
+    /** Construct layout constraints for embedding a single widget.
+     *
+     * @param child The layout constraints of the child widget.
+     * @param padding The padding around the child widget.
+     * @param margins The margins around the current widget.
+     * @param baseline_priority The priority of the baseline. When embedding a
+     *                          widget the priority should probably be
+     *                          increased.
+     * @return The layout constraints of the current widget.
+     */
+    [[nodiscard]] layout_constraints constexpr static embed(
+        layout_constraints const& child,
+        hi::margins padding,
+        hi::margins margins,
+        hi::baseline_priority baseline_priority) noexcept
+    {
+        auto r = embed(child, padding, margins);
+        r._baseline.set_priority(baseline_priority);
+        return r;
+    }
+
+private:
+    extent2 _size = {};
+    extent2 _weight = {};
+    hi::margins _margins = {};
+    hi::baseline _baseline = {};
 };
 
 } // namespace hi::v1
