@@ -104,3 +104,12 @@ ctest
 CTEST
 vsconfig
 deinitialize
+aarectangle
+renderdoc
+nplurals
+xgettext
+msginit
+msgmerge
+renderpass
+subpass
+Subpasses

@@ -33,9 +33,13 @@
     "tests/data/**",
     "data/ucd/**",
     "docs/media/style/cppreference-doxygen-web.tag.xml",
+    "docs/media/style/customdoxygen.css",
+    "docs/media/style/DoxygenLayout.xml",
     "CMakeLists.txt",
     "CMakeOverride.txt",
-    "CMake/packaging/hikoguiResources.cmake.in"
+    "CMake/packaging/hikoguiResources.cmake.in",
+    "examples/hikogui_demo/resources/nl.po",
+    "hikogui.natvis"
   ],
   "dictionaryDefinitions": [
     {
