@@ -16,7 +16,7 @@ module;
 
 hi_warning_push();
 // C26476: Expression/symbol '...' uses a naked union '...' with multiple type pointers: Use variant instead (type.7.).
-// This implements `datum` which is simular to a std::variant.
+// This implements `datum` which is similar to a std::variant.
 hi_warning_ignore_msvc(26476);
 // C26409: Avoid calling new and delete explicitly, use std::make_unique<T> instead (r.11).
 // This implements `datum` which implements RAII for large objects.

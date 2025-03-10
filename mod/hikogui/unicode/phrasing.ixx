@@ -25,7 +25,7 @@ export namespace hi::inline v1 {
  * @ingroup unicode
  *
  * This is the phrasing of a piece of text. The phrasing determines
- * the style of text on a semantic level. Simular to HTML phrasing tags.
+ * the style of text on a semantic level. Similar to HTML phrasing tags.
  *
  * The underlying value must be between 0 through 63;
  * so that the phrasing_mask can be 64-bits.

@@ -832,7 +832,7 @@ void gfx_surface::build_render_passes()
         vk::SubpassDescription{
             vk::SubpassDescriptionFlags(), // Subpass 0 Box
             vk::PipelineBindPoint::eGraphics,
-            0, // inputAttchmentReferencesCount
+            0, // inputAttachmentReferencesCount
             nullptr, // inputAttachmentReferences
             narrow_cast<uint32_t>(color_attachment_references.size()),
             color_attachment_references.data(),
@@ -843,7 +843,7 @@ void gfx_surface::build_render_passes()
         vk::SubpassDescription{
             vk::SubpassDescriptionFlags(), // Subpass 1 Image
             vk::PipelineBindPoint::eGraphics,
-            0, // inputAttchmentReferencesCount
+            0, // inputAttachmentReferencesCount
             nullptr, // inputAttachmentReferences
             narrow_cast<uint32_t>(color_attachment_references.size()),
             color_attachment_references.data(),
@@ -1009,7 +1009,7 @@ void gfx_surface::teardown_command_buffers()
     auto vulkan_surface = vulkan_instance().createWin32SurfaceKHR(surface_create_info);
 
     auto surface = std::make_unique<gfx_surface>(vulkan_surface);
-    
+
     // Now that we have a physical window and render surface it is time to find the gfx-device
     // for rendering on this surface.
     auto device = find_best_device(*surface);

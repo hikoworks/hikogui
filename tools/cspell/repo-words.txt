@@ -347,3 +347,7 @@ cvtsh
 subformula
 Realtek
 STGM
+pwsz
+desaturate
+ICONERROR
+includer

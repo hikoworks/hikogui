@@ -193,8 +193,8 @@ template<std::integral T>
  *
  * To create the packed byte array from values.
  *  - Shift each value into a bigint object.
- *  - Shift by an aditional 0 to 7 bits to align the first value to the MSB of a byte.
- *  - Shift by an aditional 128 bits for the over-read extension.
+ *  - Shift by an additional 0 to 7 bits to align the first value to the MSB of a byte.
+ *  - Shift by an additional 128 bits for the over-read extension.
  *  - Make a byte buffer with how many bits where added to the bigint.
  *  - Reverse iterate over the bytes in the buffer and shift out bytes from the bigint.
  *

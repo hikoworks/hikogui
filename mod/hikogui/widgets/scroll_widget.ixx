@@ -29,7 +29,7 @@ export namespace hi { inline namespace v1 {
  *
  * The size of the scroll widget is based on the `widget::minimum_size()`,
  * `widget::preferred_size()` and `widget::maximum_size()` of the content widget
- * together with the space needed for the scrollbars.
+ * together with the space needed for the scroll bars.
  *
  * In the directions that are allowed for scrolling the minimum size of the
  * scroll widget is adjusted to be much smaller, up to the smallest size of the
