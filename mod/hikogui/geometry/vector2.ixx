@@ -33,7 +33,7 @@ public:
     constexpr vector2& operator=(vector2 const&) noexcept = default;
     constexpr vector2& operator=(vector2&&) noexcept = default;
 
-    /** Convert a vector to its array_type-nummeric_array.
+    /** Convert a vector to its array_type-numeric_array.
      */
     [[nodiscard]] constexpr explicit operator array_type() const noexcept
     {

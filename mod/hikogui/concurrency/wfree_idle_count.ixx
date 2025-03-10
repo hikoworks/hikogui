@@ -30,7 +30,7 @@ export namespace hi::inline v1 {
  * idle_count.unlock();
  *
  * ... wait some time ...
- * 
+ *
  * auto new_version = idle_count.expanded_version(version);
  * if (new_version > old_version) {
  *   // All threads now see the new data.
@@ -82,7 +82,7 @@ public:
 
     /** Get the current idle-count.
      *
-     * @return The number of times the critcal section became idle, modulo 2^23.
+     * @return The number of times the critical section became idle, modulo 2^23.
      */
     hi_force_inline uint64_t operator*() const noexcept
     {

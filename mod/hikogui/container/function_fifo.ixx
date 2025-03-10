@@ -13,7 +13,7 @@ import hikogui_container_wfree_fifo;
 
 export namespace hi::inline v1 {
 
-/** A fifo (First-in, Firts-out) for asynchronous calls.
+/** A fifo (First-in, First-out) for asynchronous calls.
  *
  * This fifo is used to handle asynchronous calls from an event-loop.
  *

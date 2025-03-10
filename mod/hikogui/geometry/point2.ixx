@@ -35,7 +35,7 @@ public:
     constexpr point2& operator=(point2 const&) noexcept = default;
     constexpr point2& operator=(point2&&) noexcept = default;
 
-    /** Convert a point to its array_type-nummeric_array.
+    /** Convert a point to its array_type-numeric_array.
      */
     [[nodiscard]] constexpr explicit operator array_type() const noexcept
     {
