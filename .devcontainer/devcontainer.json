@@ -1,6 +1,6 @@
 {
     "name": "HikoGui DevBox",
-    "image": "ghcr.io/jakoch/cpp-devbox:with-vulkansdk-latest",
+    "image": "ghcr.io/jakoch/cpp-devbox:trixie-with-vulkansdk-1.0.8",
     "customizations": {
         "vscode": {
             "extensions": [

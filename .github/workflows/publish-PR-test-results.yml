@@ -46,7 +46,7 @@ jobs:
           unzip -d tests test_results.zip
 
       - name: 👌 Publish Test Results
-        uses: EnricoMi/publish-unit-test-result-action@v2 # https://github.com/EnricoMi/publish-unit-test-result-action
+        uses: EnricoMi/publish-unit-test-result-action/linux@v2 # https://github.com/EnricoMi/publish-unit-test-result-action
         with:
           commit: ${{ github.event.workflow_run.head_sha }}
           junit_files: tests/**/test_results*.xml

@@ -56,10 +56,10 @@ jobs:
 
       - name: 🛠️ Setup Visual Studio Developer Command Prompt
         uses: ilammy/msvc-dev-cmd@v1
-    
+
       - name: 🔽 Install Vulkan SDK
-        uses: jakoch/install-vulkan-sdk-action@v1.0.3 # https://github.com/jakoch/install-vulkan-sdk-action/
-        with: 
+        uses: jakoch/install-vulkan-sdk-action@v1.1.1 # https://github.com/jakoch/install-vulkan-sdk-action/
+        with:
           vulkan_version: latest
           optional_components: com.lunarg.vulkan.vma
           install_runtime: true
@@ -94,7 +94,7 @@ jobs:
       - name: ✏ CMake ➔ Make Build Directory
         shell: pwsh
         run: mkdir "${{env.BUILD_DIR}}"
-    
+
       # The Vulkan Runtime is normally to be found in "C:\windows\systems32", but it's not a system library on CI.
       - name: 🔽 Install Vulkan Runtime in build directory
         working-directory: ${{env.BUILD_DIR}}
@@ -116,7 +116,7 @@ jobs:
       - name: 🙏 CMake ➔ Build Debug
         working-directory: ${{env.BUILD_DIR}}
         run: cmake --build . --config Debug --parallel 1
-    
+
       - name: ✔ ❌✔️ Hiko-Test Debug
         working-directory: ${{env.BUILD_DIR}}
         run: Debug\hikogui_htests-dbg "--gtest_output=xml:${{github.workspace}}\result_htests_deb_${{env.MATRIX_ID}}.xml"
@@ -124,11 +124,11 @@ jobs:
       - name: 📦 CMake ➔ Install Debug
         working-directory: ${{env.BUILD_DIR}}
         run: cmake --install . --config Debug
-  
+
       - name: 🙏 CMake ➔ Build RelWithDebInfo
         working-directory: ${{env.BUILD_DIR}}
         run: cmake --build . --config RelWithDebInfo --parallel 1
-    
+
       - name: ✔ ❌✔️ Hiko-Test RelWithDebInfo
         working-directory: ${{env.BUILD_DIR}}
         run: RelWithDebInfo\hikogui_htests-rdi "--gtest_output=xml:${{github.workspace}}\result_htests_rdi_${{env.MATRIX_ID}}.xml"
@@ -140,7 +140,7 @@ jobs:
       - name: 🙏 CMake ➔ Build Release
         working-directory: ${{env.BUILD_DIR}}
         run: cmake --build . --config Release --parallel 1
-    
+
       - name: ✔ ❌✔️ Hiko-Test Release
         working-directory: ${{env.BUILD_DIR}}
         run: Release\hikogui_htests-rel "--gtest_output=xml:${{github.workspace}}\result_htests_rel${{env.MATRIX_ID}}.xml"
