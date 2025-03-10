@@ -73,7 +73,7 @@ testing::AssertionResult ResultsNearPredFormat(
 
 #define ASSERT_RESULTS(val1, val2) ASSERT_RESULTS_NEAR(val1, val2, 0.000001)
 
-TEST(bezier_cruve, solve_x_by_y)
+TEST(bezier_curve, solve_x_by_y)
 {
     ASSERT_RESULTS(bezier_curve(point2(1.0f, 1.0f), point2(1.5f, 1.0f), point2(2.0f, 1.0f)).solveXByY(1.5f), make_lean_vector<double>());
     ASSERT_RESULTS(bezier_curve(point2(2.0f, 1.0f), point2(2.0f, 1.5f), point2(2.0f, 2.0f)).solveXByY(1.5f), make_lean_vector<double>(2.0f));

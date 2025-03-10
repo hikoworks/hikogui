@@ -597,7 +597,7 @@ void gfx_pipeline_image::device_shared::build_atlas()
         0.0, // minLod
         0.0, // maxLod
         vk::BorderColor::eFloatTransparentBlack,
-        VK_FALSE // unnormazlizedCoordinates
+        VK_FALSE // unnormalizedCoordinates
     };
     atlas_sampler = device.createSampler(samplerCreateInfo);
 

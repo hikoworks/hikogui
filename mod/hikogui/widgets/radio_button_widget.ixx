@@ -40,7 +40,7 @@ concept radio_button_widget_attribute =
  *
  * A radio_button cannot itself switch state to 'other', this state may be
  * caused by external factors. The canonical example is a tree structure
- * of radio_buttones; when child radio_buttones have different values from each other
+ * of radio_buttons; when child radio_buttons have different values from each other
  * the parent radio_button state is set to 'other'.
  *
  * In the following example we create a radio_button widget on the window

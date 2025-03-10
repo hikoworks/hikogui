@@ -96,7 +96,7 @@ std::vector<vk::PipelineColorBlendAttachmentState> gfx_pipeline_SDF::getPipeline
          vk::BlendOp::eAdd, // colorBlendOp
          vk::BlendFactor::eOne, // srcAlphaBlendFactor
          has_dual_source_blend ? vk::BlendFactor::eOneMinusSrc1Alpha : vk::BlendFactor::eOneMinusSrcAlpha, // dstAlphaBlendFactor
-         vk::BlendOp::eAdd, // aphaBlendOp
+         vk::BlendOp::eAdd, // alphaBlendOp
          vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB |
              vk::ColorComponentFlagBits::eA}};
 }
@@ -508,7 +508,7 @@ void gfx_pipeline_SDF::device_shared::buildAtlas()
         0.0, // minLod
         0.0, // maxLod
         vk::BorderColor::eFloatTransparentBlack,
-        VK_FALSE // unnormazlizedCoordinates
+        VK_FALSE // unnormalizedCoordinates
     };
     atlasSampler = device.createSampler(samplerCreateInfo);
     device.setDebugUtilsObjectNameEXT(atlasSampler, "sdf-pipeline atlas sampler");

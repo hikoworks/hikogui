@@ -8,7 +8,7 @@
 
 hi_warning_push();
 // C26414: Move, copy, reassign or reset a local smart pointer (r.5)
-// We are testing a smart-pointer-like (group_ptr), so we hit this warning explicitely.
+// We are testing a smart-pointer-like (group_ptr), so we hit this warning explicitly.
 hi_warning_ignore_msvc(26414)
 
 namespace test_group_ptr {
@@ -310,7 +310,7 @@ TEST(group_ptr, notify_no_arg)
     ASSERT_EQ(c->value, 1);
     ASSERT_EQ(a.get(), b.get());
     ASSERT_EQ(a.get(), c.get());
-    
+
     ASSERT_EQ(a_count, 0);
     ASSERT_EQ(b_count, 0);
     ASSERT_EQ(c_count, 0);
