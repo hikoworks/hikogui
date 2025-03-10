@@ -29,7 +29,9 @@
     "cspell.json",
     "cspell*.{json,yaml}",
     "LICENSE",
-    "LICENSE_1_0.txt"
+    "LICENSE_1_0.txt",
+    "tests/data/**",
+    "data/ucd/**"
   ],
   "dictionaryDefinitions": [
     {
