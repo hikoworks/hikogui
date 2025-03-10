@@ -31,7 +31,7 @@ root := block
 group := '[' group_name ']' block
 group_name := ( name '.' )* name
 
-block := ( assignment | comment | description | deprecated | supress )*
+block := ( assignment | comment | description | deprecated | suppress )*
 
 comment := [;#] nolf_text '\n'
 
@@ -43,7 +43,7 @@ deprecated := deprecated* deprecated_default
 deprecated_text = ';!' nolf_text '\n'
 deprecated_default = ';!' assignment
 
-supress := ';-' name* '\n'
+suppress := ';-' name* '\n'
 
 assignment := name [=:] expression ( [;#] nolf_text )? '\n'
 
@@ -53,7 +53,7 @@ name := id
 
 id := [a-zA-Z_][a-zA-Z0-9_]
 
-expression := 
+expression :=
 
 ```
 

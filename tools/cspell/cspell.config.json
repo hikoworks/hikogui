@@ -1,0 +1,67 @@
+{
+  "$schema": "https://raw.githubusercontent.com/streetsidesoftware/cspell/main/cspell.schema.json",
+  "version": "0.2",
+  "id": "hikogui-cspell-config",
+  "name": "hikogui cspell Config",
+  "language": "en-US",
+  "minWordLength": 4,
+  "globRoot": "../../",
+  "files": [
+    ".devcontainer/devcontainer.json",
+    ".devcontainer/**/Dockerfile",
+    ".devcontainer/scripts/*.sh",
+    ".github/workflows/*.yml",
+    ".github/**/*.md",
+    "docs/**/*.md",
+    "*.yml",
+    "*.md"
+  ],
+  "ignorePaths": [
+    ".git/*/**",
+    ".git/!(COMMIT_EDITMSG)",
+    ".vscode/**",
+    ".clang-format",
+    "*.bat",
+    "*.cmake",
+    "*.json",
+    "*.lock",
+    "*.log",
+    "cspell.json",
+    "cspell*.{json,yaml}",
+    "LICENSE",
+    "LICENSE_1_0.txt"
+  ],
+  "dictionaryDefinitions": [
+    {
+      "name": "repo-words",
+      "addWords": true,
+      "scope": [
+        "workspace"
+      ],
+      "path": "./repo-words.txt",
+      "description": "A list of words related to this repository."
+    }
+  ],
+  "dictionaries": [
+    "repo-words"
+  ],
+  "languageSettings": [
+    {
+      "languageId": "*",
+      "allowCompoundWords": false
+    },
+    {
+      "languageId": "markdown",
+      "caseSensitive": true
+    }
+  ],
+  "patterns": [
+    {
+      "name": "a-regexp",
+      "pattern": "SOME_[A-Z]+_H_"
+    }
+  ],
+  "ignoreRegExpList": [
+    "a-regexp"
+  ]
+}

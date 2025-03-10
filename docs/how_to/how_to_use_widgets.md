@@ -213,13 +213,13 @@ A list of widgets
     callback function.
   - `hi::toolbar_button_widget`: A push button designed to be used with a
     callback function. Specifically for use inside a `hi::toolbar_widget`.
-  - `hi::toggle_widget`: A button representing a binary choice and indiciating
+  - `hi::toggle_widget`: A button representing a binary choice and indicating
     an immediate effect.
   - `hi::checkbox_widget`: A button representing a binary choice, but also being
     able to show a third 'other' state.
   - `hi::radio_button_widget`: A button representing one out of mutually
     exclusive choices.
-  - `hi::toolbar_tab_button_widget`: A button representing one out of mutally
+  - `hi::toolbar_tab_button_widget`: A button representing one out of mutually
     exclusive tabs. Designed to control the `hi::tab_widget`. For use inside a
     `hi::toolbar_widget`.
   - `hi::menu_button_widget`: A button used inside menus.

@@ -36,7 +36,7 @@ an expression of the HikoGUI template language. A `hi::datum` class can hold the
  * Vector
  * Map
 
-### Subexpression
+### Subexpressions
 
 Expressions can be enclosed inside parenthesis '(' ')' to force precedence on the expression inside.
 
@@ -111,7 +111,7 @@ Built in filters:
 
 ### Assignment
 
-An assignment operator is different from an inplace-operation. An inplace-operation will
+An assignment operator is different from an Inplace-operation. An Inplace-operation will
 modify a value of an existing variable. An assignment operator will create or replace
 a variable at the current scope.
 
@@ -709,7 +709,7 @@ bar is foo is 42.
 
 Return data from a function
 
-Syntax: 
+Syntax:
 
  - '#&zwj;return' expression '\\n'
 
