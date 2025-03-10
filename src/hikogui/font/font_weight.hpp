@@ -24,7 +24,7 @@ enum class font_weight {
     light, ///< 300: Light
     regular, ///< 400: Normal / Regular
     medium, ///< 500: Medium
-    semi_bold, ///< 600: Semi-bold / Demi-bold
+    semi_bold, ///< 600: Semi-bold
     bold, ///< 700: Bold
     extra_bold, ///< 800: Extra-bold / Ultra-bold
     black, ///< 900: Heavy / Black

@@ -198,7 +198,7 @@ public:
      * Because of complications with reading UTF-8 string with sequences
      * it is only allowed to read from the start of the file.
      *
-     * @note It is undefined bahavior when the seek pointer is not zero.
+     * @note It is undefined behavior when the seek pointer is not zero.
      * @param max_size The maximum number of bytes to read.
      * @return Data as a UTF-8 string, may return less then the requested size.
      * @throws io_error On IO error.
@@ -209,7 +209,7 @@ public:
 
         auto const size_ = size();
         if (size_ > max_size) {
-            throw io_error("read_string() requires the file size to be smaler than max_size.");
+            throw io_error("read_string() requires the file size to be smaller than max_size.");
         }
 
         auto r = std::string{};

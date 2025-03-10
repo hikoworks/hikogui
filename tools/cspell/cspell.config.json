@@ -64,7 +64,25 @@
     "src/hikogui/codec/SHA2_tests.cpp",
     "src/hikogui/codec/base_n_tests.cpp",
     "src/hikogui/codec/datum_tests.cpp",
-    "src/hikogui/graphic_path/graphic_path_tests.cpp"
+    "src/hikogui/graphic_path/graphic_path_tests.cpp",
+    "tools/generate_cmakelists.py",
+    "src/hikogui/GUI/gui_window_win32.hpp",
+    "src/hikogui/audio/win32_device_interface.hpp",
+    "src/hikogui/audio/win32_wave_device.hpp",
+    "src/hikogui/audio/audio_stream_format_win32.hpp",
+    "src/hikogui/audio/audio_device_win32.hpp",
+    "src/hikogui/codec/png.hpp",
+    "src/hikogui/codec/inflate.hpp",
+    "src/hikogui/font/elusive_icon.hpp",
+    "src/hikogui/geometry/aarectangle.hpp",
+    "src/hikogui/font/true_type_font.hpp",
+    "src/hikogui/geometry/perspective.hpp",
+    "src/hikocpu/array_intrinsic_f64x4_x86.hpp",
+    "src/hikocpu/array_intrinsic_f64x2_x86.hpp",
+    "src/hikocpu/array_intrinsic_f16x4_x86.hpp",
+    "src/hikocpu/cpu_id_x86.hpp",
+    "src/hikocpu/float_to_half.hpp",
+    "src/hikocpu/array_intrinsic_f32x4_x86.hpp"
   ],
   "dictionaryDefinitions": [
     {

@@ -49,8 +49,8 @@ hi_export_module(hikogui.container.secure_vector);
 //
 // /** Secure vector.
 //  *
-//  * The data being held by the vector will be securly cleared from memory
-//  * when the vector is destructed. Useful for temporarilly storing passwords and other secrets.
+//  * The data being held by the vector will be securely cleared from memory
+//  * when the vector is destructed. Useful for temporarily storing passwords and other secrets.
 //  */
 // template<typename T, typename Allocator = std::allocator<T>>
 // class secure_vector : public secure_vector_base<Allocator> {

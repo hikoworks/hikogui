@@ -132,7 +132,7 @@ public:
      * the theme scaled to the PPI of the window.
      *
      * It can also create a different version when the window becomes active/inactive
-     * mostly this will desaturate the colors in the theme.
+     * mostly this will de-saturate the colors in the theme.
      *
      * @param new_ppi The PPI of the window.
      */

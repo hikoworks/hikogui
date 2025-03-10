@@ -46,7 +46,7 @@ concept text_widget_attribute = forward_of<Context, observer<hi::alignment>>;
  *  - Multiple paragraphs.
  *  - Uses the unicode line break algorithm to wrap lines when not enough horizontal space.
  *  - Used the unicode word break algorithm for selecting and moving through words.
- *  - Uses the unicode scentence break algorithm for selecting and moving through scentences.
+ *  - Uses the unicode sentence break algorithm for selecting and moving through sentences.
  *  - Uses the unicode bidi algorithm for displaying text in mixed left-to-right & right-to-left languages.
  *  - Displays secondary cursor where text in the other language-direction will be inserted.
  *  - Keeps track if the user has just worked in left-to-right or right-to-left language.

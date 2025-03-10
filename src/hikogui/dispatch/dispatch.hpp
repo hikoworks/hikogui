@@ -39,7 +39,7 @@
  * handled quickly.
  *
  * The timer-loop is less latency sensitive and can be used for slower
- * maintenace tasks, such as: high-resolution clock synchronization and logging
+ * maintenance tasks, such as: high-resolution clock synchronization and logging
  * of telemetry.
  *
  * To "pump" the events you can use either `hi::loop::resume_once()` which
@@ -78,7 +78,7 @@
  * until the function as completed. If the function passed to `hi::async_task()`
  * is a `hi::task` co-routine, then that function is called directly.
  *
- * `hi::cancelable_async_task()` is simular to `hi::async_task()` but it will
+ * `hi::cancelable_async_task()` is similar to `hi::async_task()` but it will
  * take a `std::stop_token` and `hi::progress_token` to cancel and track progress
  * of the given function. The given function's `std::stop_token` and
  * `hi::progress_token` arguments are optional, and `hi::cancelable_async_task()`

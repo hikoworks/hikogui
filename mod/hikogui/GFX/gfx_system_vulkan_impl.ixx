@@ -12,7 +12,7 @@ gfx_system::~gfx_system()
 {
     hilet lock = std::scoped_lock(gfx_system_mutex);
 #ifndef NDEBUG
-    intrinsic.destroy(debugUtilsMessager, nullptr, loader());
+    intrinsic.destroy(debugUtilsMessenger, nullptr, loader());
 #endif
 }
 

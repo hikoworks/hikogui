@@ -107,7 +107,7 @@ public:
         value_type _value;
     };
 
-    /** A forward iterator which iterates through values co_yieled by the generator-function.
+    /** A forward iterator which iterates through values co_yielded by the generator-function.
      */
     class const_iterator {
     public:

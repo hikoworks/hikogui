@@ -18,7 +18,7 @@ hi_export_module(hikogui.GFX : gfx_pipeline_box_intf);
 
 hi_export namespace hi { inline namespace v1 {
 
-/*! Pipeline for rendering simple box shaded quats.
+/*! Pipeline for rendering simple box shaded quads.
  */
 class gfx_pipeline_box : public gfx_pipeline {
 public:
@@ -39,7 +39,7 @@ public:
          * shader. x = Number of pixels to the right from the left edge of the quad. y = Number of pixels above the bottom edge. z
          * = Number of pixels to the left from the right edge of the quad. w = Number of pixels below the top edge.
          *
-         * The rasteriser will interpolate these numbers, so that inside the fragment shader
+         * The rasterizer will interpolate these numbers, so that inside the fragment shader
          * the distance from a corner can be determined easily.
          */
         sfloat_rgba32 corner_coordinate;

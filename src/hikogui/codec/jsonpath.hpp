@@ -355,7 +355,7 @@ private:
         }
 
         hi_check(it != last, "Unexpected end-of-text after the start-index of the slicing operator.");
-        hi_check(*it == ':', "Expecting ':' adter the start-index of the slicing operator, got {}", *it);
+        hi_check(*it == ':', "Expecting ':' at the start-index of the slicing operator, got {}", *it);
         ++it;
 
         hi_check(it != last, "Unexpected end-of-text while parsing the end-index of the slicing operator.");

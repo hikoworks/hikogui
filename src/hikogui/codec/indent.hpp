@@ -14,7 +14,7 @@ hi_export_module(hikogui.codec.indent);
 hi_export namespace hi { inline namespace v1 {
 
 /** Indentation for writing out text files.
- * This type is used to pass indentation information recursivly to
+ * This type is used to pass indentation information recursively to
  * add indentation to text files, like for example json.
  */
 hi_export class indent {

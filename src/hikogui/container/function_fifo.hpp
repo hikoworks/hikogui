@@ -13,7 +13,7 @@ hi_export_module(hikogui.container.function_fifo);
 
 hi_export namespace hi::inline v1 {
 
-/** A fifo (First-in, Firts-out) for asynchronous calls.
+/** A fifo (First-in, First-out) for asynchronous calls.
  *
  * This fifo is used to handle asynchronous calls from an event-loop.
  *

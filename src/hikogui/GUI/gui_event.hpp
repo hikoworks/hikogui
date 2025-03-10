@@ -34,7 +34,7 @@ hi_export namespace hi { inline namespace v1 {
  */
 struct mouse_event_data {
     /** Information about which widget is underneath the mouse pointer.
-     */ 
+     */
     hi::hitbox hitbox = {};
 
     /** The current position of the mouse pointer.
@@ -259,7 +259,7 @@ public:
 
     /** Get the mouse event information.
      *
-     * @return a referene to the mouse data.
+     * @return a reference to the mouse data.
      */
     [[nodiscard]] mouse_event_data& mouse() noexcept
     {
@@ -269,7 +269,7 @@ public:
 
     /** Get the mouse event information.
      *
-     * @return a referene to the mouse data.
+     * @return a reference to the mouse data.
      */
     [[nodiscard]] mouse_event_data const& mouse() const noexcept
     {
@@ -279,7 +279,7 @@ public:
 
     /** Get the key from the keyboard event
      *
-     * @return a referene to the key.
+     * @return a reference to the key.
      */
     [[nodiscard]] keyboard_virtual_key& key() noexcept
     {
@@ -289,7 +289,7 @@ public:
 
     /** Get the key from the keyboard event
      *
-     * @return a referene to the key.
+     * @return a reference to the key.
      */
     [[nodiscard]] keyboard_virtual_key const& key() const noexcept
     {
@@ -299,7 +299,7 @@ public:
 
     /** Get the grapheme entered on the keyboard.
      *
-     * @return a referene to the grapheme.
+     * @return a reference to the grapheme.
      */
     [[nodiscard]] hi::grapheme& grapheme() noexcept
     {
@@ -309,7 +309,7 @@ public:
 
     /** Get the grapheme entered on the keyboard.
      *
-     * @return a referene to the grapheme.
+     * @return a reference to the grapheme.
      */
     [[nodiscard]] hi::grapheme const& grapheme() const noexcept
     {

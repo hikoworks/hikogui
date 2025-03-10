@@ -40,7 +40,7 @@ enum class graphic_character_t {
     open_bracket = 0x16,
     back_slash = 0x17,
     close_bracket = 0x18,
-    carret = 0x19,
+    caret = 0x19,
     underscore = 0x1a,
     back_quote = 0x1b,
     open_brace = 0x1c,
@@ -76,7 +76,7 @@ enum class graphic_character_t {
     case '[': return graphic_character_t::open_bracket;
     case '\\': return graphic_character_t::back_slash;
     case ']': return graphic_character_t::close_bracket;
-    case '^': return graphic_character_t::carret;
+    case '^': return graphic_character_t::caret;
     case '_': return graphic_character_t::underscore;
     case '`': return graphic_character_t::back_quote;
     case '{': return graphic_character_t::open_brace;

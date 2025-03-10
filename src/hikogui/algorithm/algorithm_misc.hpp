@@ -180,27 +180,27 @@ constexpr std::pair<It, It> bifind_cluster(ConstIt first, ConstIt last, It start
 
 /*! For each cluster.
  * func() is executed for each cluster that is found between first-last.
- * A cluster is found between two separators, a separator is detected with IsClusterSeperator().
+ * A cluster is found between two separators, a separator is detected with IsClusterSeparator().
  * A cluster does not include the separator itself.
  */
 template<typename It, typename S, typename F>
-inline void for_each_cluster(It first, It last, S IsClusterSeperator, F Function)
+inline void for_each_cluster(It first, It last, S IsClusterSeparator, F Function)
 {
     if (first == last) {
         return;
     }
 
     // If the first item is a cluster separator skip over it.
-    if (IsClusterSeperator(*first)) {
+    if (IsClusterSeparator(*first)) {
         first++;
     }
 
     for (auto i = first; i != last;) {
-        auto j = std::find_if(i, last, IsClusterSeperator);
+        auto j = std::find_if(i, last, IsClusterSeparator);
         Function(i, j);
 
-        auto skipOverSeperator = (j == last) ? 0 : 1;
-        i = j + skipOverSeperator;
+        auto skipOverSeparator = (j == last) ? 0 : 1;
+        i = j + skipOverSeparator;
     }
 }
 

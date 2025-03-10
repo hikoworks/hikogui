@@ -12,7 +12,7 @@ inline gfx_system::~gfx_system()
 {
     auto const lock = std::scoped_lock(gfx_system_mutex);
 #ifndef NDEBUG
-    intrinsic.destroy(debugUtilsMessager, nullptr, loader());
+    intrinsic.destroy(debugUtilsMessenger, nullptr, loader());
 #endif
 }
 

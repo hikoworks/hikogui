@@ -70,7 +70,7 @@ void secure_destroy_at(auto *p)
  *
  * Destroy objects and overwrite its memory with all '1' followed by all '0'.
  *
- * @note Internal allocations of objects will not be securily destroyed.
+ * @note Internal allocations of objects will not be securely destroyed.
  * @param first An iterator to the first object.
  * @param last An iterator to beyond the last object.
  */

@@ -86,7 +86,7 @@ enum class cancel_features_type {
     stop_and_progress = 3
 };
 
-/** Type trait to retrieve the cancel feautes of a invokable.
+/** Type trait to retrieve the cancel features of a invocable.
  *
  * @tparam Func The invocable to check.
  * @tparam Args The arguments to the invocable.

@@ -30,7 +30,7 @@ struct iso_3166_info {
 [[nodiscard]] consteval auto iso_3166_infos_init() noexcept
 {
     // We are using a c-style array to std::array conversion because
-    // compilers, tools and analysers do not handle large std::array constructors.
+    // compilers, tools and analyzers do not handle large std::array constructors.
 
     // clang-format off
     constexpr iso_3166_info data[] = {
