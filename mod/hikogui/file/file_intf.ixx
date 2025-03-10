@@ -207,7 +207,7 @@ public:
 
         hilet size_ = size();
         if (size_ > max_size) {
-            throw io_error("read_string() requires the file size to be smaler than max_size.");
+            throw io_error("read_string() requires the file size to be smaller than max_size.");
         }
 
         auto r = std::string{};

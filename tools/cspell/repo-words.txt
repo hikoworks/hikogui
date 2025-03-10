@@ -351,3 +351,7 @@ pwsz
 desaturate
 ICONERROR
 includer
+BRANIMIR
+LAMBOV
+gtransform
+Demi
