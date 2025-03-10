@@ -31,7 +31,11 @@
     "LICENSE",
     "LICENSE_1_0.txt",
     "tests/data/**",
-    "data/ucd/**"
+    "data/ucd/**",
+    "docs/media/style/cppreference-doxygen-web.tag.xml",
+    "CMakeLists.txt",
+    "CMakeOverride.txt",
+    "CMake/packaging/hikoguiResources.cmake.in"
   ],
   "dictionaryDefinitions": [
     {

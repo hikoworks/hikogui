@@ -97,3 +97,10 @@ gettime
 gettimeofday
 hiperf
 leapsecond
+pixmap
+NDEBUG
+ttauri
+ctest
+CTEST
+vsconfig
+deinitialize
