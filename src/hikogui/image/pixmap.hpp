@@ -20,7 +20,7 @@ hi_warning_push();
 // C26439: This kind of function should not throw. Declare it 'noexcept' (f.6)
 // move assignment can throw because allocation may be needed due to proper allocator implementation.
 hi_warning_ignore_msvc(26439);
-// C26459: You called an STL function 'std::unitialized_move' with a raw pointer... (stl.1)
+// C26459: You called an STL function 'std::uninitialized_move' with a raw pointer... (stl.1)
 // Writing iterators instead of using raw pointers will require a lot of code without any added safety.
 hi_warning_ignore_msvc(26459);
 

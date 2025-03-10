@@ -229,7 +229,7 @@ inline bool log::start_subsystem(global_state_type log_level)
 {
     set_log_level(log_level);
     if (hi::start_subsystem(global_state_type::log_is_running, log::subsystem_init, log::subsystem_deinit)) {
-        atterminate([]() {
+        on_terminate([]() {
             log_global.flush();
         });
         return true;

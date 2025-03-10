@@ -668,7 +668,7 @@ TEST_CASE(other_slash)
     REQUIRE(it == std::default_sentinel);
 }
 
-TEST_CASE(other_patern_syntax)
+TEST_CASE(other_pattern_syntax)
 {
     constexpr auto c_lexer = hi::detail::lexer<hi::lexer_config::c_style()>{};
 

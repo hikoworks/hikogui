@@ -666,7 +666,7 @@ TEST(lexer, other_slash)
     ASSERT_EQ(it, std::default_sentinel);
 }
 
-TEST(lexer, other_patern_syntax)
+TEST(lexer, other_pattern_syntax)
 {
     constexpr auto c_lexer = hi::detail::lexer<hi::lexer_config::c_style()>{};
 

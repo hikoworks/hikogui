@@ -32,7 +32,7 @@ TEST(markup, phrasing_regular)
     ASSERT_EQ(tmp[2].phrasing(), hi::phrasing::regular);
 }
 
-TEST(markup, phrasing_emphesis)
+TEST(markup, phrasing_emphasis)
 {
     auto tmp = hi::apply_markup("a[e]b[.]c");
     ASSERT_EQ(tmp, "abc");

@@ -19,7 +19,7 @@ class description (object):
         self.bidi_paired_bracket_type = "n"
         self.bidi_paired_bracket = None
 
-        # BidiMirring.txt
+        # BidiMirroring.txt
         self.bidi_mirroring_glyph = None
 
         # CompositionExclusions.txt

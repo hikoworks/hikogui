@@ -30,12 +30,12 @@ namespace detail {
 
 inline std::mutex terminate_mutex;
 
-inline std::vector<std::function<void()>> atterminate_functions;
+inline std::vector<std::function<void()>> on_terminate_functions;
 
-inline void call_atterminate() noexcept
+inline void call_on_terminate() noexcept
 {
     auto const lock = std::scoped_lock(terminate_mutex);
-    for (auto it = atterminate_functions.rbegin(); it != atterminate_functions.rend(); ++it) {
+    for (auto it = on_terminate_functions.rbegin(); it != on_terminate_functions.rend(); ++it) {
         (*it)();
     }
 }
@@ -45,10 +45,10 @@ inline void call_atterminate() noexcept
 /** Register functions that need to be called on std::terminate().
  *
  */
-inline void atterminate(std::function<void()> f) noexcept
+inline void on_terminate(std::function<void()> f) noexcept
 {
     auto const lock = std::scoped_lock(detail::terminate_mutex);
-    detail::atterminate_functions.push_back(std::move(f));
+    detail::on_terminate_functions.push_back(std::move(f));
 }
 
 /** The old terminate handler.
@@ -67,7 +67,7 @@ inline void terminate_handler() noexcept
 {
     using namespace std::literals;
 
-    detail::call_atterminate();
+    detail::call_on_terminate();
 
     auto title = std::string{};
     auto message = std::string{};
