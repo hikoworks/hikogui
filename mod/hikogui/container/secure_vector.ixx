@@ -49,7 +49,7 @@ import hikogui_security;
 //
 // /** Secure vector.
 //  *
-//  * The data being held by the vector will be securly cleared from memory
+//  * The data being held by the vector will be securely cleared from memory
 //  * when the vector is destructed. Useful for temporarily storing passwords and other secrets.
 //  */
 // template<typename T, typename Allocator = std::allocator<T>>
