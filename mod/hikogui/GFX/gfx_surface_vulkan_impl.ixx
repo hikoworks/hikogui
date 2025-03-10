@@ -124,7 +124,7 @@ std::optional<uint32_t> gfx_surface::acquire_next_image_from_swapchain()
         return {frameBufferIndex};
 
     case vk::Result::eSuboptimalKHR:
-        // Techniqually we received an image here, but we treat it
+        // Technically we received an image here, but we treat it
         // as a swapchain-lost which should reset the swapchain anyway,
         // so not rendering to the image should be okay.
         hi_log_info("acquireNextImageKHR() eSuboptimalKHR");

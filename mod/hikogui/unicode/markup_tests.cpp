@@ -8,7 +8,7 @@
 
 
 // case 'r': return phrasing::regular;
-// case 'e': return phrasing::emphesis;
+// case 'e': return phrasing::emphasis;
 // case 's': return phrasing::strong;
 // case 'c': return phrasing::code;
 // case 'a': return phrasing::abbreviation;
@@ -37,7 +37,7 @@ TEST(markup, phrasing_emphasis)
     auto tmp = hi::apply_markup("a[e]b[.]c");
     ASSERT_EQ(tmp, "abc");
     ASSERT_EQ(tmp[0].phrasing(), hi::phrasing::regular);
-    ASSERT_EQ(tmp[1].phrasing(), hi::phrasing::emphesis);
+    ASSERT_EQ(tmp[1].phrasing(), hi::phrasing::emphasis);
     ASSERT_EQ(tmp[2].phrasing(), hi::phrasing::regular);
 }
 
