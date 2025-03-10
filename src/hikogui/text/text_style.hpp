@@ -58,7 +58,7 @@ public:
     /** Set the font-chain for this text style.
      *
      * The new chain is prepended in front of the current chain. Unless
-     * @a imporant is set, in which case the font-chain is replaced.
+     * @a important is set, in which case the font-chain is replaced.
      *
      * @param font_chain The chain of fonts to search glyphs in.
      */

@@ -182,7 +182,7 @@ public:
         hi_axiom(loop::main().on_thread());
         return selected_child().find_next_widget(current_widget, group, direction);
     }
-    /// @endprivatsectopn
+    /// @endprivatesection
 private:
     widget const *_previous_selected_child = nullptr;
     std::vector<std::unique_ptr<widget>> _children;

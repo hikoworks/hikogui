@@ -82,7 +82,18 @@
     "src/hikocpu/array_intrinsic_f16x4_x86.hpp",
     "src/hikocpu/cpu_id_x86.hpp",
     "src/hikocpu/float_to_half.hpp",
-    "src/hikocpu/array_intrinsic_f32x4_x86.hpp"
+    "src/hikocpu/array_intrinsic_f32x4_x86.hpp",
+    "examples/widgets/text_example_impl.cpp",
+    "examples/custom_widgets/resources/copyright.md",
+    "mod/hikogui/unicode/unicode_plural.ixx",
+    "mod/hikogui/unicode/ucd_scripts.ixx",
+    "mod/hikogui/SIMD/simd_tests.cpp",
+    "mod/hikogui/SIMD/native_i32x4_sse2.ixx",
+    "mod/hikogui/path/glob_tests.cpp",
+    "mod/hikogui/i18n/language_tag_impl.ixx",
+    "mod/hikogui/i18n/iso_15924_impl.ixx",
+    "mod/hikogui/GUI/gui_window_win32.ixx",
+    "mod/hikogui/codec/SHA2_tests.cpp",
   ],
   "dictionaryDefinitions": [
     {

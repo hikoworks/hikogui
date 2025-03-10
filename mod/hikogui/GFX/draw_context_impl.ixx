@@ -225,7 +225,7 @@ void draw_context::_draw_text_insertion_cursor(
         left = it->direction == unicode_bidi_class::L ? maximum_left : maximum_right;
     }
 
-    // Clamp the cursor position between the left and right side of the layed out text.
+    // Clamp the cursor position between the left and right side of the laid out text.
     left = std::clamp(left, maximum_left - 1.0f, maximum_right + 1.0f);
 
     // Draw the vertical line cursor.

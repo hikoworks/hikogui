@@ -103,7 +103,7 @@ concept from_stringable = requires() {
 };
 
 template<typename From, typename To>
-concept static_castableable = requires(From v) {
+concept static_castable = requires(From v) {
     {
         static_cast<To>(v)
     } -> std::convertible_to<To>;

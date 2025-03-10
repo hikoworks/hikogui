@@ -36,7 +36,7 @@ export namespace hi { inline namespace v1 {
 
 /** Read a bits from of span of bytes
  * Bits are ordered LSB first.
- * Bits are copied as if the byte array is layed out from right to left, example:
+ * Bits are copied as if the byte array is laid out from right to left, example:
  *
  *  7 6 5 4 3 2 1 0 7 6 5 4 3 2 1 0
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+

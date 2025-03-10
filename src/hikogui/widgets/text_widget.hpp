@@ -40,7 +40,7 @@ concept text_widget_attribute = forward_of<Context, observer<hi::alignment>>;
  * On its own it can be used to edit multiple lines of text, but it will probably
  * be used embedded inside other widgets, like:
  *  - `label_widget` to display translated text together with an optional icon.
- *  - `text_field_widget` to edit a value of diffent types, includig integers, floating point, strings, etc.
+ *  - `text_field_widget` to edit a value of diffent types, including integers, floating point, strings, etc.
  *
  * Features:
  *  - Multiple paragraphs.

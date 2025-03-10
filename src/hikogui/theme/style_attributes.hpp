@@ -99,7 +99,7 @@ public:
     }
 
     /** Set all attributes in other as-if they are important.
-     * 
+     *
      * @param other The attributes used to overwrite the current attributes.
      * @return A mask for what kind of values where changed.
      */
@@ -133,8 +133,8 @@ public:
         return r;
     }
 
-    /** Apply attributes of other ontop of the current.
-     * 
+    /** Apply attributes of other on top of the current.
+     *
      * @param other The attributes used to overwrite the current attributes.
      * @return A mask for what kind of values where changed.
      */
