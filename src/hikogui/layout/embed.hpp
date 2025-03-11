@@ -2,6 +2,12 @@
 
 #pragma once
 
+#include "constraints.hpp"
+#include "shape.hpp"
+#include "../units/units.hpp"
+#include "../utility/utility.hpp"
+#include "../macros.hpp"
+
 hi_export_module(hikogui.layout : embed);
 
 hi_export namespace hi::inline v1::layout {
@@ -30,19 +36,39 @@ public:
         return *this;
     }
 
-    [[nodiscard]] constexpr constraints get_constraints(constraints const& child_constraints) noexcept
+    template<typename F>
+    [[nodiscard]] constexpr constraints get_constraints(F const& f) noexcept
+        requires std::is_invocable_r_v<constraints, F>
     {
-        _child_constraints = child_constraints;
+        _child_constraints = f();
 
-        auto const child_padding = max(_padding, _child_constraints._margins);
+        auto const child_left_padding = max(_left_padding, _child_constraints.left);
+        auto const child_right_padding = max(_right_padding, _child_constraints.right);
+        auto const child_top_padding = max(_top_padding, _child_constraints.top);
+        auto const child_bottom_padding = max(_bottom_padding, _child_constraints.bottom);
 
-        auto r = constraints{};
-        r._size = _child_constraints._size + child_padding.size();
-        r._weight = _child_constraints._weight;
-        r._margins = _margins;
-        r._baseline = hi::baseline::embed(child_constraints.baseline(), child_padding);
+        auto r = _child_constraints;
+        r.width += child_left_padding + child_right_padding;
+        r.height += child_top_padding + child_bottom_padding;
+        r.left = _left_margin;
+        r.right = _right_margin;
+        r.top = _top_margin;
+        r.bottom = _bottom_margin;
+
+        switch (r._vertical_alignment) {
+        case vertical_alignment::top:
+            r.baseline_offset += -child_top_padding;
+            break;
+        case vertical_alignment::middle:
+            r.baseline_offset += (-child_top_padding + child_bottom_padding) * 0.5f;
+            break;
+        case vertical_alignment::bottom:
+            r.baseline_offset += child_bottom_padding;
+            break;
+        }
+
         if (_priority) {
-            r._baseline.set_priority(_priority);
+            r.baseline_priority = *_priority;
         }
         return r;
     }
@@ -55,9 +81,15 @@ public:
 
 
 private:
-    hi::margins _margins;
-    hi::margins _padding;
-    std::optional<baseline_priority> _priority;
+    unit::pixels_f _left_padding = {};
+    unit::pixels_f _right_padding = {};
+    unit::pixels_f _top_padding = {};
+    unit::pixels_f _bottom_padding = {};
+    unit::pixels_f _left_margin = {};
+    unit::pixels_f _right_margin = {};
+    unit::pixels_f _top_margin = {};
+    unit::pixels_f _bottom_margin = {};
+
     constraints _child_constraints;
 };
 

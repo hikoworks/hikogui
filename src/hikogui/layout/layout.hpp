@@ -1,7 +1,6 @@
 
 #pragma once
 
-#include "baseline.hpp" // export
 #include "shape.hpp" // export
 #include "constraints.hpp" // export
 #include "grid.hpp" // export

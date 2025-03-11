@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include "baseline.hpp"
 #include "../geometry/geometry.hpp"
 #include "../utility/utility.hpp"
 #include "../macros.hpp"
