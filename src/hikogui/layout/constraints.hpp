@@ -10,17 +10,17 @@
 
 hi_export_module(hikogui.layout : constraints);
 
-hi_export namespace hi::inline v1 {
+hi_export namespace hi::inline v1::layout {
 /** Constraints for the layout of a widget.
  *
  */
-class layout_constraints {
+class constraints {
 public:
-    constexpr layout_constraints() noexcept = default;
-    constexpr layout_constraints(layout_constraints const&) noexcept = default;
-    constexpr layout_constraints(layout_constraints&&) noexcept = default;
-    constexpr layout_constraints& operator=(layout_constraints const&) noexcept = default;
-    constexpr layout_constraints& operator=(layout_constraints&&) noexcept = default;
+    constexpr constraints() noexcept = default;
+    constexpr constraints(constraints const&) noexcept = default;
+    constexpr constraints(constraints&&) noexcept = default;
+    constexpr constraints& operator=(constraints const&) noexcept = default;
+    constexpr constraints& operator=(constraints&&) noexcept = default;
 
     /** Construct layout constraints.
      *
@@ -31,7 +31,7 @@ public:
      * @param margins The margins around the widget.
      * @param baseline The baseline of the widget.
      */
-    constexpr layout_constraints(extent2 size, extent2 weight, hi::margins margins, hi::baseline baseline) noexcept :
+    constexpr constraints(extent2 size, extent2 weight, hi::margins margins, hi::baseline baseline) noexcept :
         _size(size), _weight(weight), _margins(margins), _baseline(baseline)
     {
     }
@@ -43,14 +43,14 @@ public:
      * @param margins The margins around the current widget.
      * @return The layout constraints of the current widget.
      */
-    [[nodiscard]] layout_constraints constexpr static embed(
-        layout_constraints const& child,
+    [[nodiscard]] constraints constexpr static embed(
+        constraints const& child,
         hi::margins padding,
         hi::margins margins) noexcept
     {
         auto const child_padding = max(padding, child._margins);
 
-        auto r = layout_constraints{};
+        auto r = constraints{};
         r._size = child._size + child_padding.size();
         r._weight = child._weight;
         r._margins = margins;
@@ -68,8 +68,8 @@ public:
      *                          increased.
      * @return The layout constraints of the current widget.
      */
-    [[nodiscard]] layout_constraints constexpr static embed(
-        layout_constraints const& child,
+    [[nodiscard]] constraints constexpr static embed(
+        constraints const& child,
         hi::margins padding,
         hi::margins margins,
         hi::baseline_priority baseline_priority) noexcept

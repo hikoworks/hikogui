@@ -12,7 +12,7 @@
 
 hi_export_module(hikogui.text : baseline);
 
-hi_export namespace hi::inline v1 {
+hi_export namespace hi::inline v1::layout {
 /**
  * @brief Enumeration representing the priority levels for baselines.
  *
@@ -142,20 +142,20 @@ public:
      */
     [[nodiscard]] constexpr float offset(float height) const
     {
-        switch (_alignment) {
-        case vertical_alignment::top:
-            assert(_offset <= 0.0f);
-            assert(_offset >= -height);
-            return height + _offset;
-        case vertical_alignment::middle:
-            assert(_offset <= height * 0.5f);
-            assert(_offset >= -height * 0.5f);
-            return height * 0.5f + _offset;
-        case vertical_alignment::bottom:
-            assert(_offset >= 0.0f);
-            assert(_offset <= height);
-            return _offset;
-        }
+        auto const offset = [&] {
+            switch (_alignment) {
+            case vertical_alignment::top:
+                return std::round(height + _offset);
+            case vertical_alignment::middle:
+                return std::round(height * 0.5f + _offset);
+            case vertical_alignment::bottom:
+                return std::round(_offset);
+            }
+        }();
+
+        assert(offset >= 0.0f);
+        assert(offset <= height);
+        return offset;
     }
 
     [[nodiscard]] constexpr baseline_priority priority() const noexcept
