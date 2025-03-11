@@ -16,7 +16,12 @@ hi_export namespace hi::inline v1::layout {
 
 struct shape {
     aarectangle rectangle;
-    float baseline;
+    unit::pixels_f baseline;
+
+    /** The priority of the baseline.
+     * This value is used for children to inherit the baseline of the parent
+     */
+    baseline_priority baseline_priority = baseline_priority::none;
 
     shape() noexcept = default;
     shape(shape const&) noexcept = default;
