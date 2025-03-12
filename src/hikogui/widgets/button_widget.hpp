@@ -75,20 +75,20 @@ public:
     /// @privatesection
     [[nodiscard]] layout::constraints get_constraints() const noexcept override
     {
-        return _layout.get_constraints(
-            style.margins_px,
-            style.padding_px,
-            style.base_line_priority,
-            [&]() {
-                return _label_widget->update_constraints();
-            });
+        _shaper.set_margin(style.margins_px);
+        _shaper.set_padding(style.padding_px);
+        _shaper.set_base_line_priority(style.base_line_priority);
+
+        return _shaper.get_constraints([&]() {
+            return _label_widget->update_constraints();
+        });
     }
 
     void set_layout(widget_layout const& context) noexcept override
     {
         super::set_layout(context);
 
-        _layout.set_layout(layout().shape(), [&](layout::shape const& shape) {
+        _shaper.set_layout(layout().shape(), [&](layout::shape const& shape) {
             _label_widget->set_layout(context.transform(shape));
         });
     }
@@ -152,6 +152,7 @@ public:
     }
     /// @endprivatesection
 private:
+    mutable layout::embed _shaper;
     box_constraints _label_constraints;
     std::unique_ptr<label_widget> _label_widget;
 

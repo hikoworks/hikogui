@@ -75,8 +75,38 @@ public:
 
     template<typename F>
     constexpr void set_layout(shape const& shape, F const& f) noexcept
+        requires std::is_invocable_r_v<void, F, shape>
     {
+        auto const child_left_padding = max(_left_padding, _child_constraints.left);
+        auto const child_right_padding = max(_right_padding, _child_constraints.right);
+        auto const child_top_padding = max(_top_padding, _child_constraints.top);
+        auto const child_bottom_padding = max(_bottom_padding, _child_constraints.bottom);
 
+        auto const child_width = _child_constraints.width - child_left_padding - child_right_padding;
+        auto const child_height = _child_constraints.height - child_top_padding - child_bottom_padding;
+
+        auto const child_left = shape.left + child_left_padding;
+        auto const child_bottom = shape.bottom + child_bottom_padding;
+        
+        auto const baseline_offset = [&] {
+            if (shape.baseline_priority > _child_constraints.baseline_priority) {
+                return shape.baseline_offset;
+
+            } else {
+                switch (_child_constraints._vertical_alignment) {
+                case vertical_alignment::top:
+                    return shape.bottom + child_bottom_padding + _child_constraints.baseline_offset;
+                case vertical_alignment::middle:
+                    return shape.bottom + child_bottom_padding + _child_constraints.baseline_offset + child_height * 0.5f;
+                case vertical_alignment::bottom:
+                    return _child_constraints.baseline_offset;
+                }
+            }
+        }();
+
+        auto const child_shape = shape{aarectangle{point2{child_left, child_bottom}, extent2{child_width, child_height}}};
+
+        f(shape.translate(child_left, child_top, child_width, child_height));
     }
 
 
