@@ -21,7 +21,7 @@ In the example below the json-path is "bar.foo" which results in the preferences
 hi::observer<int> foo;
 preferences.add("bar.foo", foo);
 
-// Everytime the program loads the value in the preference file is incremented.
+// Every time the program loads the value in the preference file is incremented.
 ++foo;
 ```
 

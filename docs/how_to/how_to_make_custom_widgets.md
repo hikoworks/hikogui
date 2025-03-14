@@ -244,7 +244,7 @@ The `keyboard_down` event is a candidate automatically generate a bundle of even
 key-bindings.
 
 In this example, the widget intercepts a grapheme being entered on the keyboard. Graphemes
-are what a user of a language preceives what a single character is, this may be one or more unicode
+are what a user of a language perceives what a single character is, this may be one or more unicode
 code-points where accents are composed on top of a base character. The function returns `true`
 to signify that it handled the event and that further processing of the bundle of events should stop.
 
@@ -350,7 +350,7 @@ Children
 
 For the following high-performance methods the children need to be recursively called:
 
- - `set_contraints()`
+ - `set_constraints()`
  - `set_layout()`
  - `draw()`
  - `hitbox_test()`
@@ -378,7 +378,7 @@ stored in a vector.
 ### Baseline
 Widgets that appear next to each other should share a baseline so that their text will be properly aligned.
 
-Widgets communicate the desire of where it wants the baseline to be through the `set_contraints()` method.
+Widgets communicate the desire of where it wants the baseline to be through the `set_constraints()` method.
 This includes a priority so that different types of widget are able to size and position correctly.
 
 During `set_layout()` the actual baseline that is shared between widgets is communicated to each widget.

@@ -173,7 +173,7 @@ public:
         // No children, or no children visible.
         return current_widget == id() ? id() : widget_id{};
     }
-    /// @endprivatsectopn
+    /// @endprivatesection
 private:
     widget const *_previous_selected_child = nullptr;
     std::vector<std::unique_ptr<widget>> _children;

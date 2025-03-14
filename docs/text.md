@@ -71,7 +71,7 @@ Features:
  - True-Type Font kerning.
  - Reverse coordinate back to index in text.
  - Handle cursor movement in display-order.
- - Word and Scentence selection. (UAX #29 Unicode text segmentation)
+ - Word and Sentence selection. (UAX #29 Unicode text segmentation)
 
 Text editing
 ------------

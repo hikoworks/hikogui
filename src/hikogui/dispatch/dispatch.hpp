@@ -33,13 +33,13 @@
  *
  * There are also two well-known loops which can be accessed using the
  * static functions `hi::loop::main()` and `hi::loop::timer()`.
- * 
+ *
  * The main-loop is used to handle events from the GUI, Audio-control and
  * network. The main-loop is latency sensitive and any event should be
  * handled quickly.
  *
  * The timer-loop is less latency sensitive and can be used for slower
- * maintenace tasks, such as: high-resolution clock synchronization and logging
+ * maintenance tasks, such as: high-resolution clock synchronization and logging
  * of telemetry.
  *
  * To "pump" the events you can use either `hi::loop::resume_once()` which

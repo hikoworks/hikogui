@@ -1,0 +1,35 @@
+#
+# SPDX-FileCopyrightText: 2025 Jens A. Koch.
+# SPDX-License-Identifier: BSL-1.0
+#
+
+name: "Check Spelling"
+
+on:
+  # This workflow runs on pushing to the default branch.
+  push:
+  # You can manually run this workflow.
+  workflow_dispatch:
+
+jobs:
+
+# ---------------------------------------------------------------------------------------
+
+  check-spelling:
+
+# ---------------------------------------------------------------------------------------
+
+    name: "Spell Checker"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🤘 Checkout Code
+        uses: actions/checkout@v4 # https://github.com/actions/checkout
+
+      - name: 🔽 Install Dependencies
+        run: sudo npm install -g cspell
+
+      - name: 🙏 Check Spelling using cspell
+        run: |
+          export CSPELL_OUTPUT=$(sudo cspell lint --no-summary --no-progress .)
+          if [ -n "$CSPELL_OUTPUT" ]; then echo "$CSPELL_OUTPUT" && exit 1; fi;

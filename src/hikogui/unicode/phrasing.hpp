@@ -23,7 +23,7 @@ hi_export namespace hi::inline v1 {
  * @ingroup unicode
  *
  * This is the phrasing of a piece of text. The phrasing determines
- * the style of text on a semantic level. Simular to HTML phrasing tags.
+ * the style of text on a semantic level. Similar to HTML phrasing tags.
  *
  * The underlying value must be between 0 through 63;
  * so that the phrasing_mask can be 64-bits.
@@ -33,7 +33,7 @@ enum class phrasing : uint8_t {
      */
     regular = 0,
 
-    /** Emphesised text; spoken as if the text is special importance, significant or promonent.
+    /** Emphasized text; spoken as if the text is special importance, significant or prominent.
      * Often formatted in italic.
      */
     emphasis = 1,
@@ -76,7 +76,7 @@ enum class phrasing : uint8_t {
     math = 8,
 
     /** Used in help text to show an example.
-     * Often formatted using a non-proportional font with a low resultion bitmap-like style.
+     * Often formatted using a non-proportional font with a low resolution bitmap-like style.
      */
     example = 9, ///< Used for displaying console output.
 

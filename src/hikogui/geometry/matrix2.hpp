@@ -30,7 +30,7 @@ class matrix2;
 [[nodiscard]] constexpr aarectangle operator*(scale2 const& lhs, aarectangle const& rhs) noexcept;
 [[nodiscard]] constexpr matrix2 operator*(translate2 const& lhs, scale2 const& rhs) noexcept;
 
-/** A 2D or 3D homogenius matrix for transforming homogenious vectors and points.
+/** A 2D or 3D homogeneous matrix for transforming homogeneous vectors and points.
  *
  * This matrix is in column major order. It is implemented as 4 columns made
  * from a `f32x4` numeric-array.
@@ -220,7 +220,7 @@ public:
         _col3 = one.xywz();
     }
 
-    /** Convert a point to its f32x4-nummeric_array.
+    /** Convert a point to its f32x4-numeric_array.
      */
     [[nodiscard]] constexpr explicit operator std::array<f32x4, 4>() const noexcept
     {

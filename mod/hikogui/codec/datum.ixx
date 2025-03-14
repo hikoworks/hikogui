@@ -1358,7 +1358,7 @@ public:
         }
     }
 
-    /** arithmatic multiply.
+    /** arithmetic multiply.
      *
      * Both operands are first promoted to `double`, `decimal` or `long long` before the
      * operation is executed.

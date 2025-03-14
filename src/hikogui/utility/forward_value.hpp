@@ -18,7 +18,7 @@ hi_export namespace hi::inline v1 {
  * This functor is used to long-time-storage of values passed into a template function.
  * This means that views need to be translated into non-view values.
  *
- * For savety against the lifetime of the orginal object ending:
+ * For safety against the lifetime of the original object ending:
  *  - rvalues are moved
  *  - lvalues are copied
  *  - std::string_view are copied into a std::string

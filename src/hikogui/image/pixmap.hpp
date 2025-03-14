@@ -20,7 +20,7 @@ hi_warning_push();
 // C26439: This kind of function should not throw. Declare it 'noexcept' (f.6)
 // move assignment can throw because allocation may be needed due to proper allocator implementation.
 hi_warning_ignore_msvc(26439);
-// C26459: You called an STL function 'std::unitialized_move' with a raw pointer... (stl.1)
+// C26459: You called an STL function 'std::uninitialized_move' with a raw pointer... (stl.1)
 // Writing iterators instead of using raw pointers will require a lot of code without any added safety.
 hi_warning_ignore_msvc(26459);
 
@@ -152,9 +152,9 @@ public:
      */
     constexpr pixmap& operator=(pixmap const& other)
     {
-        constexpr auto propogate_allocator = std::allocator_traits<allocator_type>::propagate_on_container_copy_assignment::value;
+        constexpr auto propagate_allocator = std::allocator_traits<allocator_type>::propagate_on_container_copy_assignment::value;
 
-        auto const use_this_allocator = this->_allocator == other._allocator or not propogate_allocator;
+        auto const use_this_allocator = this->_allocator == other._allocator or not propagate_allocator;
 
         if (&other == this) {
             return *this;
@@ -171,7 +171,7 @@ public:
             return *this;
 
         } else {
-            auto& new_allocator = propogate_allocator ? const_cast<allocator_type&>(other._allocator) : this->_allocator;
+            auto& new_allocator = propagate_allocator ? const_cast<allocator_type&>(other._allocator) : this->_allocator;
             auto const new_capacity = other.size();
 
             value_type* new_data = nullptr;
@@ -211,12 +211,12 @@ public:
      */
     constexpr pixmap& operator=(pixmap&& other)
     {
-        constexpr auto propogate_allocator = std::allocator_traits<allocator_type>::propagate_on_container_move_assignment::value;
+        constexpr auto propagate_allocator = std::allocator_traits<allocator_type>::propagate_on_container_move_assignment::value;
 
         if (&other == this) {
             return *this;
 
-        } else if (_allocator == other._allocator or propogate_allocator) {
+        } else if (_allocator == other._allocator or propagate_allocator) {
             clear();
             shrink_to_fit();
 

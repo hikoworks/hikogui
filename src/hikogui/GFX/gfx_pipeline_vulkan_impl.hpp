@@ -117,7 +117,7 @@ inline std::vector<vk::PipelineColorBlendAttachmentState> gfx_pipeline::getPipel
          vk::BlendOp::eAdd, // colorBlendOp
          vk::BlendFactor::eOne, // srcAlphaBlendFactor
          vk::BlendFactor::eOneMinusSrcAlpha, // dstAlphaBlendFactor
-         vk::BlendOp::eAdd, // aphaBlendOp
+         vk::BlendOp::eAdd, // alphaBlendOp
          vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB |
              vk::ColorComponentFlagBits::eA}};
 }

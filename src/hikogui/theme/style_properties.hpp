@@ -215,8 +215,8 @@ public:
         reset_baseline_priority();
     }
 
-    /** Apply attributes of other ontop of the current.
-     * 
+    /** Apply attributes of other on top of the current.
+     *
      * @param other The attributes used to overwrite the current attributes.
      * @return A mask for what kind of values where changed.
      */

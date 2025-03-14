@@ -16,7 +16,7 @@ hi_export_module(hikogui.utility.endian);
 hi_warning_push();
 // C26472: Don't use a static_cast for arithmetic conversions. Use brace initialization, gsl::narrow_cast or gsl::narrow
 // (type.1).
-// static_cast are used to cheaply cast integers to unsigned and back, for byteswapping.
+// static_cast are used to cheaply cast integers to unsigned and back, for byte-swapping.
 hi_warning_ignore_msvc(26472);
 
 hi_export namespace hi { inline namespace v1 {
@@ -188,7 +188,7 @@ template<std::integral T>
  * @tparam NumBits the number of bits to read.
  * @param src A byte-like buffer to load bits from.
  * @param bit_index The bit offset into the buffer. 0 is the 7th bit of the 1st byte in @a src.
- * @return The loaded bits in the least-signigicant-bits of an unsigned integer type that can hold the bits requested.
+ * @return The loaded bits in the least-significant-bits of an unsigned integer type that can hold the bits requested.
  */
 template<unsigned int NumBits, byte_like B>
 [[nodiscard]] constexpr auto load_bits_be(B const *src, size_t bit_index) noexcept

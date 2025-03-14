@@ -20,7 +20,7 @@ export namespace hi { inline namespace v1 {
 
 /** Get a user-setting for the application.
  *
- * Keys starting with two consequitive underscores are reserved by the HikoGUI library.
+ * Keys starting with two consecutive underscores are reserved by the HikoGUI library.
  *
  * @param key A key for the user setting.
  * @return The value from the user-settings.
@@ -33,7 +33,7 @@ template<typename T>
 
 /** Set a user-setting for the application.
  *
- * Keys starting with two consequitive underscores are reserved by the HikoGUI library.
+ * Keys starting with two consecutive underscores are reserved by the HikoGUI library.
  *
  * @param key A key for the user setting.
  * @param value The value to set.
@@ -44,7 +44,7 @@ std::error_code set_user_setting(std::string_view key, std::string_view value) n
 
 /** Set a user-setting for the application.
  *
- * Keys starting with two consequitive underscores are reserved by the HikoGUI library.
+ * Keys starting with two consecutive underscores are reserved by the HikoGUI library.
  *
  * @param key A key for the user setting.
  * @param value The value to set.
@@ -55,7 +55,7 @@ std::error_code set_user_setting(std::string_view key, long long value) noexcept
 
 /** Delete a user-setting for the application.
  *
- * Keys starting with two consequitive underscores are reserved by the HikoGUI library.
+ * Keys starting with two consecutive underscores are reserved by the HikoGUI library.
  *
  * @param key A key for the user setting.
  * @throws std::invalid_argument When the key is not valid.

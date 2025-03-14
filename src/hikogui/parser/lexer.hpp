@@ -388,7 +388,7 @@ public:
                 command.advance = 1;
                 // If there are actual null characters in the string then nothing gets captured.
                 command.char_to_capture = char_cast<char>(i);
-                command.emit_token = token::error_unexepected_character;
+                command.emit_token = token::error_unexpected_character;
                 command.next_state = idle;
             }
         }
@@ -622,7 +622,7 @@ public:
                 capture(_cp);
                 advance_counters();
                 _cp = advance();
-                return token::error_unexepected_character;
+                return token::error_unexpected_character;
             }
         }
 
@@ -1080,17 +1080,17 @@ private:
         add(idle, "()[]{},@$\\", idle, token::other, capture, advance);
 
         // The following characters are the first character of a potential multi-character operator.
-        add(idle, '+', found_plus, advance, capture); 
-        add(idle, '-', found_minus, advance, capture); 
-        add(idle, '*', found_star, advance, capture); 
-        add(idle, '&', found_and, advance, capture); 
-        add(idle, '|', found_vbar, advance, capture); 
-        add(idle, '^', found_caret, advance, capture); 
-        add(idle, '%', found_percent, advance, capture); 
-        add(idle, '!', found_bang, advance, capture); 
-        add(idle, '?', found_question, advance, capture); 
-        add(idle, '~', found_tilde, advance, capture); 
-        add(idle, '>', found_gt, advance, capture); 
+        add(idle, '+', found_plus, advance, capture);
+        add(idle, '-', found_minus, advance, capture);
+        add(idle, '*', found_star, advance, capture);
+        add(idle, '&', found_and, advance, capture);
+        add(idle, '|', found_vbar, advance, capture);
+        add(idle, '^', found_caret, advance, capture);
+        add(idle, '%', found_percent, advance, capture);
+        add(idle, '!', found_bang, advance, capture);
+        add(idle, '?', found_question, advance, capture);
+        add(idle, '~', found_tilde, advance, capture);
+        add(idle, '>', found_gt, advance, capture);
 
         add(found_plus, any, idle, token::other);
         add(found_minus, any, idle, token::other);

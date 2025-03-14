@@ -117,7 +117,7 @@ public:
     }
 
     /** Send a event to the window.
-     * 
+     *
      * @param event The event to send to the window.
      * @return True when the event was handled by the window.
      */
@@ -144,7 +144,7 @@ public:
     void request_redraw() const noexcept;
 
     /** Request the window to be fully redrawn.
-     * 
+     *
      * Use this function when a widget has changed in such a way that it
      * affects the window outside the area of the widget.
      */
@@ -245,7 +245,7 @@ public:
             set_phase(value ? widget_phase::active : widget_phase::enabled);
         }
     }
-    
+
     [[nodiscard]] virtual bool focus() const noexcept
     {
         return (style.pseudo_class() & style_pseudo_class::focus) != style_pseudo_class{};

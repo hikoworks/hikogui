@@ -302,7 +302,7 @@ struct shaper_text_metrics {
      */
     unit::pixels_f width = unit::pixels(0.0f);
 
-    /** Heigth from top-line's cap-height, to bottom's base-line.
+    /** Height from top-line's cap-height, to bottom's base-line.
      */
     unit::pixels_f height = unit::pixels(0.0f);
 
@@ -442,7 +442,7 @@ struct shaper_phase1_result {
 
     /** The unicode-bid embedding level for each grapheme and each paragraph.
      *
-     * These are two lists appened together:
+     * These are two lists appended together:
      *  - Embedding level for each grapheme, followed by
      *  - Embedding level for each paragraph.
      *
@@ -581,7 +581,7 @@ struct shaper_positioned_glyphs {
 // * @param font_size The base font size of the text.
 // * @param style The text-style-set containing the styles of the text
 // *              for different languages and phrasings.
-// * @param maximumum_width The maximum width the text is allowed to be.
+// * @param maximum_width The maximum width the text is allowed to be.
 // * @param alignment The vertical alignment of the text.
 // * @return pre-calculated information used mostly for phase 2.
 // *         The text-metrics is used for the constraints of a text-widget.

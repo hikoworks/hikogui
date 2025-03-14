@@ -78,7 +78,7 @@ public:
     [[nodiscard]] std::string serialize() const;
 
     /** Get the path from the bookmark.
-     * 
+     *
      * @return The path.
      */
     [[nodiscard]] std::filesystem::path path() const noexcept
@@ -94,7 +94,7 @@ public:
      *
      * @retval true The file is located outside the sandbox.
      * @retval false The file is located inside the sandbox and
-     *               is freely accessable by the application.
+     *               is freely accessible by the application.
      */
     [[nodiscard]] bool is_outside_sandbox() const noexcept;
 

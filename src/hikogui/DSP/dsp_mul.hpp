@@ -1,6 +1,4 @@
-
-
-#pragam once
+#pragma once
 
 namespace hi { inline namespace v1 {
 

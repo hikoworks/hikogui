@@ -36,7 +36,7 @@ public:
     audio_device() noexcept = default;
     virtual ~audio_device() = default;
 
-    /** The nonephemeral unique id that for an audio device on the system.
+    /** The non-ephemeral unique id that for an audio device on the system.
      */
     [[nodiscard]] std::string const& id() const noexcept
     {

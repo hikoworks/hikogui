@@ -12,7 +12,7 @@ public:
     using value_type = T;
     using allocator_type = Allocator;
 
-    constexpr wait_fifo() = defaul;
+    constexpr wait_fifo() = default;
 
     template<typename... Args>
     value_type &emplace_back(Args&&... args)

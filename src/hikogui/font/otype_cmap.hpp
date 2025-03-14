@@ -190,7 +190,7 @@ hi_export namespace hi { inline namespace v1 {
 
 /** Lookup a code-point in a sub-map.
  *
- * @param bytes A span arround the complete sub-map.
+ * @param bytes A span around the complete sub-map.
  * @param code_point The code-point to lookup.
  * @return The glyph_id found, or empty on failure.
  */
@@ -213,7 +213,7 @@ hi_export namespace hi { inline namespace v1 {
 
 /** Find a character in the 'cmap'-table of a open-type font file.
  *
- * @param bytes A span arround the complete 'cmap'-table.
+ * @param bytes A span around the complete 'cmap'-table.
  * @param code_point The code-point to look up in the table.
  * @return The glyph_id found, or empty on failure.
  */

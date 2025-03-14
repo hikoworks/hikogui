@@ -55,6 +55,6 @@ HikoGUI uses Vulkan-1.1 API as a minimum.
 
 The oldest graphics cards supporting Vulkan-1.1 are:
 
- - **NVidia**: GeForce 600 (Kepler)
- - **AMD**: HD 7000 (TeraScale 2)
+ - **Nvidia**: GeForce 600 (Kepler)
+ - **AMD**: HD 7000 (TerraScale 2)
  - **Intel**: HD 500 (Gen9 SkyLake)

@@ -42,14 +42,14 @@ export template<typename T>
 concept trivially_copyable = std::is_trivially_copyable_v<T>;
 
 /** Different from
- * 
+ *
  * Not std::same_as.
  */
 export template<typename Context, typename Expected>
 concept different_from = not std::same_as<Context, Expected>;
 
 /** Incompatible with another type
- * 
+ *
  * Not std::convertible_to.
  */
 export template<typename Context, typename Expected>
@@ -102,7 +102,7 @@ concept from_stringable = requires() {
 };
 
 export template<typename From, typename To>
-concept static_castableable = requires(From v) {
+concept static_castable = requires(From v) {
     {
         static_cast<To>(v)
     } -> std::convertible_to<To>;
@@ -145,7 +145,7 @@ export template<typename T>
 concept nullable = requires (T &a) { a = nullptr; };
 
 /** True if T is dereferenceable.
- * 
+ *
  * Either it is a pointer, or it implements both operator*() and operator->().
  */
 export template<typename T>

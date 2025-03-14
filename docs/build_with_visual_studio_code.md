@@ -61,7 +61,7 @@ To build:
  1. In the bottom status bar select `[MSVC-x64-Debug]`, `[Library + Demo]` and
     `[hikogui_demo]`.
  2. In the bottom status bar press the `Build` option to build.
- 3. Press the little turtle or play buttom from the bottom status bar to debug
+ 3. Press the little turtle or play button from the bottom status bar to debug
     or run the demo.
 
 _Note: A "Window Security Alert" may show up, this is due to the RenderDoc API
@@ -85,4 +85,4 @@ Common build problems:
    CMake cache.
  - There are two **Test Explorer** due to two test extensions being installed.
    Only the **Test Explorer** with more details will be able to debug
-   individual tests. 
+   individual tests.

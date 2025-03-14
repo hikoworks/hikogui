@@ -31,14 +31,14 @@ hi_export namespace hi::inline v1 {
 class os_settings {
 public:
     /** Get the device this application is running on.
-     * 
+     *
      * This is used to detect the viewing distance from the screen and
      * combined with the screen's DPI to determine how device independent
      * pixels (dips) are scaled.
-     * 
+     *
      * If you need to know how to layout the application based on the device
      * type use `device_mode()`; as some operating systems allow emulation or
-     * switching of device-mode during run-time. 
+     * switching of device-mode during run-time.
      */
     [[nodiscard]] static device_type device_type() noexcept
     {
@@ -84,7 +84,7 @@ public:
     }
 
     /** Get the alignment based on the writing direction.
-     * 
+     *
      * @param rhs The alignment that may need to be flipped to match the writing direction.
      * @retval The alignment, possibly flipped.
      */
@@ -94,7 +94,7 @@ public:
     }
 
     /** Get the alignment based on the writing direction.
-     * 
+     *
      * @param rhs The alignment that may need to be flipped to match the writing direction.
      * @retval The alignment, possibly flipped.
      */
@@ -306,7 +306,7 @@ public:
 
     /** The number of logical processors in the system.
      *
-     * Logical processors include all the physical processors, cores and hyperthreading.
+     * Logical processors include all the physical processors, cores and hyper-threading.
      *
      * @return The number of logical processors.
      */

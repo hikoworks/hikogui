@@ -103,7 +103,7 @@ public:
 #endif
 
 #ifndef NDEBUG
-        debugUtilsMessager = intrinsic.createDebugUtilsMessengerEXT(
+        debugUtilsMessenger = intrinsic.createDebugUtilsMessengerEXT(
             {vk::DebugUtilsMessengerCreateFlagsEXT(),
              vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose |
                  // vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo |
@@ -132,7 +132,7 @@ public:
         }
     }
 
-    
+
     [[nodiscard]] gfx_device *find_best_device(vk::SurfaceKHR surface)
     {
         enumerate_devices();
@@ -175,7 +175,7 @@ private:
     //! Vulkan dynamic loader of library functions.
     vk::DispatchLoaderDynamic _loader;
 
-    vk::DebugUtilsMessengerEXT debugUtilsMessager;
+    vk::DebugUtilsMessengerEXT debugUtilsMessenger;
 
     void enumerate_devices() noexcept
     {
@@ -184,7 +184,7 @@ private:
         if (not devices.empty()) {
             return;
         }
-            
+
         for (auto physical_device : intrinsic.enumeratePhysicalDevices()) {
             devices.push_back(std::make_shared<gfx_device>(physical_device));
         }
@@ -277,7 +277,7 @@ vk::DispatchLoaderDynamic vulkan_loader() noexcept
 }
 
 /** Find the best device for a Vulkan surface.
- * 
+ *
  * @param surface The surface to find the best device for.
  * @return A pointer to a gfx device.
  * @retval nullptr Could not find a Vulkan device for this surface.
@@ -288,7 +288,7 @@ vk::DispatchLoaderDynamic vulkan_loader() noexcept
 }
 
 /** Find the best device for a surface.
- * 
+ *
  * @param surface The surface to find the best device for.
  * @return A pointer to a fdx device.
  * @retval nullptr Could not find a Vulkan device for this surface.

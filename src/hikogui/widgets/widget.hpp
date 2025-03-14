@@ -119,7 +119,7 @@ public:
             send_to_window(gui_event_type::gui_activate);
             if (accepts_keyboard_focus(keyboard_focus_group::menu)) {
                 // By going forward and backward we select the current parent,
-                // the widget that opened the menu-stack. 
+                // the widget that opened the menu-stack.
                 send_to_window(gui_event_type::gui_widget_next);
                 send_to_window(gui_event_type::gui_widget_prev);
             }
@@ -250,7 +250,7 @@ public:
         if (found) {
             // Either:
             // 1. current_keyboard_widget was nullptr; this widget, nor its child widgets accept focus.
-            // 2. current_keyboard_wigget was this; none of the child widgets accept focus.
+            // 2. current_keyboard_widget was this; none of the child widgets accept focus.
             // 3. current_keyboard_widget is a child; none of the following widgets accept focus.
             return current_keyboard_widget;
         }
