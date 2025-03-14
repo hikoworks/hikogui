@@ -30,7 +30,7 @@ import hikogui_utility_reflection;
 hi_warning_push();
 // C26472: Don't use a static_cast for arithmetic conversions. Use brace initialization, gsl::narrow_cast or gsl::narrow
 // (type.1).
-// static_cast are used to cheaply cast integers to unsigned and back, for byteswapping.
+// static_cast are used to cheaply cast integers to unsigned and back, for byte-swapping.
 hi_warning_ignore_msvc(26472);
 
 export namespace hi { inline namespace v1 {
@@ -193,12 +193,12 @@ template<std::integral T>
  *
  * To create the packed byte array from values.
  *  - Shift each value into a bigint object.
- *  - Shift by an aditional 0 to 7 bits to align the first value to the MSB of a byte.
- *  - Shift by an aditional 128 bits for the over-read extension.
+ *  - Shift by an additional 0 to 7 bits to align the first value to the MSB of a byte.
+ *  - Shift by an additional 128 bits for the over-read extension.
  *  - Make a byte buffer with how many bits where added to the bigint.
  *  - Reverse iterate over the bytes in the buffer and shift out bytes from the bigint.
  *
- * @note The src buffer should be extented by 128-bits to allow over-reading beyond the end of the data.
+ * @note The src buffer should be extended by 128-bits to allow over-reading beyond the end of the data.
  * @tparam NumBits the number of bits to read.
  * @param src A byte-like buffer to load bits from.
  * @param bit_index The bit offset into the buffer. 0 is the 7th bit of the 1st byte in @a src.

@@ -12,7 +12,7 @@
 using namespace std;
 using namespace hi;
 
-TEST(grahpic_path, getBeziersOfLayer)
+TEST(graphic_path, getBeziersOfLayer)
 {
     auto path = graphic_path();
     path.moveTo(point2{1, 1});
@@ -29,7 +29,7 @@ TEST(grahpic_path, getBeziersOfLayer)
     ASSERT_EQ(beziers[3], bezier_curve(point2(1, 2), point2(1, 1)));
 }
 
-TEST(grahpic_path, getbezier_pointsOfContour)
+TEST(graphic_path, getbezier_pointsOfContour)
 {
     auto path = graphic_path();
     path.moveTo(point2{1, 1});

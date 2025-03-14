@@ -24,7 +24,7 @@ enum class on_overflow_t {
     Saturate,
     //! On overflow assert and terminate.
     Assert,
-    //! On overflow assert and teminate in debug, assume in release.
+    //! On overflow assert and terminate in debug, assume in release.
     Axiom,
 };
 
