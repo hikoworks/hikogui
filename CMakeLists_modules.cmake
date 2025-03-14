@@ -504,6 +504,5 @@ target_sources(hikogui INTERFACE FILE_SET hikogui_include_files TYPE HEADERS BAS
     ${CMAKE_CURRENT_SOURCE_DIR}/mod/hikogui/GFX/renderdoc_app.h
     ${CMAKE_CURRENT_SOURCE_DIR}/mod/hikogui/macros.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/mod/hikogui/crt.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/mod/hikogui/test.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/mod/hikogui/win32_headers.hpp
 )

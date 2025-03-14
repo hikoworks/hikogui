@@ -422,7 +422,6 @@ target_sources(hikogui INTERFACE FILE_SET hikogui_include_files TYPE HEADERS BAS
     src/hikogui/telemetry/log.hpp
     src/hikogui/telemetry/telemetry.hpp
     src/hikogui/telemetry/trace.hpp
-    src/hikogui/test.hpp
     src/hikogui/text/shaper.hpp
     src/hikogui/text/text.hpp
     src/hikogui/text/text_cursor.hpp
