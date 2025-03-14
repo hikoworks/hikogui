@@ -4,29 +4,32 @@
 
 #pragma once
 
-#include "baseline.hpp"
 #include "../geometry/geometry.hpp"
 #include "../utility/utility.hpp"
 #include "../macros.hpp"
 #include <limits>
 #include <optional>
 
-hi_export_module(hikogui.layout.box_shape);
+hi_export_module(hikogui.layout.shape);
 
-hi_export namespace hi {
-inline namespace v1 {
+hi_export namespace hi::inline v1::layout {
 
-struct box_shape {
+struct shape {
     aarectangle rectangle;
-    hi::baseline baseline;
+    unit::pixels_f baseline;
 
-    box_shape() noexcept = default;
-    box_shape(box_shape const&) noexcept = default;
-    box_shape(box_shape&&) noexcept = default;
-    box_shape& operator=(box_shape const&) noexcept = default;
-    box_shape& operator=(box_shape&&) noexcept = default;
+    /** The priority of the baseline.
+     * This value is used for children to inherit the baseline of the parent
+     */
+    baseline_priority baseline_priority = baseline_priority::none;
 
-    explicit box_shape(aarectangle rectangle, hi::baseline baseline = {}) noexcept : rectangle(rectangle), baseline(baseline) {}
+    shape() noexcept = default;
+    shape(shape const&) noexcept = default;
+    shape(shape&&) noexcept = default;
+    shape& operator=(shape const&) noexcept = default;
+    shape& operator=(shape&&) noexcept = default;
+
+    explicit shape(aarectangle rectangle, hi::baseline baseline = {}) noexcept : rectangle(rectangle), baseline(baseline) {}
 
     [[nodiscard]] float x() const noexcept
     {

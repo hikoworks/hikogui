@@ -11,7 +11,7 @@
 
 hi_export_module(hikogui.layout : grid);
 
-hi_export namespace hi::inline v1 {
+hi_export namespace hi::inline v1::layout {
 namespace detail {
 
 template<typename T>

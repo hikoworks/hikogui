@@ -1,11 +1,8 @@
 
 #pragma once
 
-#include "baseline.hpp" // export
-#include "box_constraints.hpp" // export
-#include "box_shape.hpp" // export
+#include "shape.hpp" // export
 #include "constraints.hpp" // export
-#include "grid_layout.hpp" // export
 #include "grid.hpp" // export
 #include "row_column_layout.hpp" // export
 #include "spreadsheet_address.hpp" // export

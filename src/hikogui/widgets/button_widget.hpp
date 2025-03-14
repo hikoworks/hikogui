@@ -73,28 +73,24 @@ public:
     }
 
     /// @privatesection
-    [[nodiscard]] box_constraints update_constraints() noexcept override
+    [[nodiscard]] layout::constraints get_constraints() const noexcept override
     {
-        _label_constraints = _label_widget->update_constraints();
+        _shaper.set_margin(style.margins_px);
+        _shaper.set_padding(style.padding_px);
+        _shaper.set_base_line_priority(style.base_line_priority);
 
-        auto const padding = max(style.padding_px, _label_constraints.margins);
-
-        auto r = _label_constraints + padding;
-        r.margins = style.margins_px;
-        r.baseline = embed(_label_constraints.baseline, unit::pixels(padding.bottom()), unit::pixels(padding.top()));
-        return r;
+        return _shaper.get_constraints([&]() {
+            return _label_widget->update_constraints();
+        });
     }
 
     void set_layout(widget_layout const& context) noexcept override
     {
         super::set_layout(context);
 
-        auto const label_padding = max(style.padding_px, _label_constraints.margins);
-        auto const label_rectangle = context.rectangle() - label_padding;
-        auto const label_shape = box_shape{
-            label_rectangle, lift(context.baseline(), unit::pixels(label_padding.bottom()), unit::pixels(label_padding.top()))};
-
-        _label_widget->set_layout(context.transform(label_shape));
+        _shaper.set_layout(layout().shape(), [&](layout::shape const& shape) {
+            _label_widget->set_layout(context.transform(shape));
+        });
     }
 
     void draw(draw_context const& context) const noexcept override
@@ -156,6 +152,7 @@ public:
     }
     /// @endprivatesection
 private:
+    mutable layout::embed _shaper;
     box_constraints _label_constraints;
     std::unique_ptr<label_widget> _label_widget;
 
