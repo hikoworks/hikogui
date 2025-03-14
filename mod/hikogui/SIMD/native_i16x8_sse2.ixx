@@ -44,7 +44,7 @@ inline namespace v1 {
  * When loading and storing from memory this is the order of the element in the register
  *
  * ```
- *   lo           hi lo           hi lo           hi lo           hi 
+ *   lo           hi lo           hi lo           hi lo           hi
  *  +---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+
  *  | E 0/a | E 1/b | E 2/c | E 3/d | E 4/e | E 5/f | E 6/g | E 7/h |
  *  +---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+
@@ -300,7 +300,7 @@ struct native_i16x8 {
      *
      * @tparam Mask A bit mask corresponding to each element.
      * @param a The value to modify.
-     * @return argument @a with elements set to zero where the corrosponding @a Mask bit was '1'.
+     * @return argument @a with elements set to zero where the corresponding @a Mask bit was '1'.
      */
     template<size_t Mask>
     [[nodiscard]] friend native_i16x8 set_zero(native_i16x8 a) noexcept
@@ -505,7 +505,7 @@ struct native_i16x8 {
         constexpr auto zero_mask = detail::native_swizzle_to_mask<SourceElements, size, '0'>();
         constexpr auto number_mask = one_mask | zero_mask;
         constexpr auto alpha_mask = ~number_mask & 0b1111;
-       
+
         if constexpr ((zero_mask | alpha_mask) == 0b1111) {
             return native_i16x8{_mm_setzero_si128()};
 

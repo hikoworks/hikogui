@@ -24,10 +24,10 @@ hi_export namespace hi { inline namespace v1 {
 namespace detail {
 
 /** Table of likely expansions.
- * 
+ *
  * Most data from this table comes from unicode locale database:
  *    https://github.com/unicode-org/cldr/blob/release-40/common/supplemental/likelySubtags.xml
- * 
+ *
  * Also included is a modified grandfathered table.
  */
 [[nodiscard]] consteval auto language_tag_expansions_init() noexcept
@@ -35,7 +35,7 @@ namespace detail {
     using data_type = std::pair<std::string_view, std::string_view>;
 
     // We are using a c-style array to std::array conversion because
-    // compilers, tools and analysers do not handle large std::array constructors.
+    // compilers, tools and analyzers do not handle large std::array constructors.
 
     // clang-format off
     constexpr data_type data[] = {

@@ -147,7 +147,7 @@ public:
 
     V increment(K const &key) noexcept
     {
-        static_assert(std::is_arithmetic_v<V>, "Only increment on a artihmatic value");
+        static_assert(std::is_arithmetic_v<V>, "Only increment on a arithmetic value");
         auto i = begin();
         for (; i != end(); ++i) {
             if (i->key == key) {

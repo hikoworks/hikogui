@@ -161,7 +161,7 @@ public:
     /** Find a glyph for a code_point.
      *
      * @param code_point The code-point to find in the character map.
-     * @return The corrosponding glyph found representing the code-point, or an empty glyph if not found.
+     * @return The corresponding glyph found representing the code-point, or an empty glyph if not found.
      */
     [[nodiscard]] glyph_id find(char32_t code_point) const noexcept
     {

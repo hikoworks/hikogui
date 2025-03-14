@@ -46,7 +46,7 @@ inline namespace v1 {
  * When loading and storing from memory this is the order of the element in the register
  *
  * ```
- *   lo           hi lo           hi lo           hi lo           hi 
+ *   lo           hi lo           hi lo           hi lo           hi
  *  +---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+
  *  | E 0/a | E 1/b | E 2/c | E 3/d | E 4/e | E 5/f | E 6/g | E 7/h |
  *  +---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+
@@ -185,7 +185,7 @@ struct native_simd<float16,8> {
 #endif
     }
 
-    /** For each bit in mask set corrosponding element to all-ones or all-zeros.
+    /** For each bit in mask set corresponding element to all-ones or all-zeros.
      */
     [[nodiscard]] static native_simd from_mask(size_t mask) noexcept
     {
@@ -252,7 +252,7 @@ struct native_simd<float16,8> {
      *
      * @tparam Mask A bit mask corresponding to each element.
      * @param a The value to modify.
-     * @return argument @a with elements set to zero where the corrosponding @a Mask bit was '1'.
+     * @return argument @a with elements set to zero where the corresponding @a Mask bit was '1'.
      */
     template<size_t Mask>
     [[nodiscard]] friend native_simd set_zero(native_simd a) noexcept
@@ -326,7 +326,7 @@ struct native_simd<float16,8> {
     //    if constexpr (order == 0b111'110'101'100'011'010'001'000) {
     //        return a.v;
     //    } else {
-    //        auto tmp = _mm_shufflelo(a.v, 
+    //        auto tmp = _mm_shufflelo(a.v,
     //        return native_simd{_mm_shuffle_epi16(a.v, order)};
     //    }
     //}
@@ -393,7 +393,7 @@ struct native_simd<float16,8> {
         constexpr auto zero_mask = detail::native_swizzle_to_mask<SourceElements, size, '0'>();
         constexpr auto number_mask = one_mask | zero_mask;
         constexpr auto alpha_mask = ~number_mask & 0b11111111;
-       
+
         if constexpr ((zero_mask | alpha_mask) == 0b11111111) {
             return native_simd{_mm_setzero_si128()};
 
