@@ -1,5 +1,5 @@
 {
-    "name": "Jurasic",
+    "name": "Jurassic",
     "mode": "dark",
 
     // Distance between widgets and between widgets and the border of the container.
@@ -63,7 +63,7 @@
         [ 52,  42,  40],
         [ 61,  51,  49]
     ],
-    
+
     "color":       [234, 207, 103],
     "disabled-color": [142, 142, 147],
     "accent-color":           [185, 49,  62],
