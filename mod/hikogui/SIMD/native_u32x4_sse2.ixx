@@ -291,7 +291,7 @@ struct native_simd<uint32_t,4> {
      *
      * @tparam Mask A bit mask corresponding to each element.
      * @param a The value to modify.
-     * @return argument @a with elements set to zero where the corrosponding @a Mask bit was '1'.
+     * @return argument @a with elements set to zero where the corresponding @a Mask bit was '1'.
      */
     template<size_t Mask>
     [[nodiscard]] friend native_simd set_zero(native_simd a) noexcept
