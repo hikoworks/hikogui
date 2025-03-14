@@ -77,6 +77,7 @@
     "mod/hikogui/unicode/ucd_scripts.ixx",
     "mod/hikogui/unicode/unicode_plural.ixx",
     "mod/hikogui/utility/cast.ixx",
+    "mod/hikogui/text/text_shaper.ixx",
     "patches/**",
     "resources/**",
     "tests/data/**",

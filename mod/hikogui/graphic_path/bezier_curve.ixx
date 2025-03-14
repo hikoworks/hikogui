@@ -192,7 +192,7 @@ export struct bezier_curve {
 
     /** Find the distance from the point to the curve.
      *
-     * If the distances are equal between two curves, take the one with a maximum orthognality.
+     * If the distances are equal between two curves, take the one with a maximum orthogonality.
      * If the orthogonality >= then the point is inside that edge.
      *
      * @param P The point from which to calculate the distance to this curve.
