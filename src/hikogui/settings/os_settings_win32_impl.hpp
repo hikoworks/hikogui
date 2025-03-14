@@ -99,7 +99,7 @@ hi_export namespace hi { inline namespace v1 {
 
     // The official APIs to get the current languages do not work.
     // Either they return the languages in a random order.
-    // Or they return only three languages, but not nessarily the first three
+    // Or they return only three languages, but not necessarily the first three
     // Or they do not update at runtime.
     // The only way that works is to get the registry from the Control Panel application.
     if (auto const languages = win32_RegGetValue<std::vector<std::string>>(
@@ -428,7 +428,7 @@ hi_export namespace hi { inline namespace v1 {
 
     } else if (result.error() == win32_error::file_not_found) {
         return policy::unspecified;
-    
+
     } else{
         hi_log_error("Could not read gpu profile policy: {}", std::error_code{result.error()}.message());
         return policy::unspecified;

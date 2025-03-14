@@ -17,7 +17,7 @@ import hikogui_utility_exception;
 import hikogui_utility_type_traits;
 
 hi_warning_push();
-// "C26472: Don't use a static_cast for arithmetic", asserts use static_cast specifically for savety.
+// "C26472: Don't use a static_cast for arithmetic", asserts use static_cast specifically for safety.
 hi_warning_ignore_msvc(26472);
 
 export namespace hi { inline namespace v1 {

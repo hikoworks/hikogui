@@ -123,7 +123,7 @@ inline std::optional<uint32_t> gfx_surface::acquire_next_image_from_swapchain()
         return {frameBufferIndex};
 
     case vk::Result::eSuboptimalKHR:
-        // Techniqually we received an image here, but we treat it
+        // technically we received an image here, but we treat it
         // as a swapchain-lost which should reset the swapchain anyway,
         // so not rendering to the image should be okay.
         hi_log_info("acquireNextImageKHR() eSuboptimalKHR");
@@ -829,7 +829,7 @@ inline void gfx_surface::build_render_passes()
         vk::SubpassDescription{
             vk::SubpassDescriptionFlags(), // Subpass 0 Box
             vk::PipelineBindPoint::eGraphics,
-            0, // inputAttchmentReferencesCount
+            0, // inputAttachmentReferencesCount
             nullptr, // inputAttachmentReferences
             narrow_cast<uint32_t>(color_attachment_references.size()),
             color_attachment_references.data(),
@@ -840,7 +840,7 @@ inline void gfx_surface::build_render_passes()
         vk::SubpassDescription{
             vk::SubpassDescriptionFlags(), // Subpass 1 Image
             vk::PipelineBindPoint::eGraphics,
-            0, // inputAttchmentReferencesCount
+            0, // inputAttachmentReferencesCount
             nullptr, // inputAttachmentReferences
             narrow_cast<uint32_t>(color_attachment_references.size()),
             color_attachment_references.data(),

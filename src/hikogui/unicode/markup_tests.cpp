@@ -33,7 +33,7 @@ TEST_CASE(phrasing_regular)
     REQUIRE(tmp[2].phrasing() == hi::phrasing::regular);
 }
 
-TEST_CASE(phrasing_emphesis)
+TEST_CASE(phrasing_emphasis)
 {
     auto tmp = hi::apply_markup("a[e]b[.]c");
     REQUIRE(tmp == "abc");

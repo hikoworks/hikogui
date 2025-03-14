@@ -206,7 +206,7 @@ public:
                 auto const weight = total_weight != 0.0f ? item.weight / total_weight : 1.0f / (last - first);
                 r.weight += item.weight;
 
-                FIRST WE NEED TO SET THE PREFERRED WIDTH, BECUASE THE MINIMUM WIDTH MAY NEVER BE LARGER THAN THE PREFERRED WIDTH.
+                FIRST WE NEED TO SET THE PREFERRED WIDTH, BECAUSE THE MINIMUM WIDTH MAY NEVER BE LARGER THAN THE PREFERRED WIDTH.
 
                 auto const item_extra_preferred = std::min(preferred_todo, ceil_as(unit::pixels, extra_preferred * weight));
                 preferred_todo -= item_extra_preferred;

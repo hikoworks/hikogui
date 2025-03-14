@@ -18,7 +18,7 @@ import hikogui_image;
 
 export namespace hi { inline namespace v1 {
 
-/*! Pipeline for rendering simple box shaded quats.
+/*! Pipeline for rendering simple box shaded quads.
  */
 class gfx_pipeline_box : public gfx_pipeline {
 public:

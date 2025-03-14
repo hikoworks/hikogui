@@ -15,8 +15,8 @@ Text Style
 ----------
 
 A text-style is actually a set of styles for different text-categories, languages
-and scripts. The text-category is a mask, the language may be empty meaning a whildcard;
-and script may be 'zzzz' meaning a whildcard. This allows for at least one of the sub-styles
+and scripts. The text-category is a mask, the language may be empty meaning a wildcard;
+and script may be 'zzzz' meaning a wildcard. This allows for at least one of the sub-styles
 to be a fallback.
 
  - filter:
@@ -27,7 +27,7 @@ to be a fallback.
  - font variant (weight/italic)
  - font size
  - color
- - lines (under / over / strike throught).
+ - lines (under / over / strike through).
 
 Attributed Grapheme Cluster
 ---------------------------
@@ -42,14 +42,14 @@ Attributed Grapheme Cluster
 
  --------------- | --- | ------------------
   Regular        | \\r | The default, neutral phrasing
-  Emphesis       | \\e | Text with stressed emphesis. Spoken with clear articulation. Often shown in italic.
-  Strong         | \\s | Text with more importance, warning, urgend. Spoken louder. Often shown in bold.
+  Emphasis       | \\e | Text with stressed emphasis. Spoken with clear articulation. Often shown in italic.
+  Strong         | \\s | Text with more importance, warning, urgent. Spoken louder. Often shown in bold.
   Code           | \\c | A (sub-)expression  of computer-language-code, Often shown in a non-proportional font.
-  Abbreviation   | \\a | An abbreviation, shown in a different style to show there is a definition somehwere.
-  Italic         | \\i | Show text in italic, without the text beging "emphesis"
+  Abbreviation   | \\a | An abbreviation, shown in a different style to show there is a definition somewhere.
+  Italic         | \\i | Show text in italic, without the text begin "emphasis"
   Bold           | \\b | Show text in bold, without the text being "strong"
   Citation       | \\q | A citation of a title, or a quote.
-  Keyboard       | \\k | Used in help messages to show which key to press. 
+  Keyboard       | \\k | Used in help messages to show which key to press.
   Mark           | \\h | Used to highlight text, like using a physical yellow marker.
   Math           | \\m | A mathematical (sub-)expression. Often shown in a special italic math font.
   Unarticulated  | \\u | Unarticulated text. Often shown as regular underlined.

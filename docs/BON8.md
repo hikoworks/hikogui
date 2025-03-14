@@ -104,7 +104,7 @@ signing of data.
 
  - The unicode string MUST be in Normalization Form C (NFC).
  - Floating point negative zero, infinite and NaN MUST be encoded as binary32.
- - NaN should be encoded as a 0x7f800001. 
+ - NaN should be encoded as a 0x7f800001.
  - Floating point numbers that can be converted to binary32 without loss
    of precision or range MUST be encoded as binary32.
  - Strings, Integers, Arrays and Objects MUST be encoded with the least amount of bytes.
@@ -182,7 +182,7 @@ Examples
 {"": 1, "a": 2}
 
  - The first string is empty so it will be terminated.
- - The second string is followed directly by an integer so is natually terminated.
+ - The second string is followed directly by an integer so is naturally terminated.
 
 ```
 {2   eos  1    'a'  2

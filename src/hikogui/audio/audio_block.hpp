@@ -27,7 +27,7 @@ hi_export enum class audio_block_state { normal, silent, corrupt };
 hi_export class audio_block {
 public:
     /** A list of pointers to non-interleaved sample buffers.
-     * It is undefined behavour to modify the samples on input.
+     * It is undefined behavior to modify the samples on input.
      *
      * Each of the sample buffers is aligned to and a multiple of 4096 bytes in size
      * which will allow you to over-read or over-write with vector instructions

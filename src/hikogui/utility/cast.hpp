@@ -2,7 +2,7 @@
 // Distributed under the Boost Software License, Version 1.0.
 // (See accompanying file LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt)
 
-/** @file utility/cast.hpp Functions for casting values between types savely.
+/** @file utility/cast.hpp Functions for casting values between types safely.
  * @ingroup utility
  */
 
@@ -31,7 +31,7 @@ hi_warning_push();
 // This file implements narrow_cast().
 hi_warning_ignore_msvc(26472);
 // C26467: Converting from floating point to unsigned integral types results in non-portable code if the double/float has
-// a negative value. Use gsl::narrow_cast or gsl::naroow instead to guard against undefined behavior and potential data loss
+// a negative value. Use gsl::narrow_cast or gsl::narrow instead to guard against undefined behavior and potential data loss
 // (es.46).
 // This file implements narrow_cast().
 hi_warning_ignore_msvc(26467);
@@ -39,7 +39,7 @@ hi_warning_ignore_msvc(26467);
 // False positive
 hi_warning_ignore_msvc(26496);
 // C26466: Don't use static_cast downcast. A cast from a polymorphic type should use dynamic_cast (type.2)
-// Used in down_cast<>() specifically for doing this savely.
+// Used in down_cast<>() specifically for doing this safely.
 hi_warning_ignore_msvc(26466);
 // C26474: Don't cast between pointer types when the conversion could be implicit (type.1).
 // Since these functions are templates this happens.
@@ -209,7 +209,7 @@ template<std::integral Out, std::integral In>
 {
     static_assert(
         std::numeric_limits<In>::is_signed == std::numeric_limits<Out>::is_signed or not std::numeric_limits<In>::is_signed,
-        "wide_cast() is only allowed if the input is unsigned or if both input and output have the same signess.");
+        "wide_cast() is only allowed if the input is unsigned or if both input and output have the same signedness.");
 
     static_assert(
         std::numeric_limits<In>::digits <= std::numeric_limits<Out>::digits,
@@ -228,7 +228,7 @@ template<std::integral Out, std::integral In>
  *  - Up to uint32_t, int32_t can be wide_cast() to double.
  *
  * @ingroup utility
- * @tparam Out An float type that can hold all values of the input type without loss of precission.
+ * @tparam Out An float type that can hold all values of the input type without loss of precision.
  * @param rhs The integer input value.
  * @return The value converted to a wider float type.
  */
@@ -680,7 +680,7 @@ template<typename T>
 }
 
 /** Create a mask from a boolean value.
- * 
+ *
  * @param v The boolean value to represent as a mask
  * @return A value which bit representations are all '1' when @a v == `true`, or
  *         all '0' when @a v == `false`.
@@ -714,7 +714,7 @@ template<typename T>
  * This function is used to cast a buffer to a type with an implicit lifetime.
  * For example when mapping a font-file into memory and casting parts of the
  * memory to easy to use structures.
- * 
+ *
  * @note Do not access the buffer during the implicit-lifetime of the returned
  *       value, this would be undefined behavior.
  * @note This function expects mmap() and other memory mapping functions to

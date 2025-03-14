@@ -17,7 +17,7 @@ hi_export_module(hikogui.GFX : gfx_pipeline_tone_mapper_intf);
 
 hi_export namespace hi { inline namespace v1 {
 
-/*! Pipeline for rendering simple flat shaded quats.
+/*! Pipeline for rendering simple flat shaded quads.
  */
 class gfx_pipeline_tone_mapper : public gfx_pipeline {
 public:

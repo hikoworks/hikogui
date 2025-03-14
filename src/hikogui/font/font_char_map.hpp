@@ -128,7 +128,7 @@ public:
         while (it != _map.end()) {
             hi_axiom(prev_it->end_code_point < it->start_code_point());
 
-            if (mergable(*prev_it, *it)) {
+            if (mergeable(*prev_it, *it)) {
                 auto const merged_count = std::min(prev_it->count() + it->count(), entry_type::max_count);
                 auto const move_count = merged_count - prev_it->count();
                 hi_axiom(move_count <= entry_type::max_count);
@@ -161,7 +161,7 @@ public:
     /** Find a glyph for a code_point.
      *
      * @param code_point The code-point to find in the character map.
-     * @return The corrosponding glyph found representing the code-point, or an empty glyph if not found.
+     * @return The corresponding glyph found representing the code-point, or an empty glyph if not found.
      */
     [[nodiscard]] inline glyph_id find(char32_t code_point) const noexcept
     {
@@ -213,7 +213,7 @@ private:
             return narrow_cast<uint16_t>(start_glyph + _count);
         }
 
-        [[nodiscard]] constexpr friend bool mergable(entry_type const& lhs, entry_type const& rhs) noexcept
+        [[nodiscard]] constexpr friend bool mergeable(entry_type const& lhs, entry_type const& rhs) noexcept
         {
             return lhs.end_code_point + 1 == rhs.start_code_point() and lhs.end_glyph() + 1 == rhs.start_glyph;
         }

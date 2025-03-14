@@ -12,7 +12,7 @@
 
 // All the HI_HAS_* macros tell us if the compiler will generate code with these instructions.
 // Therefor we can use intrinsics for these instructions without checking the cpu-id.
-// Which instrinsics are available is handled by a different macro.
+// Which intrinsics are available is handled by a different macro.
 
 #if defined(HI_GENERIC)
 // Nothing defined when generic.

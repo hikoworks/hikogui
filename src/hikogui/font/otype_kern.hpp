@@ -82,10 +82,10 @@ otype_kern_v0_find(std::span<std::byte const> bytes, glyph_id first_glyph_id, gl
         auto const entry_coverage = *entry.coverage;
 
         auto const cross_stream = to_bool(entry_coverage & 0x0004);
-        hi_check(not cross_stream, "'kern' this font contains cross-stream kerning which is unsuported.");
+        hi_check(not cross_stream, "'kern' this font contains cross-stream kerning which is unsupported.");
 
         auto const format = entry_coverage >> 8;
-        hi_check(format == 0, "'kern' this font contains a unsuported subtable.");
+        hi_check(format == 0, "'kern' this font contains a unsupported subtable.");
 
         auto const kerning = otype_kern_sub0_find(offset, bytes, first_glyph_id, second_glyph_id, em_scale);
         if (kerning) {

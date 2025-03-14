@@ -54,7 +54,7 @@ public:
         return extent2{tmp};
     }
 
-    /** Convert a extent to its array_type-nummeric_array.
+    /** Convert a extent to its array_type-numeric_array.
      */
     [[nodiscard]] constexpr explicit operator array_type() const noexcept
     {

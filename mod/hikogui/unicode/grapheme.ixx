@@ -315,7 +315,7 @@ struct grapheme {
      * @param default_script The
      * @return The script for the starter code-point retrieved from the Unicode
      *         Datastarter; or the @a default_script if the starter-script is
-     *         common or inherinted.
+     *         common or inherited.
      */
     [[nodiscard]] constexpr iso_15924 starter_script(iso_15924 default_script) const noexcept
     {
@@ -335,7 +335,7 @@ struct grapheme {
     /** Set the script of the grapheme.
      *
      * @param rhs The new script for the grapheme, if the starter-script is
-     *            common or inherinted.
+     *            common or inherited.
      */
     constexpr void set_script(iso_15924 rhs) noexcept
     {

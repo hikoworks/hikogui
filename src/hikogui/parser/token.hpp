@@ -18,7 +18,7 @@ hi_export namespace hi { inline namespace v1 {
 hi_export struct token {
     enum class kind_type : uint8_t {
         none,
-        error_unexepected_character,
+        error_unexpected_character,
         error_invalid_digit,
         error_incomplete_exponent,
         error_incomplete_string,
@@ -41,7 +41,7 @@ hi_export struct token {
     // clang-format off
     constexpr static auto kind_type_metadata = enum_metadata{
         kind_type::none, "none",
-        kind_type::error_unexepected_character, "error:unexpected character",
+        kind_type::error_unexpected_character, "error:unexpected character",
         kind_type::error_invalid_digit, "error:invalid digit",
         kind_type::error_incomplete_exponent, "error:incomplete exponent",
         kind_type::error_incomplete_string, "error:incomplete string",
@@ -63,7 +63,7 @@ hi_export struct token {
     // clang-format on
 
     constexpr static auto none = kind_type::none;
-    constexpr static auto error_unexepected_character = kind_type::error_unexepected_character;
+    constexpr static auto error_unexpected_character = kind_type::error_unexpected_character;
     constexpr static auto error_invalid_digit = kind_type::error_invalid_digit;
     constexpr static auto error_incomplete_exponent = kind_type::error_incomplete_exponent;
     constexpr static auto error_incomplete_string = kind_type::error_incomplete_string;

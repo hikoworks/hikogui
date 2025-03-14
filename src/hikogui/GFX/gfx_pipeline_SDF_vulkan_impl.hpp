@@ -98,7 +98,7 @@ inline std::vector<vk::PipelineColorBlendAttachmentState> gfx_pipeline_SDF::getP
          vk::BlendOp::eAdd, // colorBlendOp
          vk::BlendFactor::eOne, // srcAlphaBlendFactor
          has_dual_source_blend ? vk::BlendFactor::eOneMinusSrc1Alpha : vk::BlendFactor::eOneMinusSrcAlpha, // dstAlphaBlendFactor
-         vk::BlendOp::eAdd, // aphaBlendOp
+         vk::BlendOp::eAdd, // alphaBlendOp
          vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB |
              vk::ColorComponentFlagBits::eA}};
 }
@@ -357,7 +357,7 @@ inline void gfx_pipeline_SDF::device_shared::add_glyph_to_atlas(hi::font_id font
         // Draw the glyph into the staging buffer. Then flush the buffer to the
         // GPU. The actual uploading to the atlas will be done on the main
         // thread. The draw_path is translated by 1.0f in x and y since we are
-        // adding a border. 
+        // adding a border.
         fill(staging_glyph_image, translate2{1.0f, 1.0f} * draw_path);
         {
             auto const _ = std::scoped_lock(gfx_system_mutex);
@@ -539,7 +539,7 @@ inline void gfx_pipeline_SDF::device_shared::buildAtlas()
         0.0, // minLod
         0.0, // maxLod
         vk::BorderColor::eFloatTransparentBlack,
-        VK_FALSE // unnormazlizedCoordinates
+        VK_FALSE // unnormalizedCoordinates
     };
     atlasSampler = device.createSampler(samplerCreateInfo);
     device.setDebugUtilsObjectNameEXT(atlasSampler, "sdf-pipeline atlas sampler");

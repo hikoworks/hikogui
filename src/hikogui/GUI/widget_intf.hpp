@@ -118,7 +118,7 @@ public:
     }
 
     /** Send a event to the window.
-     * 
+     *
      * @param event The event to send to the window.
      * @return True when the event was handled by the window.
      */
@@ -145,7 +145,7 @@ public:
     void request_redraw() const noexcept;
 
     /** Request the window to be fully redrawn.
-     * 
+     *
      * Use this function when a widget has changed in such a way that it
      * affects the window outside the area of the widget.
      */
@@ -246,7 +246,7 @@ public:
             set_phase(value ? widget_phase::active : widget_phase::enabled);
         }
     }
-    
+
     [[nodiscard]] virtual bool focus() const noexcept
     {
         return (style.pseudo_class() & style_pseudo_class::focus) != style_pseudo_class{};
@@ -337,7 +337,7 @@ public:
      */
     [[nodiscard]] virtual unit::pixels_f height(bool minimum) const
     {
-        assert(std::holds_alternative<unit::pixles_f>(style.height);
+        assert(std::holds_alternative<unit::pixels_f>(style.height);
         return std::get<unit::pixels_f>(style.height);
     }
 
@@ -364,7 +364,7 @@ public:
      * @note May be overriden when more accurate alignment is required, or
      *       when embedding widgets.
      * @param height The height of the widget during layout.
-     * @returm The location of the baseline.
+     * @return The location of the baseline.
      */
     [[nodiscard]] virtual unit::pixels_f baseline(unit::pixels_f height) const
     {
@@ -373,7 +373,7 @@ public:
             return height - style.cap_height;
         case vertical_alignment::middle:
             return height * 0.5f - style.cap_height * 0.5f;
-        case vertical_alignemnt::bottom:
+        case vertical_alignment::bottom:
             return unit::pixels(0.0f);
         }
         std::unreachable();

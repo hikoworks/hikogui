@@ -27,7 +27,7 @@ class matrix3;
 [[nodiscard]] constexpr matrix3 operator*(translate3 const& lhs, scale3 const& rhs) noexcept;
 [[nodiscard]] constexpr matrix3 operator*(translate3 const& lhs, rotate3 const& rhs) noexcept;
 
-/** A 2D or 3D homogenius matrix for transforming homogenious vectors and points.
+/** A 2D or 3D homogeneous matrix for transforming homogeneous vectors and points.
  *
  * This matrix is in column major order. It is implemented as 4 columns made
  * from a `f32x4` numeric-array.
@@ -239,7 +239,7 @@ public:
         _col3 = one.xywz();
     }
 
-    /** Convert a point to its f32x4-nummeric_array.
+    /** Convert a point to its f32x4-numeric_array.
      */
     [[nodiscard]] constexpr explicit operator std::array<f32x4, 4>() const noexcept
     {
@@ -319,7 +319,7 @@ public:
         return {_col0 * rhs.xxxx() + _col1 * rhs.yyyy() + _col2 * rhs.zzzz() + _col3 * rhs.wwww()};
     }
 
-    
+
     /** Matrix transpose.
      */
     [[nodiscard]] friend constexpr matrix3 transpose(matrix3 const& rhs) noexcept

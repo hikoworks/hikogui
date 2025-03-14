@@ -35,10 +35,10 @@ enum class phrasing : uint8_t {
      */
     regular = 0,
 
-    /** Emphesised text; spoken as if the text is special importance, significant or promonent.
+    /** Emphasised text; spoken as if the text is special importance, significant or promonent.
      * Often formatted in italic.
      */
-    emphesis = 1,
+    emphasis = 1,
 
     /** Strong text; spoken louder, as if the text is not to be missed.
      * Often formatted in bold.
@@ -111,7 +111,7 @@ enum class phrasing : uint8_t {
 // clang-format off
 constexpr auto phrasing_metadata = enum_metadata{
     phrasing::regular, "regular",
-    phrasing::emphesis, "emphesis",
+    phrasing::emphasis, "emphasis",
     phrasing::strong, "strong",
     phrasing::code, "code",
     phrasing::abbreviation, "abbreviation",
@@ -133,7 +133,7 @@ constexpr auto phrasing_metadata = enum_metadata{
 {
     switch (c) {
     case 'r': return phrasing::regular;
-    case 'e': return phrasing::emphesis;
+    case 'e': return phrasing::emphasis;
     case 's': return phrasing::strong;
     case 'c': return phrasing::code;
     case 'a': return phrasing::abbreviation;
@@ -155,7 +155,7 @@ constexpr auto phrasing_metadata = enum_metadata{
 
 enum class phrasing_mask : uint16_t {
     regular = 1 << std::to_underlying(phrasing::regular),
-    emphesis = 1 << std::to_underlying(phrasing::emphesis),
+    emphasis = 1 << std::to_underlying(phrasing::emphasis),
     strong = 1 << std::to_underlying(phrasing::strong),
     code = 1 << std::to_underlying(phrasing::code),
     abbreviation = 1 << std::to_underlying(phrasing::abbreviation),
@@ -170,7 +170,7 @@ enum class phrasing_mask : uint16_t {
     warning = 1 << std::to_underlying(phrasing::warning),
     error = 1 << std::to_underlying(phrasing::error),
 
-    all = regular | emphesis | strong | code | abbreviation | quote | keyboard | highlight | math | example | unarticulated |
+    all = regular | emphasis | strong | code | abbreviation | quote | keyboard | highlight | math | example | unarticulated |
         title | success | warning | error
 };
 

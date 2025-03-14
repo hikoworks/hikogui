@@ -2,7 +2,7 @@
 // Distributed under the Boost Software License, Version 1.0.
 // (See accompanying file LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt)
 
-/** @file utility/cast.hpp Functions for casting values between types savely.
+/** @file utility/cast.hpp Functions for casting values between types safely.
  * @ingroup utility
  */
 
@@ -39,7 +39,7 @@ hi_warning_ignore_msvc(26467);
 // False positive
 hi_warning_ignore_msvc(26496);
 // C26466: Don't use static_cast downcast. A cast from a polymorphic type should use dynamic_cast (type.2)
-// Used in down_cast<>() specifically for doing this savely.
+// Used in down_cast<>() specifically for doing this safely.
 hi_warning_ignore_msvc(26466);
 // C26474: Don't cast between pointer types when the conversion could be implicit (type.1).
 // Since these functions are templates this happens.

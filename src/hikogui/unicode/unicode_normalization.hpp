@@ -316,7 +316,7 @@ unicode_normalize(std::u32string_view text, unicode_normalize_config config = un
 }
 
 /** Check if the string of code-points is a single grapheme in NFC normal form.
- * 
+ *
  * @param it An iterator pointing to the first code-point.
  * @param last An iterator pointing beyond the last code-point.
  */
@@ -327,7 +327,7 @@ template<std::input_iterator It, std::sentinel_for<It> ItEnd>
         // Needs to have at least one code-point.
         return false;
     }
-    
+
     if (std::distance(it, last) > 31) {
         // A maximum 30 marks is allowed after the starter.
         return false;
@@ -338,7 +338,7 @@ template<std::input_iterator It, std::sentinel_for<It> ItEnd>
         return false;
     }
 
-    // Check if each consequtive code-point is a mark (CCC != 0).
+    // Check if each consecutive code-point is a mark (CCC != 0).
     // And that the CCC is ordered by numeric value.
     auto max_ccc = uint8_t{1};
     for (; it != last; ++it) {

@@ -77,7 +77,7 @@ TEST(simd, Compare)
     HI_ASSERT_SIMD_EQ(tmp, f32x4(2.0f, 3.0f, 4.0f, 5.0f));
 }
 
-TEST(simd, Arithmatic)
+TEST(simd, arithmetic)
 {
     hilet tmp1 = f32x4{9.0f, 6.0f, 4.0f, 14.0f};
     hilet tmp2 = f32x4{3.0f, -2.0f, 8.0f, 7.0f};

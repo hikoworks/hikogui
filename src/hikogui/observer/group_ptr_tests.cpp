@@ -7,11 +7,11 @@
 
 hi_warning_push();
 // C26414: Move, copy, reassign or reset a local smart pointer (r.5)
-// We are testing a smart-pointer-like (group_ptr), so we hit this warning explicitely.
+// We are testing a smart-pointer-like (group_ptr), so we hit this warning explicitly.
 hi_warning_ignore_msvc(26414);
 
 TEST_SUITE(group_ptr_suite) {
-    
+
 class A : public hi::enable_group_ptr<A> {
 public:
     A(int value) noexcept : value(value) {}

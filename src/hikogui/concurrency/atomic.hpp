@@ -14,7 +14,7 @@ hi_export_module(hikogui.concurrency.atomic);
 
 hi_warning_push();
 // C26403: Reset or explicitly delete and owner<T> pointer '...' (r.3).: ...
-// The static analyser is very confused about the get_or_make() function.
+// The static analyzer is very confused about the get_or_make() function.
 hi_warning_ignore_msvc(26403);
 
 hi_export namespace hi::inline v1 {
