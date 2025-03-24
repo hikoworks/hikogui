@@ -1,0 +1,26 @@
+
+#pragma once
+
+#include "../macros.hpp"
+#include <cstdint>
+
+hi_export_module(hikogui.layout : baseline_priority);
+
+hi_export namespace hi::inline v1::layout {
+
+/**
+ * @brief Enumeration representing the priority levels for baselines.
+ *
+ * The baseline_priority enumeration defines the priority levels for baselines.
+ * Each priority level represents a different alignment preference for widgets
+ * when negotiating the baseline position.
+ */
+enum class baseline_priority : uint8_t {
+    none = 0, //< No priority.
+    label = 1, //< Priority for labels.
+    small_widget = 10, //< Priority for small widgets.
+    large_widget = 100, //< Priority for large widgets.
+};
+
+
+}

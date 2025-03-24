@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "baseline_priority.hpp"
 #include "../geometry/geometry.hpp"
 #include "../utility/utility.hpp"
 #include "../macros.hpp"
@@ -15,67 +16,43 @@ hi_export_module(hikogui.layout.shape);
 hi_export namespace hi::inline v1::layout {
 
 struct shape {
+    /** Rectangle of the widget.
+     * 
+     * The rectangle is in window coordinates.
+     */
     aarectangle rectangle;
-    unit::pixels_f baseline;
+
+    /** Clipping rectangle.
+     * 
+     * The widget is only allowed to draw inside this rectangle.
+     * The clipping rectangle is in window coordinates.
+     */
+    aarectangle clip_rectangle;
+
+    /** The size of the window.
+     * 
+     * This is used when creating overlay widgets, to determine the size and
+     * location of the overlay.
+     */
+    extent2 window_size;
+
+    /** The elevation of the widget above the window.
+     * 
+     * The elevation is used to determine the order of drawing widgets.
+     */
+    float elevation = 0.0f;
+
+    /** The baseline of the widget.
+     * 
+     * The baseline is used to align text in the widget.
+     * The baseline is the y-coordinate on the window.
+     */
+    float baseline;
 
     /** The priority of the baseline.
      * This value is used for children to inherit the baseline of the parent
      */
-    baseline_priority baseline_priority = baseline_priority::none;
-
-    shape() noexcept = default;
-    shape(shape const&) noexcept = default;
-    shape(shape&&) noexcept = default;
-    shape& operator=(shape const&) noexcept = default;
-    shape& operator=(shape&&) noexcept = default;
-
-    explicit shape(aarectangle rectangle, hi::baseline baseline = {}) noexcept : rectangle(rectangle), baseline(baseline) {}
-
-    [[nodiscard]] float x() const noexcept
-    {
-        return rectangle.x();
-    }
-
-    [[nodiscard]] float y() const noexcept
-    {
-        return rectangle.y();
-    }
-
-    [[nodiscard]] extent2 size() const noexcept
-    {
-        return rectangle.size();
-    }
-
-    [[nodiscard]] float width() const noexcept
-    {
-        return rectangle.width();
-    }
-
-    [[nodiscard]] float height() const noexcept
-    {
-        return rectangle.height();
-    }
-
-    [[nodiscard]] float left() const noexcept
-    {
-        return rectangle.left();
-    }
-
-    [[nodiscard]] float right() const noexcept
-    {
-        return rectangle.right();
-    }
-
-    [[nodiscard]] float bottom() const noexcept
-    {
-        return rectangle.bottom();
-    }
-
-    [[nodiscard]] float top() const noexcept
-    {
-        return rectangle.top();
-    }
+    hi::layout::baseline_priority baseline_priority = baseline_priority::none;
 };
 
 } // namespace v1
-} // namespace hi::v1

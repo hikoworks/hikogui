@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "baseline_priority.hpp"
 #include "../units/units.hpp"
 #include "../utility/utility.hpp"
 #include "../macros.hpp"
@@ -16,124 +17,46 @@ hi_export namespace hi::inline v1::layout {
  *
  */
 struct constraints {
-    unit::pixels_f width = {};
-    unit::pixels_f height = {};
-    float width_weight = 0.0f;
-    float height_weight = 0.0f;
-    unit::pixels_f left = {};
-    unit::pixels_f right = {};
-    unit::pixels_f top = {};
-    unit::pixels_f bottom = {};
-    unit::pixels_f baseline_offset = {};
-    baseline_priority_type baseline_priority = baseline_priority_type::none;
+    extent2 size = {};
+    hi::margins margins = {};
+    float baseline_offset = {};
+    hi::layout::baseline_priority baseline_priority = baseline_priority_type::none;
     vertical_alignment vertical_alignment = vertical_alignment::middle;
+    bool expand_width = false;
+    bool expand_height = false;
     
-    /**
-     * @brief Enumeration representing the priority levels for baselines.
-     *
-     * The baseline_priority enumeration defines the priority levels for baselines.
-     * Each priority level represents a different alignment preference for widgets
-     * when negotiating the baseline position.
-     */
-    enum class baseline_priority_type : unsigned int {
-        none = 0, //< No priority.
-        label = 1, //< Priority for labels.
-        small_widget = 10, //< Priority for small widgets.
-        large_widget = 100, //< Priority for large widgets.
-    };
-
     constexpr constraints() noexcept = default;
     constexpr constraints(constraints const&) noexcept = default;
     constexpr constraints(constraints&&) noexcept = default;
     constexpr constraints& operator=(constraints const&) noexcept = default;
     constexpr constraints& operator=(constraints&&) noexcept = default;
 
-    /** Construct layout constraints.
-     *
-     * @param width The width of the widget.
-     * @param height The height of the widget.
-     * @param width_weight The weight used to distribute extra width. When the
-     *                     width has a weight of 0.0f, the width of the widget
-     *                     will be the minimum width.
-     * @param height_weight The weight used to distribute extra height. When the
-     *                      height has a weight of 0.0f, the height of the widget
-     *                      will be the minimum height.
-     * @param left The left margin of the widget.
-     * @param right The right margin of the widget.
-     * @param top The top margin of the widget.
-     * @param bottom The bottom margin of the widget.
-     * @param baseline_offset The baseline offset of the widget.
-     * @param baseline_priority The priority of the baseline.
-     * @param vertical_alignment The vertical alignment of the widget.
-     */
     constexpr constraints(
-        unit::pixels_f width,
-        unit::pixels_f height,
-        float width_weight,
-        float height_weight,
-        unit::pixels_f left,
-        unit::pixels_f right,
-        unit::pixels_f top,
-        unit::pixels_f bottom,
-        unit::pixels_f baseline_offset,
-        baseline_priority_type baseline_priority,
-        vertical_alignment vertical_alignment) noexcept :
-        width(width),
-        height(height),
-        width_weight(width_weight),
-        height_weight(height_weight),
-        left(left),
-        right(right),
-        top(top),
-        bottom(bottom),
+        extent2 size,
+        bool expand_width,
+        bool expand_height,
+        hi::margins margins,
+        float baseline_offset,
+        hi::layout::baseline_priority baseline_priority,
+        hi::vertical_alignment vertical_alignment) noexcept :
+        size(size),
+        margins(margins),
         baseline_offset(baseline_offset),
         baseline_priority(baseline_priority),
-        vertical_alignment(vertical_alignment)
-    {
-    }
-
-    constexpr constraints(
-        extent2 size,
-        margins margins,
-        unit::pixels_f baseline_offset,
-        baseline_priority_type baseline_priority,
-        vertical_alignment vertical_alignment) noexcept :
-        constraints(
-            unit::pixels(size.width()),
-            unit::pixels(size.height()),
-            0.0f,
-            0.0f,
-            unit::pixels(margins.left()),
-            unit::pixels(margins.right()),
-            unit::pixels(margins.top()),
-            unit::pixels(margins.bottom()),
-            baseline_offset,
-            baseline_priority,
-            vertical_alignment)
+        vertical_alignment(vertical_alignment),
+        expand_width(expand_width),
+        expand_height(expand_height)
         {}
 
     constexpr constraints(
         extent2 size,
-        extent2 weight,
-        margins margins,
-        unit::pixels_f baseline_offset,
-        baseline_priority_type baseline_priority) noexcept :
-        constraints(
-            unit::pixels(size.width()),
-            unit::pixels(size.height()),
-            weight.width(),
-            weight.height(),
-            unit::pixels(margins.left()),
-            unit::pixels(margins.right()),
-            unit::pixels(margins.top()),
-            unit::pixels(margins.bottom()),
-            baseline_offset,
-            baseline_priority,
-            vertical_alignment::middle)
+        hi::margins margins,
+        float baseline_offset,
+        hi::layout::baseline_priority baseline_priority,
+        hi::vertical_alignment vertical_alignment) noexcept :
+        constraints(size, false, false, margins, baseline_offset, baseline_priority, vertical_alignment)
         {}
-
     
-
     /** Merge the constraints of two widgets in a row.
      *
      * All horizontal constraints are added together. All vertical constraints
@@ -166,14 +89,15 @@ struct constraints {
         }();
 
         return constraints{
-            a.width + b.width,
-            std::max(a.height, b.height),
-            a.width_weight + b.width_weight,
-            std::max(a.height_weight, b.height_weight),
-            a.left + b.left,
-            a.right + b.right,
-            std::max(a.top, b.top),
-            std::max(a.bottom, b.bottom),
+            extent2{a.size.width() + b.size.width(), std::max(a.size.height(), b.size.height())},
+            a.expand_width | b.expand_width,
+            a.expand_height | b.expand_height,
+            hi::margins{
+                a.margins.left() + b.margins.left(),
+                std::max(a.margins.bottom(), b.margins.bottom()),
+                a.margins.right() + b.margins.right(),
+                std::max(a.margins.top(), b.margins.top()),
+            },
             new_baseline_offset,
             max(a.baseline_priority, b.baseline_priority),
             a.vertical_alignment    
@@ -192,14 +116,15 @@ struct constraints {
     [[nodiscard]] constexpr friend constraints merge_column(constraints const& a, constraints const& b) noexcept
     {
         return constraints{
-            std::max(a.width, b.width),
-            a.height + b.height,
-            std::max(a.width_weight, b.width_weight),
-            a.height_weight + b.height_weight,
-            std::max(a.left, b.left),
-            std::max(a.right, b.right),
-            a.top + b.top,
-            a.bottom + b.bottom,
+            extent2{std::max(a.size.width(), b.size.width()), a.size.height() + b.size.height()},
+            a.expand_width | b.expand_width,
+            a.expand_height | b.expand_height,
+            hi::margins{
+                std::max(a.margins.left(), b.margins.left()),
+                a.margins.bottom() + b.margins.bottom(),
+                std::max(a.margins.right(), b.margins.right()),
+                a.margins.top() + b.margins.top(),
+            },
             unit::pixels_f{},
             baseline_priority_type::none,
             vertical_alignment::middle    

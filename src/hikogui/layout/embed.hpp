@@ -36,37 +36,41 @@ public:
         return *this;
     }
 
+    constexpr embed &set_elevation_offset(float offset) noexcept
+    {
+        _elevation_offset = offset;
+        return *this;
+    }
+
     template<typename F>
     [[nodiscard]] constexpr constraints get_constraints(F const& f) noexcept
         requires std::is_invocable_r_v<constraints, F>
     {
         _child_constraints = f();
 
-        auto const child_left_padding = max(_left_padding, _child_constraints.left);
-        auto const child_right_padding = max(_right_padding, _child_constraints.right);
-        auto const child_top_padding = max(_top_padding, _child_constraints.top);
-        auto const child_bottom_padding = max(_bottom_padding, _child_constraints.bottom);
+        auto const child_padding = max(_padding, _child_constraints.margins);
 
         auto r = _child_constraints;
-        r.width += child_left_padding + child_right_padding;
-        r.height += child_top_padding + child_bottom_padding;
-        r.left = _left_margin;
-        r.right = _right_margin;
-        r.top = _top_margin;
-        r.bottom = _bottom_margin;
+        r.width += child_padding.horizontal();
+        r.height += child_padding.vertical();
+        r.margins = _margins;
 
-        switch (r._vertical_alignment) {
+        switch (r.vertical_alignment) {
         case vertical_alignment::top:
-            r.baseline_offset += -child_top_padding;
+            r.baseline_offset += -child_padding.top();
             break;
         case vertical_alignment::middle:
-            r.baseline_offset += (-child_top_padding + child_bottom_padding) * 0.5f;
+            r.baseline_offset += (-child_padding.top() + child_padding.bottom()) * 0.5f;
             break;
         case vertical_alignment::bottom:
-            r.baseline_offset += child_bottom_padding;
+            r.baseline_offset += child_padding.bottom();
             break;
         }
 
+        // The parent will likely have a higher priority than the child, when
+        // it is embedding the child with extra padding. This will make low
+        // priority labels in neighboring cells align with the baseline of
+        // a larger widget with a label in a different position.
         if (_priority) {
             r.baseline_priority = *_priority;
         }
@@ -74,53 +78,38 @@ public:
     }
 
     template<typename F>
-    constexpr void set_layout(shape const& shape, F const& f) noexcept
+    constexpr void set_layout(layout::shape const& shape, F const& f) noexcept
         requires std::is_invocable_r_v<void, F, shape>
     {
-        auto const child_left_padding = max(_left_padding, _child_constraints.left);
-        auto const child_right_padding = max(_right_padding, _child_constraints.right);
-        auto const child_top_padding = max(_top_padding, _child_constraints.top);
-        auto const child_bottom_padding = max(_bottom_padding, _child_constraints.bottom);
-
-        auto const child_width = _child_constraints.width - child_left_padding - child_right_padding;
-        auto const child_height = _child_constraints.height - child_top_padding - child_bottom_padding;
-
-        auto const child_left = shape.left + child_left_padding;
-        auto const child_bottom = shape.bottom + child_bottom_padding;
+        auto child_shape = layout::shape{};
+        child_shape.rectangle = shape.rectangle - max(_padding, _child_constraints.margins);
+        child_shape.clipping_rectangle = intersect(shape.clipping_rectangle, child_shape.rectangle + _child_constraints.margins);
+        child_shape.elevation = shape.elevation + _elevation_offset;
         
-        auto const baseline_offset = [&] {
-            if (shape.baseline_priority > _child_constraints.baseline_priority) {
-                return shape.baseline_offset;
-
-            } else {
+        child_shape.baseline = [&] {
+            if (shape.baseline_priority <= _child_constraints.baseline_priority) {
                 switch (_child_constraints._vertical_alignment) {
                 case vertical_alignment::top:
-                    return shape.bottom + child_bottom_padding + _child_constraints.baseline_offset;
+                    return child_shape.rectangle.top() + _child_constraints.baseline_offset;
                 case vertical_alignment::middle:
-                    return shape.bottom + child_bottom_padding + _child_constraints.baseline_offset + child_height * 0.5f;
+                    return child_shape.rectangle.middle() + _child_constraints.baseline_offset;
                 case vertical_alignment::bottom:
-                    return _child_constraints.baseline_offset;
+                    return child_shape.rectangle.bottom() + _child_constraints.baseline_offset;
                 }
             }
         }();
 
-        auto const child_shape = shape{aarectangle{point2{child_left, child_bottom}, extent2{child_width, child_height}}};
-
-        f(shape.translate(child_left, child_top, child_width, child_height));
+        return f(child_shape);
     }
 
-
 private:
-    unit::pixels_f _left_padding = {};
-    unit::pixels_f _right_padding = {};
-    unit::pixels_f _top_padding = {};
-    unit::pixels_f _bottom_padding = {};
-    unit::pixels_f _left_margin = {};
-    unit::pixels_f _right_margin = {};
-    unit::pixels_f _top_margin = {};
-    unit::pixels_f _bottom_margin = {};
+    hi::margins _margins = {};
+    hi::margins _padding = {};
+    std::optional<baseline_priority> _priority = {};
+    float _elevation_offset = 0.0f;
 
     constraints _child_constraints;
+    shape _child_shape;
 };
 
 }

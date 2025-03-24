@@ -5,7 +5,6 @@
 #pragma once
 
 #include "hitbox.hpp"
-#include "widget_layout.hpp"
 #include "widget_id.hpp"
 #include "widget_state.hpp"
 #include "keyboard_focus_group.hpp"
@@ -327,132 +326,39 @@ public:
         }
     }
 
-    /** Get the height of a widget.
+    /** Get the constraints of the widget.
      *
-     * This by default returns the style's height of the widget.
-     *
-     * @param minimum When false this function returns the preferred height, when
-     *                true this function returns the minimum height.
-     * @return The height in pixels.
+     * Although this function is const, it may update the internal state of the
+     * widget. This is because `set_layout()` may need this information to
+     * properly calculate the shape of the widget's internals. The best way to
+     * do this is by making the layout-engine/shaper member variable mutable.
      */
-    [[nodiscard]] virtual unit::pixels_f height(bool minimum) const
-    {
-        assert(std::holds_alternative<unit::pixles_f>(style.height);
-        return std::get<unit::pixels_f>(style.height);
-    }
-
-    /** Get the minimum width for a certain height.
-     *
-     * The height for widgets in a row are calculated first and may be
-     * larger than the minimum and preferred height of the widget itself.
-     * This allows a widget to be more precise with its width.
-     *
-     * @param height The height to calculate the minimum width for.
-     * @return The width in pixels.
-     */
-    [[nodiscard]] virtual unit::pixels_f width(unit::pixels_f height) const
-    {
-        assert(std::holds_alternative<unit::pixels_f>(style.width));
-        return std::get<unit::pixels_f>(style.width);
-    }
-
-    /** The default baseline for this widget at a certain height.
-     *
-     * The default baseline is based on the vertical alignment and cap-height
-     * of the text.
-     *
-     * @note May be overriden when more accurate alignment is required, or
-     *       when embedding widgets.
-     * @param height The height of the widget during layout.
-     * @returm The location of the baseline.
-     */
-    [[nodiscard]] virtual unit::pixels_f baseline(unit::pixels_f height) const
-    {
-        switch (style.vertical_alignment) {
-        case vertical_alignment::top:
-            return height - style.cap_height;
-        case vertical_alignment::middle:
-            return height * 0.5f - style.cap_height * 0.5f;
-        case vertical_alignemnt::bottom:
-            return unit::pixels(0.0f);
-        }
-        std::unreachable();
-    }
-
-    /** The priority for selecting baselines between widgets in a row.
-     *
-     * @return baseline priority, higher value is higher priority.
-     */
-    [[nodiscard]] virtual int baseline_priority() const
-    {
-        return style.baseline_priority;
-    }
-
-    /** The margins around this widget.
-     *
-     * @return The margins that needs to be put around a widget.
-     *         Some widgets like labels may actually draw into their margin,
-     *         so this is important.
-     */
-    [[nodiscard]] virtual hi::margins margins() const
-    {
-        return style.margins;
-    }
-
-    /** The weight for extra height distribution.
-     *
-     * @return The weight used to distribute extra height.
-     * @retval 0.0 This widget should not get extra height distributed to it.
-     */
-    [[nodiscard]] virtual float height_weight() const
-    {
-        return style.height_weight;
-    }
-
-    /** The weight for extra width distribution.
-     *
-     * @return The weight used to distribute extra width.
-     * @retval 0.0 This widget should not get extra width distributed to it.
-     */
-    [[nodiscard]] virtual float width_weight() const
-    {
-        return style.width_weight;
-    }
+    [[nodiscard]] virtual layout::constraints get_constraints() const noexcept = 0;
 
     /** Update the internal layout of the widget.
-     * This function is called when the size of this widget must change, or if any of the
-     * widget request a re-layout.
      *
-     * This function may be used for expensive calculations, such as geometry calculations,
-     * which should only be done when the data or sizes change; it should cache these calculations.
+     * This function is called when the size or position of this widget has
+     * changed.
      *
-     * @post This function will change what is returned by `widget::size()` and the transformation
-     *       matrices.
-     * @param context The layout for this child.
+     * This function may be used for expensive calculations, such as geometry
+     * calculations, which should only be done when the data or style changes;
+     * a widget should cache these calculations.
+     *
+     * @param shape The shape of the child.
      */
-    virtual void set_layout(widget_layout const& context) noexcept
-    {
-        _layout = context;
-    }
-
-    /** Get the current layout for this widget.
-     */
-    [[nodiscard]] widget_layout const& layout() const noexcept
-    {
-        return _layout;
-    }
+    virtual void set_layout(layout::shape const& shape) noexcept = 0;
 
     /** Draw the widget.
      *
-     * This function is called by the window (optionally) on every frame.
-     * It should recursively call this function on every visible child.
-     * This function is only called when `updateLayout()` has returned true.
+     * This function is called by the window (optionally) on every frame. It
+     * should recursively call this function on every visible child. This
+     * function is only called when `updateLayout()` has returned true.
      *
      * The overriding function should call the base class's `draw()`, the place
-     * where the call this function will determine the order of the vertices into
-     * each buffer. This is important when needing to do the painters algorithm
-     * for alpha-compositing. However the pipelines are always drawn in the same
-     * order.
+     * where the call this function will determine the order of the vertices
+     * into each buffer. This is important when needing to do the painters
+     * algorithm for alpha-compositing. However the pipelines are always drawn
+     * in the same order.
      *
      * @param context The context to where the widget will draw.
      */

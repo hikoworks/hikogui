@@ -79,26 +79,24 @@ public:
         _shaper.set_padding(style.padding_px);
         _shaper.set_base_line_priority(style.base_line_priority);
 
-        return _shaper.get_constraints([&]() {
+        return _shaper.get_constraints([&] {
             return _label_widget->update_constraints();
         });
     }
 
-    void set_layout(widget_layout const& context) noexcept override
+    void set_layout(layout::shape const& shape) noexcept override
     {
-        super::set_layout(context);
-
-        _shaper.set_layout(layout().shape(), [&](layout::shape const& shape) {
-            _label_widget->set_layout(context.transform(shape));
+        _shaper.set_layout(shape, [&](layout::shape const& shape) {
+            _label_widget->set_layout(shape);
         });
     }
 
     void draw(draw_context const& context) const noexcept override
     {
-        if (overlaps(context, layout())) {
+        if (overlaps(context, _shaper.rectangle())) {
             context.draw_box(
-                layout(),
-                layout().rectangle(),
+                _shaper.rectangle(),
+                _shaper.clip_rectangle(),
                 style.background_color,
                 style.border_color,
                 style.border_width_px,
@@ -137,8 +135,8 @@ public:
     {
         assert(loop::main().on_thread());
 
-        if (enabled() and layout().contains(position)) {
-            return {id(), layout().elevation, hitbox_type::button};
+        if (enabled() and _shaper.rectangle().contains(position)) {
+            return {id(), _shaper.elevation(), hitbox_type::button};
         } else {
             return {};
         }
