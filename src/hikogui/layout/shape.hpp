@@ -53,6 +53,35 @@ struct shape {
      * This value is used for children to inherit the baseline of the parent
      */
     hi::layout::baseline_priority baseline_priority = baseline_priority::none;
+
+    /** Get a translate object for the elevation of this shape.
+     *
+     * This function will return a translate object that will translate the
+     * the z-coordinate to the elevation of the shape. This is used to draw
+     * geometric shapes at the correct elevation.
+     * 
+     * @param offset The offset to add to the elevation.
+     * @return A translate object that will translate the z-coordinate to the
+     *         elevation.
+     */
+    [[nodiscard]] translate3 translate_z(float offset = 0.0f) const noexcept
+    {
+        return {0.0f, 0.0f, elevation + offset};
+    }
+
+    /** Get the middle-line based on the baseline.
+     */
+    [[nodiscard]] float get_midline(float x_height) const noexcept
+    {
+        return baseline + x_height / 2.0f;
+    }
+
+    /** Check if a point is inside the shape.
+     */
+    [[nodiscard]] bool contains(point2 position) const noexcept
+    {
+        return rectangle.contains(position);
+    }
 };
 
 } // namespace v1

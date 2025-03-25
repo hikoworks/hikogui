@@ -131,14 +131,19 @@ public:
     }
 
     /// @privatesection
-    void set_layout(widget_layout const& context) noexcept override
+    [[nodiscard]] layout::constraints get_constraints() const noexcept override
     {
-        super::set_layout(context);
+        return style.make_constraints_for_fixed_size();
+    }
 
-        auto const middle = context.get_middle(style.cap_height);
-        auto const extended_rectangle = context.rectangle() + style.vertical_margins_px;
-        _button_rectangle =
-            align_to_middle(extended_rectangle, style.size_px, os_settings::alignment(style.horizontal_alignment), middle.in(unit::pixels));
+    void set_layout(layout::shape const& shape) noexcept override
+    {
+        _shape = shape;
+
+        auto const midline = shape.get_midline(style.x_height_px);
+
+        auto const horizontal_alignment = os_settings::alignment(style.horizontal_alignment);
+        _button_rectangle = align_to_middle(shape.rectangle(), style.size_px, horizontal_alignment, midline);
 
         _check_glyph = find_glyph(elusive_icon::Ok);
         auto const check_glyph_bb = _check_glyph.front_glyph_metrics().bounding_rectangle * style.font_size_px;
@@ -151,10 +156,10 @@ public:
 
     void draw(draw_context const& context) const noexcept override
     {
-        if (overlaps(context, layout())) {
+        if (overlaps(context, _shape.rectangle)) {
             context.draw_box(
-                layout(),
-                _button_rectangle,
+                _shape.translate_z() * _button_rectangle,
+                _shape.clipping_rectangle,
                 style.background_color,
                 style.border_color,
                 style.border_width_px,
@@ -163,14 +168,24 @@ public:
 
             switch (delegate->state(this)) {
             case widget_value::on:
-                context.draw_glyph(layout(), translate_z(0.1f) * _check_glyph_rectangle, _check_glyph, style.accent_color);
+                context.draw_glyph(
+                    _shape.translate_z(0.1f) * _check_glyph_rectangle,
+                    _shape.clipping_rectangle,
+                    _check_glyph,
+                    style.accent_color);
                 break;
+
             case widget_value::off:
                 // Do nothing, the checkbox is off.
                 break;
+
             default:
                 // Indeterminate
-                context.draw_glyph(layout(), translate_z(0.1f) * _minus_glyph_rectangle, _minus_glyph, style.accent_color);
+                context.draw_glyph(
+                    _shape.translate_z(0.1f) * _minus_glyph_rectangle,
+                    _shape.clipping_rectangle,
+                    _minus_glyph,
+                    style.accent_color);
             }
         }
 
@@ -181,7 +196,7 @@ public:
     {
         hi_axiom(loop::main().on_thread());
 
-        if (enabled() and _button_rectangle.contains(position)) {
+        if (enabled() and _shape.contains(position)) {
             return {id(), layout().elevation, hitbox_type::button};
         } else {
             return {};
@@ -215,6 +230,8 @@ public:
     /// @endprivatesection
 
 private:
+    layout::shape _shape;
+
     aarectangle _button_rectangle;
     font_glyph_ids _check_glyph;
     aarectangle _check_glyph_rectangle;

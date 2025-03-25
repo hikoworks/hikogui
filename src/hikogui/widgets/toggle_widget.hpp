@@ -111,14 +111,19 @@ public:
     }
 
     /// @privatesection
-    void set_layout(widget_layout const& context) noexcept override
+    [[nodiscard]] layout::constraints get_constraints() const noexcept override
     {
-        super::set_layout(context);
+        return style.make_constraints_for_fixed_size();
+    }
 
-        auto const middle = context.get_middle(style.cap_height);
-        auto const extended_rectangle = context.rectangle() + style.vertical_margins_px;
-        _button_rectangle = align_to_middle(
-            extended_rectangle, style.size_px, os_settings::alignment(style.horizontal_alignment), middle.in(unit::pixels));
+    void set_layout(layout::shape const& shape) noexcept override
+    {
+        _shape = shape;
+
+        auto const midline = shape.get_midline(style.x_height_px);
+
+        auto const horizontal_alignment = os_settings::alignment(style.horizontal_alignment);
+        _button_rectangle = align_to_middle(shape.rectangle(), style.size_px, horizontal_alignment, midline);
 
         auto const pip_square = aarectangle{get<0>(_button_rectangle), extent2{style.height_px, style.height_px}};
         _pip_circle = align(pip_square, circle{style.height_px * 0.5f - 3.0f}, alignment::middle_center());
@@ -129,10 +134,10 @@ public:
 
     void draw(draw_context const& context) const noexcept override
     {
-        if (overlaps(context, layout())) {
+        if (overlaps(context, _shape.rectangle)) {
             context.draw_box(
-                layout(),
-                _button_rectangle,
+                _shape.translate_z() * _button_rectangle,
+                _shape.clipping_rectangle,
                 style.background_color,
                 style.border_color,
                 style.border_width_px,
@@ -152,9 +157,12 @@ public:
                 notifier();
             }
 
-            auto const pip_offset = translate3{_pip_move_range * _animated_value.current_value(), 0.0f, 0.1f};
+            auto const pip_offset = translate2{_pip_move_range * _animated_value.current_value(), 0.0f};
             auto const positioned_pip_circle = pip_offset * _pip_circle;
-            context.draw_circle(layout(), positioned_pip_circle * 1.02f, style.accent_color);
+            context.draw_circle(
+                _shape.translate_z(0.1f) * (positioned_pip_circle * 1.02f),
+                _shape.clipping_rectangle,                
+                style.accent_color);
         }
 
         return super::draw(context);
@@ -162,10 +170,10 @@ public:
 
     [[nodiscard]] hitbox hitbox_test(point2 position) const noexcept override
     {
-        hi_axiom(loop::main().on_thread());
+        assert(loop::main().on_thread());
 
-        if (enabled() and _button_rectangle.contains(position)) {
-            return {id(), layout().elevation, hitbox_type::button};
+        if (enabled() and _shape.contains(position)) {
+            return {id(), _shape.elevation, hitbox_type::button};
         } else {
             return {};
         }
@@ -201,6 +209,7 @@ public:
 private:
     constexpr static std::chrono::nanoseconds _animation_duration = std::chrono::milliseconds(150);
 
+    layout::shape _shape;
     aarectangle _button_rectangle;
     mutable animator<float> _animated_value = _animation_duration;
     circle _pip_circle;

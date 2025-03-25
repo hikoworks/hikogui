@@ -286,50 +286,6 @@ public:
         }
     }
 
-    [[nodiscard]] virtual color background_color() const noexcept
-    {
-        if (enabled()) {
-            if (hover()) {
-                return theme().fill_color(layout().layer + 1);
-            } else {
-                return theme().fill_color(layout().layer);
-            }
-        } else {
-            return theme().fill_color(layout().layer - 1);
-        }
-    }
-
-    [[nodiscard]] virtual color foreground_color() const noexcept
-    {
-        if (enabled()) {
-            return theme().border_color();
-        } else {
-            return theme().disabled_color();
-        }
-    }
-
-    [[nodiscard]] virtual color focus_color() const noexcept
-    {
-        if (enabled()) {
-            if (focus()) {
-                return theme().accent_color();
-            } else {
-                return theme().border_color();
-            }
-        } else {
-            return theme().disabled_color();
-        }
-    }
-
-    [[nodiscard]] virtual color accent_color() const noexcept
-    {
-        if (enabled()) {
-            return theme().accent_color();
-        } else {
-            return theme().disabled_color();
-        }
-    }
-
 protected:
     /** Make an overlay rectangle.
      *

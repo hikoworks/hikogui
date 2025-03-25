@@ -128,18 +128,23 @@ public:
     }
 
     /// @privatesection
-    void set_layout(widget_layout const& context) noexcept override
+    [[nodiscard]] layout::constraints get_constraints() const noexcept override
     {
-        super::set_layout(context);
+        return style.make_constraints_for_fixed_size();
+    }
+
+    void set_layout(layout::shape const& shape) noexcept override
+    {
+        _shape = shape;
+
+        auto const midline = shape.get_midline(style.x_height_px);
+
+        auto const horizontal_alignment = os_settings::alignment(style.horizontal_alignment);
+        _button_rectangle = align_to_middle(shape.rectangle(), style.size_px, horizontal_alignment, midline);
 
         auto const button_diameter = style.size_px.height();
         auto const button_radius = std::round(button_diameter * 0.5f);
         auto const button_size = extent2{button_diameter, button_diameter};
-
-        auto const middle = context.get_middle(style.cap_height);
-        auto const extended_rectangle = context.rectangle() + style.vertical_margins_px;
-        _button_rectangle =
-            align_to_middle(extended_rectangle, style.size_px, os_settings::alignment(style.horizontal_alignment), middle.in(unit::pixels));
 
         _button_circle = circle{_button_rectangle};
 
@@ -148,11 +153,11 @@ public:
 
     void draw(draw_context const& context) const noexcept override
     {
-        if (overlaps(context, layout())) {
+        if (overlaps(context, _shape.rectangle)) {
             if (focus_group != keyboard_focus_group::menu) {
                 context.draw_circle(
-                    layout(),
-                    _button_circle * 1.02f,
+                    _shape.translate_z() * (_button_circle * 1.02f),
+                    _shape.clipping_rectangle,
                     style.background_color,
                     style.border_color,
                     style.border_width_px,
@@ -173,9 +178,12 @@ public:
             }
 
             // draw pip
-            auto float_value = _animated_value.current_value();
+            auto const float_value = _animated_value.current_value();
             if (float_value > 0.0) {
-                context.draw_circle(layout(), _pip_circle * 1.02f * float_value, style.accent_color);
+                context.draw_circle(
+                    _shape.translate_z(0.1f) * (_pip_circle * (1.02f * float_value)),
+                    _shape.clipping_rectangle,
+                    style.accent_color);
             }
         }
 
@@ -186,8 +194,8 @@ public:
     {
         hi_axiom(loop::main().on_thread());
 
-        if (enabled() and _button_rectangle.contains(position)) {
-            return {id(), layout().elevation, hitbox_type::button};
+        if (enabled() and _shape.contains(position)) {
+            return {id(), _shape.elevation, hitbox_type::button};
         } else {
             return {};
         }
@@ -221,6 +229,8 @@ public:
 
 private:
     constexpr static std::chrono::nanoseconds _animation_duration = std::chrono::milliseconds(150);
+
+    layout::shape _shape;
 
     aarectangle _button_rectangle;
 
