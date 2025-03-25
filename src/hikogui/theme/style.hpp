@@ -81,6 +81,76 @@ public:
 
     hi::alignment alignment;
 
+    [[nodiscard]] layout::constraints _make_constraints_helper() const noexcept
+    {
+    }
+
+    /** Make constraints from layout.
+     *
+     * This function will return the constraints for a widget with a layout.
+     * The constraints will be calculated from the width, height, and alignment
+     * properties of the style.
+     *
+     * The baseline_offset will be calculated based on the vertical alignment
+     * property and the alignment within the final layout.
+     */
+    [[nodiscard]] layout::constraints make_constraints() const noexcept
+    {
+        auto r = layout::constraints{};
+
+        r.size = size_px;
+        r.margins = margins_px;
+        r.baseline_offset = [&] {
+            switch (vertical_alignment) {
+            case vertical_alignment::top:
+                return -x_height_px;
+            case vertical_alignment::middle:
+                return -x_height_px / 2.0f;
+            case vertical_alignment::bottom:
+                return 0.0f;
+            }
+            std::unreachable();
+        }();
+
+        r.baseline_priority = baseline_priority;
+        r.vertical_alignment = vertical_alignment;
+        return r; 
+    }
+
+    /** Make constraints for a fixed size widget.
+     *
+     * This function will return the constraints for a widget with a fixed size.
+     * The constraints will be calculated from the width, height, and alignment
+     * properties of the style.
+     *
+     * The baseline_offset will be calculated where the baseline is positition
+     * so that text is aligned to the middle of the visual part of the widget.
+     */
+    [[nodiscard]] layout::constraints make_constraints_for_fixed_size() const noexcept
+    {
+        auto r = make_constraints();
+
+        r.baseline_offset = [&] {
+            auto const middle_px = height_px / 2.0f;
+            auto const x_middle_px = x_height_px / 2.0f;
+
+            switch (vertical_alignment) {
+            case vertical_alignment::top:
+                return -middle_px - x_middle_px
+            case vertical_alignment::middle:
+                return -x_middle_px;
+            case vertical_alignment::bottom:
+                return middle_px - x_middle_px;
+            }
+            std::unreachable();
+        }();
+
+        return r; 
+    }
+
+
+    
+
     /** Calculate the concrete object size of an image.
      *
      * This function takes into account:
