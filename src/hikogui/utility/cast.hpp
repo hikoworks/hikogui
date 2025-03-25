@@ -82,7 +82,7 @@ template<typename Out, typename In>
  * @return A nullptr of the output type
  */
 template<typename Out>
-[[nodiscard]] constexpr Out up_cast(std::nullptr_t) noexcept
+[[nodiscard]] constexpr Out up_cast(nullptr_t) noexcept
 {
     static_assert(std::is_pointer_v<Out>, "up_cast() Out template paramater must be a pointer.");
     return nullptr;
@@ -136,7 +136,7 @@ template<typename Out, typename In>
  * @return A pointer to the same object with a new type.
  */
 template<typename Out>
-[[nodiscard]] constexpr Out down_cast(std::nullptr_t) noexcept
+[[nodiscard]] constexpr Out down_cast(nullptr_t) noexcept
     requires std::is_pointer_v<Out>
 {
     return nullptr;
@@ -680,7 +680,7 @@ template<typename T>
 }
 
 /** Create a mask from a boolean value.
- *
+ * 
  * @param v The boolean value to represent as a mask
  * @return A value which bit representations are all '1' when @a v == `true`, or
  *         all '0' when @a v == `false`.
@@ -709,6 +709,23 @@ template<typename T>
     return reinterpret_cast<std::intptr_t>(ptr);
 }
 
+/** Cast a byte-like buffer to a type with implicit lifetime.
+ *
+ * This function is used to cast a buffer to a type with an implicit lifetime.
+ * For example when mapping a font-file into memory and casting parts of the
+ * memory to easy to use structures.
+ * 
+ * @note Do not access the buffer during the implicit-lifetime of the returned
+ *       value, this would be undefined behavior.
+ * @note This function expects mmap() and other memory mapping functions to
+ *       be blessed in respect to automatically creating implicit lifetimes
+ *       objects.
+ * @tparam T The type to cast to, must be an implicit lifetime type.
+ * @param bytes The buffer to cast. The buffer must be aligned and at least the
+ *              size of @a T.
+ * @return A reference to the value in the buffer.
+ * @throws std::bad_cast when the buffer is too small or not aligned.
+ */
 template<typename T, byte_like Byte>
 [[nodiscard]] copy_cv_t<T, Byte>& implicit_cast(std::span<Byte> bytes)
 {
@@ -728,9 +745,29 @@ template<typename T, byte_like Byte>
         }
     }
 
+    // XXX #708 use std::start_lifetime_as<T> here
+    //return std::start_lifetime_as<value_type>(bytes.data());
     return *reinterpret_cast<value_type *>(bytes.data());
 }
 
+/** Cast a byte-like buffer to a array of type with implicit lifetime.
+ *
+ * This function is used to cast a buffer to am array of type with an implicit
+ * lifetime. For example when mapping a font-file into memory and casting parts
+ * of the memory to easy to use structures.
+ *
+ * @note Do not access the buffer during the implicit-lifetime of the returned
+ *       value, this would be undefined behavior.
+ * @note This function expects mmap() and other memory mapping functions to
+ *       be blessed in respect to automatically creating implicit lifetimes
+ *       objects.
+ * @tparam T The type to cast to, must be an implicit lifetime type.
+ * @param bytes The buffer to cast. The buffer must be aligned and at least the
+ *              size of @a T.
+ * @param n The number of values in the buffer.
+ * @return A span of values in the buffer.
+ * @throws std::bad_cast when the buffer is too small or not aligned.
+ */
 template<typename T, byte_like Byte>
 [[nodiscard]] std::span<copy_cv_t<T, Byte>> implicit_cast(std::span<Byte> bytes, size_t n)
 {
@@ -750,9 +787,31 @@ template<typename T, byte_like Byte>
         }
     }
 
+    // XXX #708 use std::start_lifetime_as<T> here
+    //return {std::start_lifetime_as_array<value_type>(bytes.data(), n), n};
     return {reinterpret_cast<value_type *>(bytes.data()), n};
 }
 
+/** Cast a byte-like buffer to a array of type with implicit lifetime.
+ *
+ * This function is used to cast a buffer to am array of type with an implicit
+ * lifetime. For example when mapping a font-file into memory and casting parts
+ * of the memory to easy to use structures.
+ *
+ * @note Do not access the buffer during the implicit-lifetime of the returned
+ *       value, this would be undefined behavior.
+ * @note This function expects mmap() and other memory mapping functions to
+ *       be blessed in respect to automatically creating implicit lifetimes
+ *       objects.
+ * @tparam T The type to cast to, must be an implicit lifetime type.
+ * @param offset The offset into the buffer where the value is located. The
+ *               offset will be incremented by the size of the value.
+ * @param bytes The buffer to cast. The buffer must be aligned and at least the
+ *              size of @a T.
+ * @param n The number of values in the buffer.
+ * @return A span of values in the buffer.
+ * @throws std::bad_cast when the buffer is too small or not aligned.
+ */
 template<typename T, byte_like Byte>
 [[nodiscard]] copy_cv_t<T, Byte>& implicit_cast(size_t& offset, std::span<Byte> bytes)
 {
@@ -775,9 +834,31 @@ template<typename T, byte_like Byte>
     }
 
     offset += sizeof(value_type);
+    // XXX #708 use std::start_lifetime_as<T> here
+    //return std::start_lifetime_as<value_type>(bytes.data());
     return *reinterpret_cast<value_type *>(data);
 }
 
+/** Cast a byte-like buffer to a array of type with implicit lifetime.
+ *
+ * This function is used to cast a buffer to am array of type with an implicit
+ * lifetime. For example when mapping a font-file into memory and casting parts
+ * of the memory to easy to use structures.
+ *
+ * @note Do not access the buffer during the implicit-lifetime of the returned
+ *       value, this would be undefined behavior.
+ * @note This function expects mmap() and other memory mapping functions to
+ *       be blessed in respect to automatically creating implicit lifetimes
+ *       objects.
+ * @tparam T The type to cast to, must be an implicit lifetime type.
+ * @param offset The offset into the buffer where the value is located. The
+ *               offset will be incremented by the size of the array of values.
+ * @param bytes The buffer to cast. The buffer must be aligned and at least the
+ *              size of @a T.
+ * @param n The number of values in the buffer.
+ * @return A span of values in the buffer.
+ * @throws std::bad_cast when the buffer is too small or not aligned.
+ */
 template<typename T, byte_like Byte>
 [[nodiscard]] std::span<copy_cv_t<T, Byte>> implicit_cast(size_t& offset, std::span<Byte> bytes, size_t n)
 {
@@ -800,6 +881,8 @@ template<typename T, byte_like Byte>
     }
 
     offset += sizeof(value_type) * n;
+    // XXX #708 use std::start_lifetime_as<T> here
+    //return {std::start_lifetime_as_array<value_type>(bytes.data(), n), n};
     return {reinterpret_cast<value_type *>(data), n};
 }
 

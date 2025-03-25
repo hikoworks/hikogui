@@ -10,7 +10,6 @@
 #include "exception.hpp"
 #include "terminate.hpp"
 #include "cast.hpp"
-#include <cstring>
 #include <concepts>
 #include <memory>
 #include <vector>
@@ -33,7 +32,7 @@ hi_warning_ignore_msvc(26472);
 hi_export namespace hi::inline v1 {
 
 /** make_unique with CTAD (Class Template Argument Deduction)
- *
+ * 
  * @tparam T A class template type.
  * @param args The arguments forwarded to the constructor.
  * @return A std::unique_ptr<ctad_t<T>> to an object.
@@ -46,7 +45,7 @@ template<template<typename...> typename T, typename... Args>
 }
 
 /** make_shared with CTAD (Class Template Argument Deduction)
- *
+ * 
  * @tparam T A class template type.
  * @param args The arguments forwarded to the constructor.
  * @return A std::shared_ptr<ctad_t<T>> to an object.

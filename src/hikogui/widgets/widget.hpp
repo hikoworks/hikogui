@@ -57,47 +57,6 @@ public:
     widget(widget&&) = delete;
     widget& operator=(widget&&) = delete;
 
-    using widget_intf::children;
-    [[nodiscard]] generator<widget_intf&> children(bool include_invisible) noexcept override
-    {
-        co_return;
-    }
-
-    /** Find the widget that is under the mouse cursor.
-     * This function will recursively test with visual child widgets, when
-     * widgets overlap on the screen the hitbox object with the highest elevation is returned.
-     *
-     * @param position The coordinate of the mouse local to the widget.
-     * @return A hit_box object with the cursor-type and a reference to the widget.
-     */
-    [[nodiscard]] hitbox hitbox_test(point2 position) const noexcept override
-    {
-        return {};
-    }
-
-    /** Call hitbox_test from a parent widget.
-     *
-     * This function will transform the position from parent coordinates to local coordinates.
-     *
-     * @param position The coordinate of the mouse local to the parent widget.
-     */
-    [[nodiscard]] virtual hitbox hitbox_test_from_parent(point2 position) const noexcept
-    {
-        return hitbox_test(_layout.from_parent * position);
-    }
-
-    /** Call hitbox_test from a parent widget.
-     *
-     * This function will transform the position from parent coordinates to local coordinates.
-     *
-     * @param position The coordinate of the mouse local to the parent widget.
-     * @param sibling_hitbox The hitbox of a sibling to combine with the hitbox of this widget.
-     */
-    [[nodiscard]] virtual hitbox hitbox_test_from_parent(point2 position, hitbox sibling_hitbox) const noexcept
-    {
-        return std::max(sibling_hitbox, hitbox_test(_layout.from_parent * position));
-    }
-
     /** Check if the widget will accept keyboard focus.
      *
      */
@@ -105,37 +64,6 @@ public:
     {
         hi_axiom(loop::main().on_thread());
         return false;
-    }
-
-    [[nodiscard]] box_constraints update_constraints() noexcept override
-    {
-        _layout = {};
-        return {*minimum, *minimum, *maximum};
-    }
-
-    void set_layout(widget_layout const& context) noexcept override
-    {
-        _layout = context;
-    }
-
-    void draw(draw_context const& context) noexcept override {}
-
-    /** Send a event to the window.
-     */
-    bool process_event(gui_event const& event) const noexcept override
-    {
-        if (auto *p = parent()) {
-            return p->process_event(event);
-        } else {
-            return true;
-        }
-    }
-
-    /** Request the widget to be redrawn on the next frame.
-     */
-    void request_redraw() const noexcept override
-    {
-        process_event({gui_event_type::window_redraw, layout().clipping_rectangle_on_window()});
     }
 
     /** Handle command.
@@ -164,68 +92,81 @@ public:
             set_hover(false);
             return true;
 
+        case gui_event_type::mouse_down:
+            if (enabled() and event.mouse().cause.left_button) {
+                set_active(true);
+                handle_event(gui_event_type::gui_activate_stay);
+            }
+            return true;
+
+        case gui_event_type::mouse_up:
+            if (enabled() and event.mouse().cause.left_button) {
+                set_active(false);
+            }
+            return true;
+
         case gui_event_type::window_activate:
-            set_active(true);
+            set_front(true);
             // All widgets need the active value set.
             return false;
 
         case gui_event_type::window_deactivate:
-            set_active(false);
+            set_front(false);
             // All widgets need the active value unset.
             return false;
 
         case gui_event_type::gui_activate_stay:
-            process_event(gui_event_type::gui_activate);
+            send_to_window(gui_event_type::gui_activate);
             if (accepts_keyboard_focus(keyboard_focus_group::menu)) {
                 // By going forward and backward we select the current parent,
                 // the widget that opened the menu-stack. 
-                process_event(gui_event_type::gui_widget_next);
-                process_event(gui_event_type::gui_widget_prev);
+                send_to_window(gui_event_type::gui_widget_next);
+                send_to_window(gui_event_type::gui_widget_prev);
             }
             return true;
 
         case gui_event_type::gui_activate_next:
-            process_event(gui_event_type::gui_activate);
-            return process_event(gui_event_type::gui_widget_next);
+            send_to_window(gui_event_type::gui_activate);
+            return send_to_window(gui_event_type::gui_widget_next);
 
         case gui_event_type::gui_widget_next:
-            process_event(
-                gui_event::window_set_keyboard_target(id, keyboard_focus_group::normal, keyboard_focus_direction::forward));
+            send_to_window(
+                gui_event::window_set_keyboard_target(id(), keyboard_focus_group::normal, keyboard_focus_direction::forward));
             return true;
 
         case gui_event_type::gui_widget_prev:
-            process_event(
-                gui_event::window_set_keyboard_target(id, keyboard_focus_group::normal, keyboard_focus_direction::backward));
+            send_to_window(
+                gui_event::window_set_keyboard_target(id(), keyboard_focus_group::normal, keyboard_focus_direction::backward));
             return true;
 
         case gui_event_type::gui_menu_next:
-            if (mode() >= widget_mode::partial and accepts_keyboard_focus(keyboard_focus_group::menu)) {
-                process_event(
-                    gui_event::window_set_keyboard_target(id, keyboard_focus_group::menu, keyboard_focus_direction::forward));
+            if (enabled() and accepts_keyboard_focus(keyboard_focus_group::menu)) {
+                send_to_window(
+                    gui_event::window_set_keyboard_target(id(), keyboard_focus_group::menu, keyboard_focus_direction::forward));
                 return true;
             }
             break;
 
         case gui_event_type::gui_menu_prev:
-            if (mode() >= widget_mode::partial and accepts_keyboard_focus(keyboard_focus_group::menu)) {
-                process_event(
-                    gui_event::window_set_keyboard_target(id, keyboard_focus_group::menu, keyboard_focus_direction::backward));
+            if (enabled() and accepts_keyboard_focus(keyboard_focus_group::menu)) {
+                send_to_window(
+                    gui_event::window_set_keyboard_target(id(), keyboard_focus_group::menu, keyboard_focus_direction::backward));
                 return true;
             }
             break;
 
         case gui_event_type::gui_toolbar_next:
-            if (mode() >= widget_mode::partial and accepts_keyboard_focus(keyboard_focus_group::toolbar)) {
-                process_event(
-                    gui_event::window_set_keyboard_target(id, keyboard_focus_group::toolbar, keyboard_focus_direction::forward));
+            if (enabled() and accepts_keyboard_focus(keyboard_focus_group::toolbar)) {
+                send_to_window(
+                    gui_event::window_set_keyboard_target(id(), keyboard_focus_group::toolbar, keyboard_focus_direction::forward));
                 return true;
             }
             break;
 
         case gui_event_type::gui_toolbar_prev:
-            if (mode() >= widget_mode::partial and accepts_keyboard_focus(keyboard_focus_group::toolbar)) {
-                process_event(
-                    gui_event::window_set_keyboard_target(id, keyboard_focus_group::toolbar, keyboard_focus_direction::backward));
+            if (enabled() and accepts_keyboard_focus(keyboard_focus_group::toolbar)) {
+                send_to_window(
+                    gui_event::window_set_keyboard_target(id(), keyboard_focus_group::toolbar, keyboard_focus_direction::backward));
                 return true;
             }
             break;
@@ -244,12 +185,12 @@ public:
 
         auto handled = false;
 
-        for (auto& child : this->children(false)) {
+        for (auto& child : visible_children()) {
             handled |= child.handle_event_recursive(event, reject_list);
         }
 
         if (!std::ranges::any_of(reject_list, [&](auto const& x) {
-                return x == id;
+                return x == id();
             })) {
             handled |= handle_event(event);
         }
@@ -268,14 +209,14 @@ public:
 
         if (current_keyboard_widget == 0 and accepts_keyboard_focus(group)) {
             // If there was no current_keyboard_widget, then return this if it accepts focus.
-            return id;
+            return id();
 
-        } else if (current_keyboard_widget == id) {
+        } else if (current_keyboard_widget == id()) {
             found = true;
         }
 
         auto children_ = std::vector<widget_intf const *>{};
-        for (auto& child : children(false)) {
+        for (auto& child : visible_children()) {
             children_.push_back(std::addressof(child));
         }
 
@@ -323,72 +264,25 @@ public:
         hi_axiom(loop::main().on_thread());
 
         if (auto p = parent()) {
-            p->scroll_to_show(_layout.to_parent * rectangle);
+            p->scroll_to_show(layout().to_parent * rectangle);
         }
     }
 
     [[nodiscard]] hi::theme const& theme() const noexcept
     {
-        hi_assert_not_null(window);
-        return window->theme;
+        if (auto w = window()) {
+            return w->theme;
+        } else {
+            std::unreachable();
+        }
     }
 
     [[nodiscard]] gfx_surface const *surface() const noexcept
     {
-        if (window) {
-            return window->surface.get();
+        if (auto w = window()) {
+            return w->surface.get();
         } else {
             return nullptr;
-        }
-    }
-
-    [[nodiscard]] virtual color background_color() const noexcept
-    {
-        if (mode() >= widget_mode::partial) {
-            if (phase() == widget_phase::hover) {
-                return theme().fill_color(_layout.layer + 1);
-            } else {
-                return theme().fill_color(_layout.layer);
-            }
-        } else {
-            return theme().fill_color(_layout.layer - 1);
-        }
-    }
-
-    [[nodiscard]] virtual color foreground_color() const noexcept
-    {
-        if (mode() >= widget_mode::partial) {
-            if (phase() == widget_phase::hover) {
-                return theme().border_color(_layout.layer + 1);
-            } else {
-                return theme().border_color(_layout.layer);
-            }
-        } else {
-            return theme().border_color(_layout.layer - 1);
-        }
-    }
-
-    [[nodiscard]] virtual color focus_color() const noexcept
-    {
-        if (mode() >= widget_mode::partial) {
-            if (focus()) {
-                return theme().accent_color();
-            } else if (phase() == widget_phase::hover) {
-                return theme().border_color(_layout.layer + 1);
-            } else {
-                return theme().border_color(_layout.layer);
-            }
-        } else {
-            return theme().border_color(_layout.layer - 1);
-        }
-    }
-
-    [[nodiscard]] virtual color accent_color() const noexcept
-    {
-        if (mode() >= widget_mode::partial) {
-            return theme().accent_color();
-        } else {
-            return theme().border_color(_layout.layer - 1);
         }
     }
 

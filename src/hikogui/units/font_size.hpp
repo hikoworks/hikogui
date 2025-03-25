@@ -78,6 +78,31 @@ class font_size_quantity : public font_size_variant<T> {
         return rhs * lhs;
     }
 
+    template<typename O>
+    [[nodiscard]] constexpr friend font_size_quantity<std::common_type_t<T, O>>
+    operator*(O const& lhs, font_size_quantity const& rhs) noexcept
+    {
+        if (auto* dips_ptr = std::get_if<au::Quantity<DipsPerEm, T>>(&rhs)) {
+            return *dips_ptr * lhs;
+
+        } else if (auto* pixel_ptr = std::get_if<au::Quantity<PixelsPerEm, T>>(&rhs)) {
+            return *pixel_ptr * lhs;
+
+        } else if (auto* points_ptr = std::get_if<au::Quantity<PointsPerEm, T>>(&rhs)) {
+            return *points_ptr * lhs;
+
+        } else {
+            hi_no_default();
+        }
+    }
+
+    template<typename O>
+    [[nodiscard]] constexpr friend font_size_quantity<std::common_type_t<T, O>>
+    operator*(font_size_quantity const& lhs, O const& rhs) noexcept
+    {
+        return rhs * lhs;
+    }
+
 private:
     template<typename O>
     [[nodiscard]] constexpr static font_size_quantity font_size_quantity_conversion(length_quantity<O> const& other)

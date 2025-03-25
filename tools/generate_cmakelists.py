@@ -51,28 +51,22 @@ def make_cmakelist_includes_text(header_files, suppressed_header_files):
     r += "\n"
     r += "target_sources(hikogui INTERFACE FILE_SET hikogui_include_files TYPE HEADERS BASE_DIRS \"${CMAKE_CURRENT_SOURCE_DIR}/src/\"  FILES\n"
     for header_file in header_files:
-        if (header_file.endswith("_win32.hpp") or
-           header_file.endswith("_win32_impl.hpp") or
-           header_file.endswith("_win32_intf.hpp") or
-           "win32" in header_file):
+        if header_file.endswith("_win32.hpp") or header_file.endswith("_win32_impl.hpp") or header_file.endswith("_win32_intf.hpp"):
             r += "    $<$<PLATFORM_ID:Windows>:${CMAKE_CURRENT_SOURCE_DIR}/%s>\n" % header_file.replace("\\", "/")
 
-        elif header_file.endswith("_posix.hpp") or header_file.endswith("_posix_impl.hpp") or header_file.endswith("_posix_intf.hpp"):
+        if header_file.endswith("_posix.hpp") or header_file.endswith("_posix_impl.hpp") or header_file.endswith("_posix_intf.hpp"):
             r += "    $<$<PLATFORM_ID:Linux>:${CMAKE_CURRENT_SOURCE_DIR}/%s>\n" % header_file.replace("\\", "/")
 
-        elif (header_file.endswith("_macos.hpp") or
-             header_file.endswith("_macos_impl.hpp") or
-             header_file.endswith("_macos_intf.hpp") or
-             "macos" in header_file):
+        if header_file.endswith("_macos.hpp") or header_file.endswith("_macos_impl.hpp") or header_file.endswith("_macos_intf.hpp"):
             r += "    $<$<PLATFORM_ID:MacOS>:${CMAKE_CURRENT_SOURCE_DIR}/%s>\n" % header_file.replace("\\", "/")
 
-        elif header_file.endswith("_x86.hpp") or header_file.endswith("_x86_impl.hpp") or header_file.endswith("_x86_intf.hpp"):
+        if header_file.endswith("_x86.hpp") or header_file.endswith("_x86_impl.hpp") or header_file.endswith("_x86_intf.hpp"):
             r += "    $<$<STREQUAL:${ARCHITECTURE_ID},x86>:${CMAKE_CURRENT_SOURCE_DIR}/%s>\n" % header_file.replace("\\", "/")
 
-        elif header_file.endswith("_generic.hpp") or header_file.endswith("_generic_impl.hpp") or header_file.endswith("_generic_iintf.hpp"):
+        if header_file.endswith("_generic.hpp") or header_file.endswith("_generic_impl.hpp") or header_file.endswith("_generic_iintf.hpp"):
             r += "    $<$<STREQUAL:${ARCHITECTURE_ID},none>:${CMAKE_CURRENT_SOURCE_DIR}/%s>\n" % header_file.replace("\\", "/")
 
-        elif header_file in suppressed_header_files:
+        if header_file in suppressed_header_files:
             r += "    #%s\n" % header_file.replace("\\", "/")
 
         else:
@@ -134,7 +128,7 @@ def make_cmakelist_tests_text(test_files, suppressed_test_files):
             r += "    #${CMAKE_CURRENT_SOURCE_DIR}/%s\n" % test_file.replace("\\", "/")
         else:
             r += "    ${CMAKE_CURRENT_SOURCE_DIR}/%s\n" % test_file.replace("\\", "/")
-
+            
     r += ")\n"
     r += "\n"
     r += "show_build_target_properties(hikogui_htests)\n"
@@ -172,8 +166,8 @@ def generate_cmakelists_tests():
 def main():
     generate_cmakelists_includes()
     generate_cmakelists_tests()
-
-
+    
+    
 
 if __name__ == "__main__":
     main()

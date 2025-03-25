@@ -9,9 +9,7 @@
 #pragma once
 
 #include "file_intf.hpp"
-#if HI_OPERATING_SYSTEM == HI_OS_WINDOWS
 #include "file_view_win32_impl.hpp"
-#endif
 #include "access_mode.hpp"
 #include "../container/container.hpp"
 #include "../char_maps/char_maps.hpp" // XXX #619

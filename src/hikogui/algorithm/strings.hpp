@@ -26,7 +26,6 @@ hi_warning_push();
 hi_warning_ignore_msvc(26409);
 
 hi_export namespace hi::inline v1 {
-
 [[nodiscard]] constexpr bool is_upper(char c) noexcept
 {
     return c >= 'A' && c <= 'Z';
@@ -181,12 +180,12 @@ hi_export namespace hi::inline v1 {
  * only ASCII letters [a-zA-Z] will be modified.
  */
 template<size_t N>
-[[nodiscard]] constexpr fixed_string<N> to_title(fixed_string<N> const &rhs) noexcept
+[[nodiscard]] constexpr fixed_string<N> to_title(fixed_string<N> const& rhs) noexcept
 {
     auto r = rhs;
 
     bool first = true;
-    for (auto &c: r) {
+    for (auto& c : r) {
         if (first) {
             c = to_upper(c);
             first = false;
@@ -272,7 +271,7 @@ template<size_t N>
 [[nodiscard]] constexpr bool is_slug(std::string_view str) noexcept
 {
     for (auto const c : str) {
-        if (not (is_alpha_num(c) or c == '-')) {
+        if (not(is_alpha_num(c) or c == '-')) {
             return false;
         }
     }
@@ -335,13 +334,10 @@ template<typename T, size_t N>
     return r;
 }
 
-[[nodiscard]] constexpr uint32_t fourcc_from_cstr(char const *txt) noexcept
+[[nodiscard]] constexpr uint32_t fourcc_from_cstr(char const* txt) noexcept
 {
     hi_assert_not_null(txt);
-    return
-        (char_cast<uint32_t>(txt[0]) << 24) |
-        (char_cast<uint32_t>(txt[1]) << 16) |
-        (char_cast<uint32_t>(txt[2]) << 8) |
+    return (char_cast<uint32_t>(txt[0]) << 24) | (char_cast<uint32_t>(txt[1]) << 16) | (char_cast<uint32_t>(txt[2]) << 8) |
         char_cast<uint32_t>(txt[3]);
 }
 
@@ -365,67 +361,73 @@ constexpr std::size_t string_size(auto str) noexcept
     return 1;
 }
 
-template<typename FirstNeedle, typename... Needles>
-[[nodiscard]] std::pair<std::size_t, std::size_t>
-string_find_any(std::string_view haystack, std::size_t pos, FirstNeedle const& first_needle, Needles const&...needles) noexcept
+/** Compare the start of a string with multiple strings.
+ * 
+ * @param string The string to compare.
+ * @param first The first string to compare with.
+ * @param rest The rest of the strings to compare with.
+ * @return The size of the first string that the string starts with, or 0 if none of the strings match.
+ */
+template<typename First, typename... Rest>
+[[nodiscard]] constexpr size_t multiple_starts_with(std::string_view string, First const& first, Rest const&... rest)
 {
-    using std::size;
+    assert(not first.empty());
 
-    std::size_t first = haystack.find(first_needle, pos);
-    std::size_t last = first + string_size(first_needle);
+    if (string.starts_with(first)) {
+        return first.size();
 
-    if (first == std::string_view::npos) {
-        first = size(haystack);
-        last = size(haystack);
+    } else if constexpr (sizeof...(Rest) != 0) {
+        return multiple_starts_with(string, rest...);
+
+    } else {
+        return 0;
     }
+}
 
-    if constexpr (sizeof...(Needles) != 0) {
-        auto const[other_first, other_last] = string_find_any(haystack, pos, needles...);
-        if (other_first < first) {
-            first = other_first;
-            last = other_last;
+template<typename R, std::same_as<std::string_view>... Needles>
+[[nodiscard]] constexpr std::vector<R> _split_string(std::string_view haystack, Needles... needles)
+{
+    static_assert(sizeof...(Needles) != 0);
+
+    auto r = std::vector<R>{};
+
+    auto i = size_t{0};
+    auto word_start = i;
+    for (; i != haystack.size(); ++i) {
+        auto const substr = haystack.substr(i);
+        if (auto const found = multiple_starts_with(substr, needles...); found != 0) {
+            r.emplace_back(haystack.substr(word_start, i - word_start));
+            word_start = i + found;
+            i += found - 1;
         }
     }
 
-    return {first, last};
-}
-
-template<typename StringType, typename... Needles>
-[[nodiscard]] std::vector<StringType> _split(std::string_view haystack, Needles const&...needles) noexcept
-{
-    auto r = std::vector<StringType>{};
-
-    std::string_view::size_type current_pos = 0;
-
-    while (current_pos < size(haystack)) {
-        auto const[needle_first, needle_last] = string_find_any(haystack, current_pos, needles...);
-        r.push_back(StringType{haystack.substr(current_pos, needle_first - current_pos)});
-        current_pos = needle_last;
-    }
-
+    r.emplace_back(haystack.substr(word_start));
     return r;
 }
 
-template<typename... Needles>
-[[nodiscard]] std::vector<std::string> split(std::string_view haystack, Needles const&...needles) noexcept
+/** Split a string into multiple strings.
+ * 
+ * @param haystack The string to split.
+ * @param needles The strings to split on.
+ * @return A vector of strings.
+ */
+template<std::convertible_to<std::string_view>... Needles>
+[[nodiscard]] constexpr std::vector<std::string> split_string(std::string_view haystack, Needles&&... needles)
 {
-    return _split<std::string>(haystack, needles...);
+    return _split_string<std::string>(haystack, std::string_view{std::forward<Needles>(needles)}...);
 }
 
-[[nodiscard]] inline std::vector<std::string> split(std::string_view haystack) noexcept
+/** Split a string into multiple strings.
+ * 
+ * @param haystack The string to split.
+ * @param needles The strings to split on.
+ * @return A vector of strings views.
+ */
+template<std::convertible_to<std::string_view>... Needles>
+[[nodiscard]] constexpr std::vector<std::string_view> split_string_view(std::string_view haystack, Needles&&... needles)
 {
-    return split(haystack, ' ');
-}
-
-template<typename... Needles>
-[[nodiscard]] std::vector<std::string_view> split_view(std::string_view haystack, Needles const&...needles) noexcept
-{
-    return _split<std::string_view>(haystack, needles...);
-}
-
-[[nodiscard]] inline std::vector<std::string_view> split_view(std::string_view haystack) noexcept
-{
-    return split_view(haystack, ' ');
+    return _split_string<std::string_view>(haystack, std::string_view{std::forward<Needles>(needles)}...);
 }
 
 template<typename CharT>
@@ -460,7 +462,7 @@ join(std::vector<std::basic_string<CharT>> const& list, std::basic_string<CharT>
 }
 
 template<typename CharT>
-[[nodiscard]] std::basic_string<CharT> join(std::vector<std::basic_string<CharT>> const& list, CharT const *joiner) noexcept
+[[nodiscard]] std::basic_string<CharT> join(std::vector<std::basic_string<CharT>> const& list, CharT const* joiner) noexcept
 {
     return join(list, std::basic_string_view<CharT>{joiner});
 }
@@ -530,7 +532,7 @@ constexpr auto to_array_without_last(T (&rhs)[N]) noexcept
  * Useful for copying a string literal without the nul-termination
  */
 template<typename T, std::size_t N>
-constexpr auto to_array_without_last(T(&&rhs)[N]) noexcept
+constexpr auto to_array_without_last(T (&&rhs)[N]) noexcept
 {
     auto r = std::array<std::remove_cv_t<T>, N - 1>{};
     for (std::size_t i = 0; i != (N - 1); ++i) {

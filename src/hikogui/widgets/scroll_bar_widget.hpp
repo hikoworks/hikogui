@@ -46,10 +46,7 @@ public:
     observer<float> content;
 
     template<forward_of<observer<float>> Content, forward_of<observer<float>> Aperture, forward_of<observer<float>> Offset>
-    scroll_bar_widget(
-        Content&& content,
-        Aperture&& aperture,
-        Offset&& offset) noexcept :
+    scroll_bar_widget(Content&& content, Aperture&& aperture, Offset&& offset) noexcept :
         widget(),
         content(std::forward<Content>(content)),
         aperture(std::forward<Aperture>(aperture)),
@@ -57,28 +54,24 @@ public:
     {
         _content_cbt = this->content.subscribe([&](auto...) {
             ++global_counter<"scroll_bar_widget:content:relayout">;
-            process_event({gui_event_type::window_relayout});
+            request_relayout();
         });
         _aperture_cbt = this->aperture.subscribe([&](auto...) {
             ++global_counter<"scroll_bar_widget:aperture:relayout">;
-            process_event({gui_event_type::window_relayout});
+            request_relayout();
         });
         _offset_cbt = this->offset.subscribe([&](auto...) {
             ++global_counter<"scroll_bar_widget:offset:relayout">;
-            process_event({gui_event_type::window_relayout});
+            request_relayout();
         });
+
+        style.set_name("scroll-bar");
     }
 
     ~scroll_bar_widget() {}
 
     [[nodiscard]] box_constraints update_constraints() noexcept override
     {
-        _layout = {};
-
-        if (mode() <= widget_mode::collapse) {
-            return {};
-        }
-
         // The minimum size is twice the length of the slider, which is twice the theme().size()
         if constexpr (axis == axis::vertical) {
             return {
@@ -95,12 +88,7 @@ public:
 
     void set_layout(widget_layout const& context) noexcept override
     {
-        _layout = context;
-
-        if (mode() <= widget_mode::collapse) {
-            _slider_rectangle = {};
-            return;
-        }
+        super::set_layout(context);
 
         // Calculate the position of the slider.
         auto const slider_offset = std::round(*offset * travel_vs_hidden_content_ratio());
@@ -116,21 +104,22 @@ public:
         return *aperture < *content;
     }
 
-    void draw(draw_context const& context) noexcept override
+    void draw(draw_context const& context) const noexcept override
     {
-        if (mode() > widget_mode::invisible and overlaps(context, layout()) and visible()) {
+        if (overlaps(context, layout())) {
             draw_rails(context);
             draw_slider(context);
         }
+
+        return super::draw(context);
     }
 
     hitbox hitbox_test(point2 position) const noexcept override
     {
         hi_axiom(loop::main().on_thread());
 
-        if (mode() >= widget_mode::partial and layout().contains(position) and visible() and
-            _slider_rectangle.contains(position)) {
-            return {id, _layout.elevation, hitbox_type::scroll_bar};
+        if (enabled() and layout().contains(position) and _slider_rectangle.contains(position)) {
+            return {id(), layout().elevation, hitbox_type::scroll_bar};
         } else {
             return {};
         }
@@ -172,15 +161,15 @@ public:
 
     [[nodiscard]] color background_color() const noexcept override
     {
-        return theme().fill_color(_layout.layer);
+        return theme().fill_color(layout().layer);
     }
 
     [[nodiscard]] color foreground_color() const noexcept override
     {
         if (phase() == widget_phase::hover) {
-            return theme().fill_color(_layout.layer + 2);
+            return theme().fill_color(layout().layer + 2);
         } else {
-            return theme().fill_color(_layout.layer + 1);
+            return theme().fill_color(layout().layer + 1);
         }
     }
 
@@ -264,14 +253,14 @@ private:
         return _hidden_content != 0 ? slider_travel_range() / _hidden_content : 0.0f;
     }
 
-    void draw_rails(draw_context const& context) noexcept
+    void draw_rails(draw_context const& context) const noexcept
     {
         auto const corner_radii =
             axis == axis::vertical ? hi::corner_radii{layout().width() * 0.5f} : hi::corner_radii{layout().height() * 0.5f};
         context.draw_box(layout(), layout().rectangle(), background_color(), corner_radii);
     }
 
-    void draw_slider(draw_context const& context) noexcept
+    void draw_slider(draw_context const& context) const noexcept
     {
         auto const corner_radii = axis == axis::vertical ? hi::corner_radii{_slider_rectangle.width() / 2.0f} :
                                                            hi::corner_radii{_slider_rectangle.height() / 2.0f};

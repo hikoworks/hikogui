@@ -11,6 +11,7 @@
 #include "font_metrics.hpp"
 #include "font_char_map.hpp"
 #include "font_id.hpp"
+#include "font_glyph_ids.hpp"
 #include "../unicode/unicode.hpp"
 #include "../i18n/i18n.hpp"
 #include "../graphic_path/graphic_path.hpp"
@@ -31,6 +32,10 @@ hi_export namespace hi::inline v1 {
  */
 hi_export class font {
 public:
+    /** The id of the font.
+     */
+    font_id id;
+
     /** The family name as parsed from the font file.
      *
      * Examples: "Helvetica", "Times New Roman"
@@ -50,12 +55,6 @@ public:
     font_weight weight = font_weight::regular;
     float optical_size = 12.0;
 
-    /** A optimized character map.
-     *
-     * This character map is always available even if the font is not loaded.
-     */
-    font_char_map char_map;
-
     /** A string representing the features of a font.
      * This will be a comma separated list of features, mostly tables like 'kern' and 'GPOS'.
      */
@@ -65,16 +64,14 @@ public:
      */
     font_metrics_em metrics;
 
-    /** List of fonts to use as a fallback for this font.
-     */
-    std::vector<hi::font_id> fallback_chain;
-
-    font() = default;
+    constexpr font() noexcept = default;
     virtual ~font() = default;
     font(font const&) = delete;
     font& operator=(font const&) = delete;
     font(font&&) = delete;
     font& operator=(font&&) = delete;
+
+    constexpr font(font_id id) noexcept : id(id) {}
 
     /** Return if the font is loaded.
      *
@@ -85,18 +82,18 @@ public:
     /** Get the glyph for a code-point.
      * @return glyph-id, or invalid when not found or error.
      */
-    [[nodiscard]] glyph_id find_glyph(char32_t c) const noexcept
-    {
-        return char_map.find(c);
-    }
+    [[nodiscard]] virtual glyph_id find_glyph(char32_t c) const noexcept = 0;
 
     /** Get the glyphs for a grapheme.
-     * @return a set of glyph-ids, or invalid when not found or error.
+     * 
+     * @param g The grapheme to look up the glyph for.
+     * @return a set of glyph-ids, or empty when the grapheme is not found in
+     *         the font.
      */
-    [[nodiscard]] lean_vector<glyph_id> find_glyph(grapheme g) const
+    [[nodiscard]] font_glyph_ids find_glyphs(grapheme g) const
     {
         // Create a glyph_ids object for a single grapheme.
-        auto r = lean_vector<glyph_id>{};
+        auto r = font_glyph_ids{};
 
         // First try composed normalization
         for (auto const c : g.composed()) {
@@ -104,24 +101,74 @@ public:
                 r.push_back(glyph_id);
             } else {
                 r.clear();
-                break;
+                return r;
             }
         }
 
-        if (r.empty()) {
-            // Now try decomposed normalization
-            for (auto const c : g.decomposed()) {
-                if (auto const glyph_id = find_glyph(c)) {
-                    r.push_back(glyph_id);
-                } else {
-                    r.clear();
-                    break;
-                }
+        // Now try decomposed normalization
+        for (auto const c : g.decomposed()) {
+            if (auto const glyph_id = find_glyph(c)) {
+                r.push_back(glyph_id);
+            } else {
+                r.clear();
+                return r;
             }
         }
 
         return r;
     }
+
+    /** Get glyphs of a run of graphemes.
+     *
+     * When a run of text has a relatively unique grapheme it may not be found
+     * in the font. Therefor this function needs to be fast so it can be tried
+     * on multiple fonts. This is why this function returns the glyphs as an
+     * output argument, being able to reuse the allocation.
+     * 
+     * @param graphemes The text to get the glyphs for from the same font.
+     * @param r The glyphs for each grapheme.
+     * @return true on success, false when not all graphemes could be found in
+     *         the font.
+     */
+    bool find_glyphs(std::span<grapheme const> graphemes, std::span<font_glyph_ids> r) const
+    {
+        assert(graphemes.size() == r.size());
+        assert(not id.empty());
+
+        for (auto i = size_t{0}; i != graphemes.size(); ++i) {
+            auto const& g = graphemes[i];
+
+            r[i] = find_glyphs(g);
+            if (r[i].empty()) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /** Substitute a run glyphs in logical order.
+     *
+     * This function will change glyphs to better match the given script and language.
+     * Some glyphs may be replaced, or combined (ligature) into a single glyph.
+     * Glyphs that are removed will be replaced with empty glyphs (0xffff).
+     *
+     * The position of the glyphs will remain the same however, so that it is still
+     * possible to match the glyphs with the original grapheme, and know which glyphs
+     * are marks.
+     *
+     * @param inout A span of glyphs which may be replaced with glyphs that fit better
+     *              with the script and language.
+     * @param script The script of the glyph-run.
+     * @param language The language of the glyph-run.
+     */
+    //virtual bool substitute_glyphs(std::span<lean_vector<glyph_id>> glyphs, iso script, iso language) const
+    //{
+    //}
+//
+    //virtual bool position_glyphs(std::vector<glyph_position> &out, std::span<lean_vector<glyph_id> const> glyphs, iso script, iso language) const
+    //{
+    //}
 
     /** Load a glyph into a path.
      * The glyph is directly loaded from the font file.
@@ -139,7 +186,7 @@ public:
      * @return The advance for the glyph.
      * @throws std::exception If there was an error looking up the glyph.
      */
-    [[nodiscard]] virtual float get_advance(hi::glyph_id glyph_id) const = 0;
+    [[nodiscard]] virtual unit::em_squares_f get_advance(hi::glyph_id glyph_id) const = 0;
 
     /** Load a glyph into a path.
      * The glyph is directly loaded from the font file.

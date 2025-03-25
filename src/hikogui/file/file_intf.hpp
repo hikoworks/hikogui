@@ -13,9 +13,7 @@
 #include "../macros.hpp"
 #include "access_mode.hpp"
 #include "seek_whence.hpp"
-#if HI_OPERATING_SYSTEM == HI_OS_WINDOWS
 #include "file_win32_impl.hpp"
-#endif
 #include <mutex>
 #include <cstdint>
 #include <map>

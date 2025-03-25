@@ -8,6 +8,8 @@
 // Every widget must inherit from hi::widget.
 class command_widget : public hi::widget {
 public:
+    using super = hi::widget;
+
     // Using an observer allows reading, writing and monitoring of the value outside of the widget.
     hi::observer<bool> value;
 
@@ -25,21 +27,8 @@ public:
     // or when a widget wants to change its constraints.
     [[nodiscard]] hi::box_constraints update_constraints() noexcept override
     {
-        // Reset _layout so that the set_layout() calculations will be triggered.
-        _layout = {};
-
         // Set the minimum, preferred, maximum sizes and the margin around the widget.
-        return {{100, 20}, {200, 20}, {300, 50}, hi::alignment{}, theme().margin()};
-    }
-
-    // The `set_layout()` function is called when the window has resized, or when
-    // a widget wants to change the internal layout.
-    //
-    // NOTE: The size of the layout may be larger than the maximum constraints of this widget.
-    void set_layout(hi::widget_layout const& context) noexcept override
-    {
-        // Update the `_layout` with the new context.
-        if (compare_store(_layout, context)) {}
+        return {{100, 20}, {200, 20}, {300, 50}, style.margins_px};
     }
 
     // It is common to override the context sensitive colors of the default widget.
@@ -52,7 +41,7 @@ public:
     // The `draw()` function is called when all or part of the window requires redrawing.
     // This may happen when showing the window for the first time, when the operating-system
     // requests a (partial) redraw, or when a widget requests a redraw of itself.
-    void draw(hi::draw_context const& context) noexcept override
+    void draw(hi::draw_context const& context) const noexcept override
     {
         // We only need to draw the widget when it is visible and when the visible area of
         // the widget overlaps with the scissor-rectangle (partial redraw) of the drawing context.
@@ -61,14 +50,16 @@ public:
             // These colors are context sensitive; for example focus_color() checks if the widget is enabled,
             // has keyboard focus and the window is active.
             context.draw_box(
-                _layout,
-                _layout.rectangle(),
+                layout(),
+                layout().rectangle(),
                 background_color(),
                 focus_color(),
                 theme().border_width(),
                 hi::border_side::inside,
                 theme().rounding_radius());
         }
+
+        return super::draw(context);
     }
 
     // Override this function when your widget needs to be controllable by keyboard interaction.
@@ -82,13 +73,13 @@ public:
     [[nodiscard]] hi::hitbox hitbox_test(hi::point2 position) const noexcept override
     {
         // Check if the (mouse) position is within the visual-area of the widget.
-        // The hit_rectangle is the _layout.rectangle() intersected with the _layout.clipping_rectangle.
+        // The hit_rectangle is the layout().rectangle() intersected with the layout().clipping_rectangle.
         if (mode() >= hi::widget_mode::partial and layout().contains(position)) {
             // The `this` argument allows the gui_window to forward mouse events to handle_event(mouse) of this widget.
             // The `position` argument is used to handle widgets that are visually overlapping, widgets with higher elevation
             // get priority. When this widget is enabled it should show a button-cursor, otherwise just the normal arrow.
             return {
-                id, _layout.elevation, mode() >= hi::widget_mode::partial ? hi::hitbox_type::button : hi::hitbox_type::_default};
+                id, layout().elevation, mode() >= hi::widget_mode::partial ? hi::hitbox_type::button : hi::hitbox_type::_default};
 
         } else {
             return {};
@@ -112,7 +103,7 @@ public:
             return true;
 
         case hi::gui_event_type::mouse_up:
-            if (mode() >= hi::widget_mode::partial and event.is_left_button_up(_layout.rectangle())) {
+            if (mode() >= hi::widget_mode::partial and event.is_left_button_up(layout().rectangle())) {
                 return handle_event(hi::gui_event_type::gui_activate);
             }
             break;

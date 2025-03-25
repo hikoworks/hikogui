@@ -47,7 +47,7 @@ public:
     ~tab_widget()
     {
         hi_assert_not_null(delegate);
-        delegate->deinit(*this);
+        delegate->deinit(this);
     }
 
     /** Construct a tab widget with a delegate.
@@ -58,14 +58,16 @@ public:
     tab_widget(std::shared_ptr<delegate_type> delegate) noexcept : super(), delegate(std::move(delegate))
     {
         hi_axiom(loop::main().on_thread());
-
         hi_assert_not_null(this->delegate);
-        _delegate_cbt = this->delegate->subscribe([&] {
+
+        _delegate_cbt = this->delegate->subscribe(this, [this] {
             ++global_counter<"tab_widget:delegate:constrain">;
-            process_event({gui_event_type::window_reconstrain});
+            request_resize();
         });
 
-        this->delegate->init(*this);
+        this->delegate->init(this);
+
+        style.set_name("tab-view");
     }
 
     /** Construct a tab widget with an observer value.
@@ -86,11 +88,11 @@ public:
         hi_assert_not_null(delegate);
 
         child->set_parent(this);
-        delegate->add_tab(*this, index, _children.size());
+        delegate->add_tab(this, index, _children.size());
         _children.push_back(std::move(child));
 
         ++global_counter<"tab_widget:emplace:constrain">;
-        process_event({gui_event_type::window_reconstrain});
+        request_reconstrain();
     }
 
     /** Make and add a child widget.
@@ -113,49 +115,32 @@ public:
     }
 
     /// @privatesection
-    [[nodiscard]] generator<widget_intf &> children(bool include_invisible) noexcept override
+    [[nodiscard]] generator<widget_intf &> children(bool include_invisible) const noexcept override
     {
-        for (auto const& child : _children) {
-            co_yield *child;
+        for (auto i = size_t{0}; i < _children.size(); ++i) {
+            if (std::cmp_equal(i, delegate->index(this)) or include_invisible) {
+                co_yield *_children[i];
+            }
         }
     }
 
     [[nodiscard]] box_constraints update_constraints() noexcept override
     {
-        _layout = {};
+        auto r = box_constraints{};
 
-        auto& selected_child_ = selected_child();
-
-        if (_previous_selected_child != &selected_child_) {
-            _previous_selected_child = &selected_child_;
-            hi_log_info("tab_widget::update_constraints() selected tab changed");
-            process_event({gui_event_type::window_resize});
+        for (auto &child : visible_children()) {
+            r = child.update_constraints();
         }
 
-        for (auto const& child : _children) {
-            child->set_mode(child.get() == &selected_child_ ? widget_mode::enabled : widget_mode::invisible);
-        }
-
-        return selected_child_.update_constraints();
+        return r;
     }
 
     void set_layout(widget_layout const& context) noexcept override
     {
-        _layout = context;
+        super::set_layout(context);
 
-        for (auto const& child : _children) {
-            if (child->mode() > widget_mode::invisible) {
-                child->set_layout(context);
-            }
-        }
-    }
-
-    void draw(draw_context const& context) noexcept override
-    {
-        if (mode() > widget_mode::invisible) {
-            for (auto const& child : _children) {
-                child->draw(context);
-            }
+        for (auto &child : visible_children()) {
+            child.set_layout(context);
         }
     }
 
@@ -163,10 +148,10 @@ public:
     {
         hi_axiom(loop::main().on_thread());
 
-        if (mode() >= widget_mode::partial) {
+        if (enabled()) {
             auto r = hitbox{};
-            for (auto const& child : _children) {
-                r = child->hitbox_test_from_parent(position, r);
+            for (auto &child : visible_children()) {
+                r = child.hitbox_test_from_parent(position, r);
             }
             return r;
         } else {
@@ -180,40 +165,19 @@ public:
         keyboard_focus_direction direction) const noexcept override
     {
         hi_axiom(loop::main().on_thread());
-        return selected_child().find_next_widget(current_widget, group, direction);
+        for (auto &child : visible_children()) {
+            // Only one child is visible at a time.
+            return child.find_next_widget(current_widget, group, direction);
+        }
+
+        // No children, or no children visible.
+        return current_widget == id() ? id() : widget_id{};
     }
     /// @endprivatsectopn
 private:
     widget const *_previous_selected_child = nullptr;
     std::vector<std::unique_ptr<widget>> _children;
     callback<void()> _delegate_cbt;
-
-    using const_iterator = decltype(_children)::const_iterator;
-
-    [[nodiscard]] const_iterator find_selected_child() const noexcept
-    {
-        hi_axiom(loop::main().on_thread());
-        hi_assert_not_null(delegate);
-
-        auto index = delegate->index(const_cast<tab_widget&>(*this));
-        if (index >= 0 and index < ssize(_children)) {
-            return _children.begin() + index;
-        }
-
-        return _children.end();
-    }
-    [[nodiscard]] widget& selected_child() const noexcept
-    {
-        hi_axiom(loop::main().on_thread());
-        hi_assert(not _children.empty());
-
-        auto i = find_selected_child();
-        if (i != _children.cend()) {
-            return **i;
-        } else {
-            return *_children.front();
-        }
-    }
 };
 
 }} // namespace hi::v1

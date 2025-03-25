@@ -22,7 +22,8 @@
 
 hi_export_module(hikogui.widgets.audio_device_widget);
 
-hi_export namespace hi { inline namespace v1 {
+hi_export namespace hi {
+inline namespace v1 {
 
 /** Audio device configuration widget.
  * @ingroup widgets
@@ -49,41 +50,33 @@ public:
         _device_selection_widget = &_grid_widget->emplace<selection_widget>("A1", device_id, _device_list);
 
         _sync_device_list_task = sync_device_list();
+
+        style.set_name("audio-device");
     }
 
     /// @privatesection
-    [[nodiscard]] generator<widget_intf&> children(bool include_invisible) noexcept override
+    [[nodiscard]] generator<widget_intf&> children(bool include_invisible) const noexcept override
     {
         co_yield *_grid_widget;
     }
 
     [[nodiscard]] box_constraints update_constraints() noexcept override
     {
-        _layout = {};
         _grid_constraints = _grid_widget->update_constraints();
         return _grid_constraints;
     }
 
     void set_layout(widget_layout const& context) noexcept override
     {
-        if (compare_store(_layout, context)) {
-            auto const grid_rectangle = context.rectangle();
-            _grid_shape = {_grid_constraints, grid_rectangle, theme().baseline_adjustment()};
-        }
+        super::set_layout(context);
 
+        _grid_shape = box_shape{context.rectangle()};
         _grid_widget->set_layout(context.transform(_grid_shape, transform_command::level));
-    }
-
-    void draw(draw_context const& context) noexcept override
-    {
-        if (mode() > widget_mode::invisible) {
-            _grid_widget->draw(context);
-        }
     }
 
     hitbox hitbox_test(point2 position) const noexcept override
     {
-        if (mode() >= widget_mode::partial) {
+        if (enabled()) {
             auto r = hitbox{};
             r = _grid_widget->hitbox_test_from_parent(position, r);
             return r;
@@ -91,10 +84,10 @@ public:
             return hitbox{};
         }
     }
-    
+
     [[nodiscard]] bool accepts_keyboard_focus(keyboard_focus_group group) const noexcept override
     {
-        if (mode() >= widget_mode::partial) {
+        if (enabled()) {
             return _grid_widget->accepts_keyboard_focus(group);
         } else {
             return false;
@@ -110,7 +103,7 @@ private:
 
     /** The widget used to select the audio device.
      */
-    selection_widget *_device_selection_widget = nullptr;
+    selection_widget* _device_selection_widget = nullptr;
 
     observer<std::vector<std::pair<std::string, label>>> _device_list;
 
@@ -132,4 +125,5 @@ private:
     }
 };
 
-}} // namespace hi::v1
+} // namespace v1
+} // namespace hi::v1

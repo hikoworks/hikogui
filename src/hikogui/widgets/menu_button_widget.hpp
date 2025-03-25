@@ -9,7 +9,6 @@
 #pragma once
 
 #include "widget.hpp"
-#include "button_delegate.hpp"
 #include "label_widget.hpp"
 #include "../algorithm/algorithm.hpp"
 #include "../l10n/l10n.hpp"
@@ -27,9 +26,6 @@ hi_export_module(hikogui.widgets.menu_button_widget);
 hi_export namespace hi {
 inline namespace v1 {
 
-template<typename Context>
-concept menu_button_widget_attribute = label_widget_attribute<Context>;
-
 /** Add menu-button around a small-button.
  *
  * @ingroup widgets
@@ -39,99 +35,43 @@ class menu_button_widget : public widget {
 public:
     using super = widget;
     using button_widget_type = ButtonWidget;
-    using button_attributes_type = button_widget_type::attributes_type;
     using delegate_type = button_widget_type::delegate_type;
 
-    struct attributes_type {
-        /** The label to show when the button is in the 'on' state.
-         */
-        observer<hi::label> label = txt("on");
+    /** The label to show when the button is in the 'on' state.
+     */
+    observer<hi::label> label = txt("on");
 
-        /** The label to for the shortcut.
-         */
-        observer<hi::label> shortcut = hi::label{};
-
-        /** The alignment of the button and on/off/other label.
-         */
-        observer<alignment> alignment = hi::alignment::middle_left();
-
-        attributes_type(attributes_type const&) noexcept = default;
-        attributes_type(attributes_type&&) noexcept = default;
-        attributes_type& operator=(attributes_type const&) noexcept = default;
-        attributes_type& operator=(attributes_type&&) noexcept = default;
-
-        template<menu_button_widget_attribute... Attributes>
-        explicit attributes_type(Attributes&&... attributes) noexcept
-        {
-            set_attributes<0>(std::forward<Attributes>(attributes)...);
-        }
-
-        template<size_t I>
-        void set_attributes() noexcept
-        {
-        }
-
-        template<size_t I, menu_button_widget_attribute First, menu_button_widget_attribute... Rest>
-        void set_attributes(First&& first, Rest&&... rest) noexcept
-        {
-            if constexpr (forward_of<First, observer<hi::label>>) {
-                if constexpr (I == 0) {
-                    label = std::forward<First>(first);
-                } else if constexpr (I == 1) {
-                    shortcut = std::forward<First>(first);
-                } else {
-                    hi_static_no_default();
-                }
-                set_attributes<I + 1>(std::forward<Rest>(rest)...);
-
-            } else if constexpr (forward_of<First, observer<hi::alignment>>) {
-                alignment = std::forward<First>(first);
-                set_attributes<I>(std::forward<Rest>(rest)...);
-
-            } else {
-                hi_static_no_default();
-            }
-        }
-    };
-
-    attributes_type attributes;
+    /** The label to for the shortcut.
+     */
+    observer<hi::label> shortcut = hi::label{};
 
     template<typename... Args>
-    [[nodiscard]] consteval static size_t num_default_delegate_arguments() noexcept
+    [[nodiscard]] static std::shared_ptr<delegate_type> make_default_delegate(Args&&... args)
     {
-        return button_widget_type::template num_default_delegate_arguments<Args...>();
+        return button_widget_type::make_default_delegate(std::forward<Args>(args)...);
     }
 
-    template<size_t N, typename... Args>
-    [[nodiscard]] static auto make_default_delegate(Args&&... args)
+    template<std::derived_from<delegate_type> Delegate>
+    menu_button_widget(std::shared_ptr<Delegate> delegate) noexcept : super()
     {
-        return button_widget_type::template make_default_delegate<N, Args...>(std::forward<Args>(args)...);
-    }
-
-    hi_call_right_arguments(static, make_attributes, attributes_type);
-
-    menu_button_widget(attributes_type attributes, std::shared_ptr<delegate_type> delegate) noexcept :
-        super(), attributes(std::move(attributes))
-    {
-        _button_widget = std::make_unique<button_widget_type>(
-            button_attributes_type{this->attributes.alignment, keyboard_focus_group::menu}, std::move(delegate));
+        _button_widget = std::make_unique<button_widget_type>(std::move(delegate));
+        _button_widget->focus_group = keyboard_focus_group::menu;
         _button_widget->set_parent(this);
 
-        _label_widget = std::make_unique<label_widget>(this->attributes.label, this->attributes.alignment);
+        _label_widget = std::make_unique<label_widget>(label);
         _label_widget->set_parent(this);
 
-        _shortcut_widget = std::make_unique<label_widget>(this->attributes.shortcut, this->attributes.alignment);
+        _shortcut_widget = std::make_unique<label_widget>(shortcut);
         _shortcut_widget->set_parent(this);
 
-        // Link the state from the button, so that both this widget and the child widget react in the same way.
-        _button_widget->state = state;
-
-        _button_widget_cbt = _button_widget->subscribe([&] {
-            this->request_redraw();
+        _button_widget_cbt = _button_widget->subscribe([this] {
+            this->set_checked(_button_widget->checked());
             this->notifier();
         });
 
         _button_widget_cbt();
+
+        style.set_name("menu-button");
     }
 
     /** Construct a widget with a label.
@@ -141,20 +81,13 @@ public:
      *             widget followed by arguments to `attributes_type`
      */
     template<typename... Args>
-    menu_button_widget(Args&&... args) requires(num_default_delegate_arguments<Args...>() != 0)
-        :
-        menu_button_widget(
-            parent,
-            make_attributes<num_default_delegate_arguments<Args...>()>(std::forward<Args>(args)...),
-            make_default_delegate<num_default_delegate_arguments<Args...>()>(std::forward<Args>(args)...))
+    menu_button_widget(Args&&... args) : menu_button_widget(make_default_delegate(std::forward<Args>(args)...))
     {
     }
 
     /// @privatesection
     [[nodiscard]] box_constraints update_constraints() noexcept override
     {
-        _layout = {};
-
         _grid.clear();
         _grid.add_cell(0, 0, grid_cell_type::button);
         _grid.add_cell(1, 0, grid_cell_type::label, true);
@@ -183,21 +116,21 @@ public:
             }
         }
 
-        auto constraints = _grid.constraints(os_settings::left_to_right());
-        constraints.minimum += extent2{theme().template margin<float>() * 2.0f, theme().template margin<float>() * 2.0f};
-        constraints.preferred += extent2{theme().template margin<float>() * 2.0f, theme().template margin<float>() * 2.0f};
-        constraints.maximum += extent2{theme().template margin<float>() * 2.0f, theme().template margin<float>() * 2.0f};
+        auto constraints = _grid.constraints(os_settings::left_to_right(), style.vertical_alignment);
+        constraints.minimum += style.padding_px.size();
+        constraints.preferred += style.padding_px.size();
+        constraints.maximum += style.padding_px.size();
         constraints.margins = {};
         return constraints;
     }
 
     void set_layout(widget_layout const& context) noexcept override
     {
-        if (compare_store(_layout, context)) {
-            auto shape = context.shape;
-            shape.rectangle -= theme().template margin<float>();
-            _grid.set_layout(shape, theme().baseline_adjustment());
-        }
+        super::set_layout(context);
+
+        auto shape = context.shape;
+        shape.rectangle -= style.padding_px;
+        _grid.set_layout(shape);
 
         for (auto const& cell : _grid) {
             if (cell.value == grid_cell_type::button) {
@@ -215,31 +148,22 @@ public:
         }
     }
 
-    void draw(draw_context const& context) noexcept override
+    void draw(draw_context const& context) const noexcept override
     {
-        if (mode() > widget_mode::invisible and overlaps(context, layout())) {
-            auto outline_color = focus() ? focus_color() : background_color();
+        if (overlaps(context, layout())) {
             context.draw_box(
-                layout(), layout().rectangle(), background_color(), outline_color, theme().border_width(), border_side::inside);
-
-            for (auto const& cell : _grid) {
-                if (cell.value == grid_cell_type::button) {
-                    _button_widget->draw(context);
-
-                } else if (cell.value == grid_cell_type::label) {
-                    _label_widget->draw(context);
-
-                } else if (cell.value == grid_cell_type::shortcut) {
-                    _shortcut_widget->draw(context);
-
-                } else {
-                    hi_no_default();
-                }
-            }
+                layout(),
+                layout().rectangle(),
+                style.background_color,
+                style.border_color,
+                style.border_width_px,
+                border_side::inside);
         }
+        
+        return super::draw(context);
     }
 
-    [[nodiscard]] generator<widget_intf&> children(bool include_invisible) noexcept override
+    [[nodiscard]] generator<widget_intf&> children(bool include_invisible) const noexcept override
     {
         co_yield *_button_widget;
         co_yield *_label_widget;
@@ -250,9 +174,9 @@ public:
     {
         hi_axiom(loop::main().on_thread());
 
-        if (mode() >= widget_mode::partial and layout().contains(position)) {
+        if (enabled() and layout().contains(position)) {
             // Accept the hitbox of the menu_button_widget on behalf of the button_widget.
-            return {_button_widget->id, _layout.elevation, hitbox_type::button};
+            return {_button_widget->id(), layout().elevation, hitbox_type::button};
         } else {
             return {};
         }

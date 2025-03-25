@@ -55,9 +55,9 @@ static std::u32string parseNormalizationTest_column(std::string_view column)
 {
     std::u32string r;
 
-    auto codePointStrings = hi::split_view(column);
+    auto codePointStrings = hi::split_string_view(column, " ");
     for (auto const codePointString : codePointStrings) {
-        r += hi::char_cast<char32_t>(hi::from_string<uint32_t>(codePointString, 16));
+        r += hi::char_cast<char32_t>(*hi::from_string<uint32_t>(codePointString, 16));
     }
     return r;
 }
@@ -66,11 +66,11 @@ static std::optional<NormalizationTest> parseNormalizationTest_line(std::string_
 {
     auto r = std::optional<NormalizationTest>{};
 
-    auto const split_line = hi::split_view(line, '#');
+    auto const split_line = hi::split_string_view(line, "#");
     if (split_line.size() < 2) {
         return r;
     }
-    auto const columns = hi::split_view(split_line[0], ';');
+    auto const columns = hi::split_string_view(split_line[0], ";");
     if (columns.size() < 6) {
         return r;
     }
@@ -93,7 +93,7 @@ static hi::generator<NormalizationTest> parseNormalizationTests()
     auto const test_data = as_string_view(view);
 
     size_t line_nr = 0;
-    for (auto const line : hi::split_view(test_data, '\n')) {
+    for (auto const line : hi::split_string_view(test_data, "\n")) {
         if (auto const optionalTest = parseNormalizationTest_line(line, ++line_nr)) {
             co_yield *optionalTest;
         }

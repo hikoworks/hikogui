@@ -130,7 +130,11 @@ hi_export struct token {
     template<std::integral T>
     constexpr operator T() const
     {
-        return from_string<T>(static_cast<std::string_view>(*this));
+        if (auto value = from_string<T>(static_cast<std::string_view>(*this))) {
+            return *value;
+        } else {
+            throw parse_error(std::format("Can not convert string to integer: {}", static_cast<std::string>(*this)));
+        }
     }
 
     template<std::floating_point T>

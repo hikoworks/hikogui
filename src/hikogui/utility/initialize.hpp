@@ -5,9 +5,7 @@
 #pragma once
 
 #include "terminate.hpp"
-#if HI_OPERATING_SYSTEM == HI_OS_WINDOWS
 #include "console_win32.hpp"
-#endif
 #include "debugger_intf.hpp"
 #include <atomic>
 #include <chrono>
@@ -31,7 +29,7 @@ enum class initialize_state_type {
     finished,
 };
 
-inline thread_local uint16_t initialize_thread_id_dummy;
+inline thread_local uint16_t initialize_thread_id_dummy; 
 
 /** Get a thread id.
  * @return A unique id for a thread, which is never 0 or 1.

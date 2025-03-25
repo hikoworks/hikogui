@@ -8,6 +8,8 @@
 // Every widget must inherit from hi::widget.
 class widget_with_child : public hi::widget {
 public:
+    using super = hi::widget;
+
     // Every constructor of a widget starts with a `window` and `parent` argument.
     // In most cases these are automatically filled in when calling a container widget's `emplace()` function.
     template<typename Label>
@@ -23,10 +25,6 @@ public:
     // or when a widget wants to change its constraints.
     [[nodiscard]] hi::box_constraints update_constraints() noexcept override
     {
-        // Almost all widgets will reset the `_layout` variable here so that it will
-        // trigger the calculations in `set_layout()` as well.
-        _layout = {};
-
         // We need to recursively set the constraints of any child widget here as well
         _label_constraints = _label_widget->update_constraints();
 
@@ -49,15 +47,12 @@ public:
     // NOTE: The size of the layout may be larger than the maximum constraints of this widget.
     void set_layout(hi::widget_layout const& context) noexcept override
     {
-        // Update the `_layout` with the new context, in this case we want to do some
-        // calculations when the size of the widget was changed.
-        if (compare_store(_layout, context)) {
-            // The layout of the child widget are also calculated here, which only needs to be done
-            // when the layout of the current widget changes.
-            auto const label_rectangle =
-                align(context.rectangle(), _label_constraints.preferred, hi::alignment::middle_center());
-            _label_shape = hi::box_shape{_label_constraints, label_rectangle, theme().baseline_adjustment()};
-        }
+        super::set_layout(context);
+
+        // The layout of the child widget are also calculated here, which only needs to be done
+        // when the layout of the current widget changes.
+        auto const label_rectangle = align(context.rectangle(), _label_constraints.preferred, hi::alignment::middle_center());
+        _label_shape = hi::box_shape{_label_constraints, label_rectangle, theme().baseline_adjustment()};
 
         // The layout of any child widget must always be set, even if the layout didn't actually change.
         // This is because child widgets may need to re-layout for other reasons.
@@ -67,7 +62,7 @@ public:
     // The `draw()` function is called when all or part of the window requires redrawing.
     // This may happen when showing the window for the first time, when the operating-system
     // requests a (partial) redraw, or when a widget requests a redraw of itself.
-    void draw(hi::draw_context const& context) noexcept override
+    void draw(hi::draw_context const& context) const noexcept override
     {
         if (mode() > hi::widget_mode::invisible) {
             // We only need to draw the widget when it is visible and when the visible area of
@@ -75,11 +70,11 @@ public:
             if (overlaps(context, layout())) {
                 // There may be stylistic reasons to draw into the margin, for example
                 // round objects need to be drawn slightly larger than square objects.
-                // The standard clipping rectangle is 2 pixels larger than the _layout.rectangle().
+                // The standard clipping rectangle is 2 pixels larger than the layout().rectangle().
                 // In this example we draw the border outside the rectangle.
                 context.draw_box(
-                    _layout,
-                    _layout.rectangle(),
+                    layout(),
+                    layout().rectangle(),
                     background_color(),
                     foreground_color(),
                     theme().border_width(),
@@ -92,6 +87,8 @@ public:
             // overlap check.
             _label_widget->draw(context);
         }
+
+        return super::draw(context);
     }
 
 protected:
@@ -102,7 +99,7 @@ protected:
     //
     // The allocator argument should not be used by the function, it is used by the caller
     // to allocate the co-routine's frame on the stack.
-    [[nodiscard]] hi::generator<widget_intf &> children(bool include_invisible) noexcept override
+    [[nodiscard]] hi::generator<widget_intf&> children(bool include_invisible) noexcept override
     {
         // This function, written as a co-routine, yields a references to each of its children.
         co_yield *_label_widget;
@@ -115,7 +112,7 @@ private:
     hi::box_shape _label_shape;
 };
 
-int hi_main(int argc, char *argv[])
+int hi_main(int argc, char* argv[])
 {
     hi::set_application_name("Custom widget with child example");
     hi::set_application_vendor("HikoGUI");

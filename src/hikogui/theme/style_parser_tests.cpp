@@ -80,35 +80,35 @@ TEST_SUITE(style_parser_suite) {
         hi::named_color<"test1"> = hi::color{1.0, 2.0, 3.0, 0.5};
         hi::named_color<"test2"> = hi::color{2.0, 3.0, 4.0, 0.5};
 
-        auto result = hi::parse_style("foreground-color=test1 background-color = 'test2'");
+        auto result = hi::parse_style("color=test1 background-color = 'test2'");
         REQUIRE(result.has_value());
         auto [attributes, id, classes] = *result;
-        REQUIRE(attributes.foreground_color() == hi::color(1.0, 2.0, 3.0, 0.5));
+        REQUIRE(attributes.color() == hi::color(1.0, 2.0, 3.0, 0.5));
         REQUIRE(attributes.background_color() == hi::color(2.0, 3.0, 4.0, 0.5));
     }
 
     TEST_CASE(color_rgb_test) {
-        auto result = hi::parse_style("foreground-color=rgb(1.0, 2.0, 3.0) background-color = rgba(2.0,3, 4.0, 0.5)");
+        auto result = hi::parse_style("color=rgb(1.0, 2.0, 3.0) background-color = rgba(2.0,3, 4.0, 0.5)");
         REQUIRE(result.has_value());
         auto [attributes, id, classes] = *result;
-        REQUIRE(attributes.foreground_color() == hi::color(1.0, 2.0, 3.0, 1.0));
+        REQUIRE(attributes.color() == hi::color(1.0, 2.0, 3.0, 1.0));
         REQUIRE(attributes.background_color() == hi::color(2.0, 3.0, 4.0, 0.5));
     }
 
     TEST_CASE(color_hex_test) {
-        auto result = hi::parse_style("foreground-color='#112233' background-color = '#22334455'");
+        auto result = hi::parse_style("color='#112233' background-color = '#22334455'");
         REQUIRE(result.has_value());
         auto [attributes, id, classes] = *result;
-        REQUIRE(attributes.foreground_color() == hi::color_from_sRGB("#112233"));
+        REQUIRE(attributes.color() == hi::color_from_sRGB("#112233"));
         REQUIRE(attributes.background_color() == hi::color_from_sRGB("#22334455"));
     }
 
     TEST_CASE(color_error_test) {
-        REQUIRE(hi::parse_style("foreground-color=a").has_error());
-        REQUIRE(hi::parse_style("foreground-color=12").has_error());
-        REQUIRE(hi::parse_style("foreground-color=12.3").has_error());
-        REQUIRE(hi::parse_style("foreground-color=rgba(1.0, 2.0, 3.0)").has_error());
-        REQUIRE(hi::parse_style("foreground-color=rgb(1.0, 2.0)").has_error());
+        REQUIRE(hi::parse_style("color=a").has_error());
+        REQUIRE(hi::parse_style("color=12").has_error());
+        REQUIRE(hi::parse_style("color=12.3").has_error());
+        REQUIRE(hi::parse_style("color=rgba(1.0, 2.0, 3.0)").has_error());
+        REQUIRE(hi::parse_style("color=rgb(1.0, 2.0)").has_error());
     }
 
     TEST_CASE(alignment_test) {

@@ -2,13 +2,12 @@
 
 #pragma once
 
-#include "style_attributes.hpp"
+#include "style_properties.hpp"
 #include "../parser/parser.hpp"
 #include "../container/container.hpp"
 #include "../macros.hpp"
 #include <iterator>
 #include <tuple>
-#include <exception>
 
 hi_export_module(hikogui.theme : theme_tag);
 
@@ -63,10 +62,7 @@ template<std::input_iterator It, std::sentinel_for<It> ItEnd>
         return std::nullopt;
     }
 
-    if (*it == "none") {
-        ++it;
-        return horizontal_alignment::none;
-    } else if (*it == "flush") {
+    if (*it == "flush") {
         ++it;
         return horizontal_alignment::flush;
     } else if (*it == "left") {
@@ -95,10 +91,7 @@ template<std::input_iterator It, std::sentinel_for<It> ItEnd>
         return std::nullopt;
     }
 
-    if (*it == "none") {
-        ++it;
-        return vertical_alignment::none;
-    } else if (*it == "top") {
+    if (*it == "top") {
         ++it;
         return vertical_alignment::top;
     } else if (*it == "middle") {
@@ -111,6 +104,60 @@ template<std::input_iterator It, std::sentinel_for<It> ItEnd>
         return std::unexpected{std::format("{}: Unknown vertical alignment {}.", token_location(it, last), static_cast<std::string>(*it))};
     }
 }
+
+template<std::input_iterator It, std::sentinel_for<It> ItEnd>
+[[nodiscard]] constexpr expected_optional<object_fit, std::string> parse_style_object_fit(It& it, ItEnd last)
+{
+    hi_assert(it != last);
+
+    if (*it != token::id) {
+        return std::nullopt;
+    }
+
+    if (*it == "none") {
+        ++it;
+        return object_fit::none;
+    } else if (*it == "contain") {
+        ++it;
+        return object_fit::contain;
+    } else if (*it == "cover") {
+        ++it;
+        return object_fit::cover;
+    } else if (*it == "fill") {
+        ++it;
+        return object_fit::fill;
+    } else if (*it == "scale-down") {
+        ++it;
+        return object_fit::scale_down;
+    } else {
+        return std::unexpected{std::format("{}: Unknown object-fit {}.", token_location(it, last), static_cast<std::string>(*it))};
+    }
+}
+
+template<std::input_iterator It, std::sentinel_for<It> ItEnd>
+[[nodiscard]] constexpr expected_optional<float, std::string> parse_style_scalar(It& it, ItEnd last)
+{
+    hi_assert(it != last);
+
+    if (*it != token::integer and *it != token::real) {
+        return std::nullopt;
+    }
+
+    auto const value = static_cast<float>(*it);
+    ++it;
+
+    if (it == last or *it != token::id) {
+        // A numeric value without a suffix is the value.
+        return value;
+    } else if (*it == '%') {
+        ++it;
+        return value * 0.01f;
+    } else {
+        // Unknown suffix could be token for another part of the tag.
+        return value;
+    }
+}
+
 template<std::input_iterator It, std::sentinel_for<It> ItEnd>
 [[nodiscard]] constexpr expected_optional<unit::length_f, std::string> parse_style_length(It& it, ItEnd last)
 {
@@ -126,6 +173,9 @@ template<std::input_iterator It, std::sentinel_for<It> ItEnd>
     if (it == last or *it != token::id) {
         // A numeric value without a suffix is in device independet pixels.
         return unit::dips(value);
+    } else if (*it == '%') {
+        ++it;
+        return value * 0.01f;
     } else if (*it == "px") {
         ++it;
         return unit::pixels(value);
@@ -279,13 +329,13 @@ template<std::input_iterator It, std::sentinel_for<It> ItEnd>
 
             } catch (std::exception const &e) {
                 return std::unexpected{std::format("{}: Could not parse hex color '{}': {}", token_location(it, last), color_name, e.what())};
-            }
+            } 
 
         } else if (auto const* color_ptr = color::find(color_name)) {
             return *color_ptr;
         } else {
             return std::unexpected{std::format("{}: Unknown color name '{}'.", token_location(it, last), color_name)};
-        }
+        }    
 
     } else {
         return std::unexpected{std::format("{}: Unknown color value {}.", token_location(it, last), *it)};
@@ -293,13 +343,13 @@ template<std::input_iterator It, std::sentinel_for<It> ItEnd>
 }
 
 template<std::input_iterator It, std::sentinel_for<It> ItEnd>
-[[nodiscard]] constexpr expected_optional<style_attributes, std::string> parse_style_attribute(It& it, ItEnd last)
+[[nodiscard]] constexpr expected_optional<style_properties, std::string> parse_style_attribute(It& it, ItEnd last)
 {
 #define HIX_VALUE(VALUE_PARSER, NAME, ATTRIBUTE) \
     if (name == NAME) { \
         if (auto const value = VALUE_PARSER(it, last)) { \
-            auto r = style_attributes{}; \
-            r.set_##ATTRIBUTE(*value, true); \
+            auto r = style_properties{}; \
+            r.set_##ATTRIBUTE(*value, style_priority{style_importance::author, style_specificity::style}); \
             return r; \
         } else if (value.has_error()) { \
             return std::unexpected(value.error()); \
@@ -335,11 +385,14 @@ template<std::input_iterator It, std::sentinel_for<It> ItEnd>
     HIX_VALUE(parse_style_length, "border-top-left-radius", border_top_left_radius)
     HIX_VALUE(parse_style_length, "border-top-right-radius", border_top_right_radius)
     HIX_VALUE(parse_style_length, "border-radius", border_radius)
-    HIX_VALUE(parse_style_color, "foreground-color", foreground_color)
+    HIX_VALUE(parse_style_color, "color", color)
     HIX_VALUE(parse_style_color, "background-color", background_color)
     HIX_VALUE(parse_style_color, "border-color", border_color)
     HIX_VALUE(parse_style_horizontal_alignment, "horizontal-alignment", horizontal_alignment)
     HIX_VALUE(parse_style_vertical_alignment, "vertical-alignment", vertical_alignment)
+    HIX_VALUE(parse_style_object_fit, "object-fit", object_fit)
+    HIX_VALUE(parse_style_scalar, "width-weight", width_scalar)
+    HIX_VALUE(parse_style_scalar, "height-weight", height_scalar)
     {
         return std::unexpected(std::format("{}: Unknown attribute '{}'.", token_location(it, last), name));
     }
@@ -350,7 +403,7 @@ template<std::input_iterator It, std::sentinel_for<It> ItEnd>
 } // namespace detail
 
 template<std::input_iterator It, std::sentinel_for<It> ItEnd>
-[[nodiscard]] constexpr expected_optional<std::tuple<style_attributes, std::string, std::vector<std::string>>, std::string> parse_style(It first, ItEnd last)
+[[nodiscard]] constexpr expected_optional<std::tuple<style_properties, std::string, std::vector<std::string>>, std::string> parse_style(It first, ItEnd last)
 {
     constexpr auto config = [] {
         auto r = lexer_config{};
@@ -364,7 +417,7 @@ template<std::input_iterator It, std::sentinel_for<It> ItEnd>
     auto lexer_it = lexer<config>.parse(first, last);
     auto token_it = make_lookahead_iterator<4>(lexer_it);
 
-    auto attributes = hi::style_attributes{};
+    auto attributes = hi::style_properties{};
     auto id = std::string{};
     auto classes = std::vector<std::string>{};
     while (token_it != std::default_sentinel) {
@@ -402,7 +455,7 @@ template<std::input_iterator It, std::sentinel_for<It> ItEnd>
     return std::tuple{attributes, id, classes};
 }
 
-[[nodiscard]] constexpr expected_optional<std::tuple<style_attributes, std::string, std::vector<std::string>>, std::string> parse_style(std::string_view str)
+[[nodiscard]] constexpr expected_optional<std::tuple<style_properties, std::string, std::vector<std::string>>, std::string> parse_style(std::string_view str)
 {
     return parse_style(str.begin(), str.end());
 }

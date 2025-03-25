@@ -21,10 +21,12 @@
     "icon-size": 8,
 
     // Size of icons representing the length of am average word of a label's text.
-    "large-icon-size": 23,
+    "large-icon-size": 25,
 
     // Size of icons being inline with a label's text.
     "label-icon-size": 15,
+
+    "font-size": 10,
 
     // The colors values are either:
     // - integers are in sRGB
@@ -62,64 +64,54 @@
         [ 72,  72,  74]
     ],
     
-    // Colors used by widgets for internal elements and disabled icons.
-    "border-color": [
-        [ 72,  72,  74],
-        [ 99,  99, 102],
-        [142, 142, 147],
-        [174, 174, 178]
-    ],
-
-    // Color for textual or primary elements like icons.
-    "foreground-color":       "gray10",
-
-    // Accent color used by widgets, to show icons, hover and keyboard focus
-    "accent-color":           "blue",
-    "text-select-color":      "blue",
-    "primary-cursor-color":   "gray10",
-    "secondary-cursor-color": "yellow",
+    "color":                  [209, 209, 214],
+    "disabled-color":         [142, 142, 147],
+    "accent-color":           [ 10, 132, 255],
+    "text-select-color":      [ 10, 132, 255],
+    "primary-cursor-color":   [242, 242, 247],
+    "secondary-cursor-color": [255, 214,  10],
 
     "small-label-style": {
         "family": "Arial",
         "weight": "regular",
-        "size": 10,
-        "color": "gray10"
+        "scale": 1,
+        "color": [242, 242, 247]
     },
 
     "label-style": {
         "family": "Arial",
         "weight": "regular",
-        "size": 12,
-        "color": "gray10"
+        "scale": 1,
+        "color": [242, 242, 247]
     },
     "warning-label-style": {
         "family": "Times New Roman",
         "weight": "regular",
-        "size": 12,
-        "color": "gray10"
+        "scale": 1,
+        "color": [242, 242, 247]
     },
     "error-label-style": {
         "family": "Arial",
         "weight": "regular",
-        "size": 12,
-        "color": "orange"
+        "scale": 1,
+        "color": [255, 159,  10]
     },
     "help-label-style": {
         "family": "Arial",
         "weight": "regular",
-        "size": 12,
+        "scale": 1,
         "color": [88, 86, 214]
     },
     "placeholder-label-style": {
         "family": "Arial",
         "weight": "regular",
-        "size": 12,
+        "scale": 1,
         "color": [142, 142, 147]
     },
     "link-label-style": {
         "family": "Arial",
         "weight": "regular",
-        "size": 12,
+        "scale": 1,
         "color": [0, 122, 255]
     }
 }

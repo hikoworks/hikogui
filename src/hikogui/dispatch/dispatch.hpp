@@ -5,20 +5,20 @@
 #include <cstddef> // XXX #619
 #include <memory> // XXX #619
 #include <chrono> // XXX #619
-#include "async_task.hpp" // export
+#include "awaitable_future_impl.hpp" // export
+#include "awaitable_future_intf.hpp" // export
 #include "awaitable_stop_token_intf.hpp" // export
 #include "awaitable_stop_token_impl.hpp" // export
 #include "awaitable_timer_intf.hpp" // export
 #include "awaitable_timer_impl.hpp" // export
 #include "awaitable.hpp" // export
 #include "function_timer.hpp" // export
-#if HI_OPERATING_SYSTEM == HI_OS_WINDOWS
 #include "loop_win32_intf.hpp" // export
-#endif
 #include "notifier.hpp" // export
-#include "progress.hpp" // export
 #include "socket_event.hpp" // export
-#include "task_controller.hpp" // export
+#include "stop_and_progress_source.hpp" // export
+#include "stop_and_progress_token.hpp" // export
+#include "stop_and_progress.hpp" // export
 #include "task.hpp" // export
 #include "when_any.hpp" // export
 
@@ -33,7 +33,7 @@
  *
  * There are also two well-known loops which can be accessed using the
  * static functions `hi::loop::main()` and `hi::loop::timer()`.
- *
+ * 
  * The main-loop is used to handle events from the GUI, Audio-control and
  * network. The main-loop is latency sensitive and any event should be
  * handled quickly.
@@ -70,19 +70,6 @@
  *    + std::chrono::duration (including the std::chrono::literals).
  *    + std::chrono::time_stamp.
  *    + std::stop_token
- *
- * Async task
- * ----------
- * The `hi::async_task()` function will call a given function and run it
- * using `std::async()` and control it using a co-routine which loops
- * until the function as completed. If the function passed to `hi::async_task()`
- * is a `hi::task` co-routine, then that function is called directly.
- *
- * `hi::cancelable_async_task()` is simular to `hi::async_task()` but it will
- * take a `std::stop_token` and `hi::progress_token` to cancel and track progress
- * of the given function. The given function's `std::stop_token` and
- * `hi::progress_token` arguments are optional, and `hi::cancelable_async_task()`
- * will
  *
  */
 hi_export_module(hikogui.dispatch);

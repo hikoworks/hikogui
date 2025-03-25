@@ -114,26 +114,26 @@ TEST_CASE(variants_test)
 {
     auto nl_Latn_NL_expected =
         std::vector<tag>{tag::parse("nl-Latn-NL"), tag::parse("nl-NL"), tag::parse("nl-Latn"), tag::parse("nl")};
-    REQUIRE(hi::make_vector(tag::parse("nl-Latn-NL").variants()) == nl_Latn_NL_expected);
+    REQUIRE(std::ranges::to<std::vector>(tag::parse("nl-Latn-NL").variants()) == nl_Latn_NL_expected);
 
     auto nl_NL_expected = std::vector<tag>{tag::parse("nl-NL"), tag::parse("nl")};
-    REQUIRE(hi::make_vector(tag::parse("nl-NL").variants()) == nl_NL_expected);
+    REQUIRE(std::ranges::to<std::vector>(tag::parse("nl-NL").variants()) == nl_NL_expected);
 
     auto nl_Latn_expected = std::vector<tag>{tag::parse("nl-Latn"), tag::parse("nl")};
-    REQUIRE(hi::make_vector(tag::parse("nl-Latn").variants()) == nl_Latn_expected);
+    REQUIRE(std::ranges::to<std::vector>(tag::parse("nl-Latn").variants()) == nl_Latn_expected);
 
     auto nl_expected = std::vector<tag>{tag::parse("nl")};
-    REQUIRE(hi::make_vector(tag::parse("nl").variants()) == nl_expected);
+    REQUIRE(std::ranges::to<std::vector>(tag::parse("nl").variants()) == nl_expected);
 }
 
 TEST_CASE(canonical_variants_test)
 {
     auto nl_Latn_NL_expected =
         std::vector<tag>{tag::parse("nl-Latn-NL"), tag::parse("nl-NL"), tag::parse("nl-Latn"), tag::parse("nl")};
-    REQUIRE(hi::make_vector(tag::parse("nl-Latn-NL").canonical_variants()) == nl_Latn_NL_expected);
+    REQUIRE(std::ranges::to<std::vector>(tag::parse("nl-Latn-NL").canonical_variants()) == nl_Latn_NL_expected);
 
     auto nl_Latn_BE_expected = std::vector<tag>{tag::parse("nl-Latn-BE"), tag::parse("nl-BE")};
-    REQUIRE(hi::make_vector(tag::parse("nl-Latn-BE").canonical_variants()) == nl_Latn_BE_expected);
+    REQUIRE(std::ranges::to<std::vector>(tag::parse("nl-Latn-BE").canonical_variants()) == nl_Latn_BE_expected);
 }
 
 TEST_CASE(all_variants_test)

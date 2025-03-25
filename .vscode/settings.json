@@ -135,11 +135,12 @@
         "resumable": "cpp",
         "string_span": "cpp",
         "pointers": "cpp",
-        "*.tcc": "cpp",
-        "__bit_reference": "cpp",
-        "__config": "cpp",
-        "__locale": "cpp",
-        "__verbose_abort": "cpp"
+        "span_ext": "cpp",
+        "util": "cpp",
+        "assert": "cpp",
+        "byte": "cpp",
+        "narrow": "cpp",
+        "generator": "cpp"
     },
     "[python]": {
         "editor.defaultFormatter": "ms-python.autopep8"
@@ -151,5 +152,11 @@
             {},
             {"color": "#ffff00"},
         ]
-    }
+    },
+    "cmake.copyCompileCommands": "${workspaceFolder}/compile_commands.json",
+    "github.copilot.chat.codeGeneration.instructions": [
+        {
+            "file": ".copilot-instructions.md"
+        }
+    ]
 }

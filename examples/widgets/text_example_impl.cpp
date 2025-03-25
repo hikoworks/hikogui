@@ -75,8 +75,7 @@ int hi_main(int argc, char *argv[])
 
     auto text = to_gstring(latin_text + "\n" + mixed_rtl_text + "\n" + mixed_ltr_text + "\n" + hebrew_text);
 
-    auto& tw = widget->content().emplace<text_widget>("A1", text, hi::alignment::top_justified());
-    tw.set_mode(hi::widget_mode::enabled);
+    auto& tw = widget->content().emplace<text_widget>("A1", text);
 
     auto window = std::make_unique<gui_window>(std::move(widget));
 

@@ -3,8 +3,8 @@
 // (See accompanying file LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt)
 
 /** @file image/pixmap.hpp Defines the pixmap type.
-* @ingroup image
-*/
+ * @ingroup image
+ */
 
 #pragma once
 
@@ -24,7 +24,8 @@ hi_warning_ignore_msvc(26439);
 // Writing iterators instead of using raw pointers will require a lot of code without any added safety.
 hi_warning_ignore_msvc(26459);
 
-hi_export namespace hi { inline namespace v1 {
+hi_export namespace hi {
+inline namespace v1 {
 template<typename T>
 class pixmap_span;
 
@@ -48,8 +49,8 @@ public:
     /** The size type.
      */
     using size_type = size_t;
-    using pointer = value_type *;
-    using const_pointer = value_type const *;
+    using pointer = value_type*;
+    using const_pointer = value_type const*;
     using reference = value_type&;
     using const_reference = value_type const&;
     using interator = pointer;
@@ -65,7 +66,7 @@ public:
 
     template<typename Pixmap>
     struct row_iterator {
-        Pixmap *_ptr;
+        Pixmap* _ptr;
         size_t _y;
 
         // clang-format off
@@ -85,7 +86,7 @@ public:
 
     template<typename Pixmap>
     struct row_range {
-        Pixmap *_ptr;
+        Pixmap* _ptr;
 
         // clang-format off
         constexpr row_range(row_range const &) noexcept = default;
@@ -119,6 +120,7 @@ public:
         _capacity(other.size()),
         _width(other._width),
         _height(other._height),
+        _scale(other._scale),
         _allocator(std::allocator_traits<allocator_type>::select_on_container_copy_construction(other._allocator))
     {
         _data = std::allocator_traits<allocator_type>::allocate(_allocator, _capacity);
@@ -136,6 +138,7 @@ public:
         _capacity(std::exchange(other._capacity, 0)),
         _width(std::exchange(other._width, 0)),
         _height(std::exchange(other._height, 0)),
+        _scale(std::exchange(other._scale, 1)),
         _allocator(std::exchange(other._allocator, {}))
     {
     }
@@ -163,6 +166,7 @@ public:
             clear();
             _width = other._width;
             _height = other._height;
+            _scale = other._scale;
             std::uninitialized_copy(other.begin(), other.end(), this->begin());
             return *this;
 
@@ -170,7 +174,7 @@ public:
             auto& new_allocator = propogate_allocator ? const_cast<allocator_type&>(other._allocator) : this->_allocator;
             auto const new_capacity = other.size();
 
-            value_type *new_data = nullptr;
+            value_type* new_data = nullptr;
             try {
                 new_data = std::allocator_traits<allocator_type>::allocate(new_allocator, other.size());
                 std::uninitialized_copy(other.begin(), other.end(), new_data);
@@ -192,6 +196,7 @@ public:
             _capacity = new_capacity;
             _width = other._width;
             _height = other._height;
+            _scale = other._scale;
             _allocator = new_allocator;
             return *this;
         }
@@ -219,6 +224,7 @@ public:
             _capacity = std::exchange(other._capacity, 0);
             _width = std::exchange(other._width, 0);
             _height = std::exchange(other._height, 0);
+            _scale = std::exchange(other._scale, 1);
             _allocator = other._allocator;
             return *this;
 
@@ -227,6 +233,7 @@ public:
             clear();
             _width = other._width;
             _height = other._height;
+            _scale = other._scale;
 
             std::uninitialized_move(other.begin(), other.end(), this->begin());
 
@@ -236,7 +243,7 @@ public:
 
         } else {
             auto const new_capacity = other.size();
-            value_type *new_data = nullptr;
+            value_type* new_data = nullptr;
             try {
                 new_data = std::allocator_traits<allocator_type>::allocate(_allocator, new_capacity);
                 std::uninitialized_move(other.begin(), other.end(), new_data);
@@ -258,6 +265,7 @@ public:
             _capacity = new_capacity;
             _width = other._width;
             _height = other._height;
+            _scale = other._scale;
             _data = std::allocator_traits<allocator_type>::allocate(_allocator, _capacity);
 
             // Clear, but leave the allocation intact, so that it can be reused.
@@ -270,11 +278,16 @@ public:
 
     /** Create an pixmap of width and height.
      */
-    [[nodiscard]] constexpr pixmap(size_type width, size_type height, allocator_type allocator = allocator_type{}) :
+    [[nodiscard]] constexpr pixmap(
+        size_type width,
+        size_type height,
+        size_type scale = 1,
+        allocator_type allocator = allocator_type{}) :
         _data(std::allocator_traits<allocator_type>::allocate(allocator, width * height)),
         _capacity(width * height),
         _width(width),
         _height(height),
+        _scale(scale),
         _allocator(allocator)
     {
         std::uninitialized_value_construct(begin(), end());
@@ -282,15 +295,17 @@ public:
 
     template<std::convertible_to<value_type> O>
     [[nodiscard]] constexpr pixmap(
-        O *hi_restrict data,
+        O* hi_restrict data,
         size_type width,
         size_type height,
         size_type stride,
+        size_type scale = 1,
         allocator_type allocator = allocator_type{}) :
         _data(std::allocator_traits<allocator_type>::allocate(allocator, width * height)),
         _capacity(width * height),
         _width(width),
         _height(height),
+        _scale(scale),
         _allocator(allocator)
     {
         if (width == stride) {
@@ -322,30 +337,30 @@ public:
 
     template<std::convertible_to<value_type> O>
     [[nodiscard]] constexpr pixmap(
-        O *hi_restrict data,
+        O* hi_restrict data,
         size_type width,
         size_type height,
         allocator_type allocator = allocator_type{}) noexcept :
-        pixmap(data, width, height, width, allocator)
+        pixmap(data, width, height, width, 1, allocator)
     {
     }
 
     template<std::convertible_to<value_type> O>
     [[nodiscard]] constexpr explicit pixmap(pixmap<O> const& other, allocator_type allocator = allocator_type{}) :
-        pixmap(other.data(), other.width(), other.height(), allocator)
+        pixmap(other.data(), other.width(), other.height(), other.width(), other.scale(), allocator)
     {
     }
 
     template<std::convertible_to<value_type> O>
     [[nodiscard]] constexpr explicit pixmap(pixmap_span<O> const& other, allocator_type allocator = allocator_type{}) :
-        pixmap(other.data(), other.width(), other.height(), other.stride(), allocator)
+        pixmap(other.data(), other.width(), other.height(), other.stride(), other.scale(), allocator)
     {
     }
 
     template<std::same_as<value_type const> O>
     [[nodiscard]] constexpr operator pixmap_span<O>() const noexcept
     {
-        return pixmap_span<O>{_data, _width, _height};
+        return pixmap_span<O>{_data, _width, _height, _width, _scale};
     }
 
     [[nodiscard]] constexpr friend bool operator==(pixmap const& lhs, pixmap const& rhs) noexcept
@@ -369,6 +384,17 @@ public:
     [[nodiscard]] constexpr size_type height() const noexcept
     {
         return _height;
+    }
+
+    pixmap& set_scale(size_type scale) noexcept
+    {
+        _scale = scale;
+        return *this;
+    }
+
+    [[nodiscard]] constexpr size_type scale() const noexcept
+    {
+        return _scale;
     }
 
     /** The number of pixels (width * height) in this image.
@@ -473,7 +499,7 @@ public:
         hi_axiom(y + new_height <= _height);
 
         auto const p = _data + y * _width + x;
-        return {p, new_width, new_height, _width, allocator};
+        return {p, new_width, new_height, _width, _scale, allocator};
     }
 
     [[nodiscard]] constexpr pixmap subimage(size_type x, size_type y, size_type new_width, size_type new_height) const noexcept
@@ -486,6 +512,7 @@ public:
         std::destroy(begin(), end());
         _width = 0;
         _height = 0;
+        _scale = 1;
     }
 
     constexpr void shrink_to_fit()
@@ -500,7 +527,7 @@ public:
         }
 
         auto const new_capacity = size();
-        value_type *new_data = nullptr;
+        value_type* new_data = nullptr;
         try {
             new_data = std::allocator_traits<allocator_type>::allocate(_allocator, new_capacity);
             std::uninitialized_move(begin(), end(), new_data);
@@ -515,16 +542,17 @@ public:
         std::allocator_traits<allocator_type>::deallocate(_allocator, old_data, old_capacity);
     }
 
-    constexpr friend void fill(pixmap &dst, value_type value = value_type{}) noexcept
+    constexpr friend void fill(pixmap& dst, value_type value = value_type{}) noexcept
     {
         std::fill(dst.begin(), dst.end(), value);
     }
 
 private:
-    value_type *_data = nullptr;
+    value_type* _data = nullptr;
     size_type _capacity = 0;
     size_type _width = 0;
     size_type _height = 0;
+    size_type _scale = 1;
     [[no_unique_address]] allocator_type _allocator = {};
 };
 
@@ -534,6 +562,7 @@ pixmap(pixmap_span<T> const& other) -> pixmap<std::remove_const_t<T>, std::alloc
 template<typename T, typename Allocator>
 pixmap(pixmap_span<T> const& other, Allocator allocator) -> pixmap<std::remove_const_t<T>, Allocator>;
 
-}} // namespace hi::v1
+} // namespace v1
+} // namespace hi::v1
 
 hi_warning_pop();

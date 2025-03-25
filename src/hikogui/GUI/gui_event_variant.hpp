@@ -39,10 +39,6 @@ enum class gui_event_variant {
      */
     grapheme,
 
-    /** The gui_event has rectangle data.
-     */
-    rectangle,
-
     /** The gui_event has clipboard data.
      */
     clipboard_data,
@@ -80,9 +76,6 @@ enum class gui_event_variant {
     case gui_event_type::keyboard_grapheme:
     case gui_event_type::keyboard_partial_grapheme:
         return gui_event_variant::grapheme;
-
-    case gui_event_type::window_redraw:
-        return gui_event_variant::rectangle;
 
     default:
         return gui_event_variant::other;

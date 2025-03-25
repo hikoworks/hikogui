@@ -12,188 +12,245 @@
 #include "ucd_grapheme_cluster_breaks.hpp"
 #include "ucd_line_break_classes.hpp"
 #include "ucd_east_asian_widths.hpp"
+#include "../algorithm/algorithm.hpp"
 #include "../utility/utility.hpp"
 #include "../macros.hpp"
 #include <cstdint>
 #include <vector>
 #include <algorithm>
 #include <numeric>
+#include <ranges>
+#include <string_view>
 
 hi_export_module(hikogui.unicode.unicode_line_break);
 
-
 hi_export namespace hi::inline v1 {
-namespace detail {
 
-/** Combined unicode_line_break_class and unicode_line_break_opportunity.
- */
-struct unicode_line_break_info {
-    unicode_line_break_class original_class = unicode_line_break_class::XX;
-    unicode_line_break_class current_class = unicode_line_break_class::XX;
-    bool is_extended_pictographic = false;
-    bool is_Cn = false;
-    unicode_east_asian_width east_asian_width = unicode_east_asian_width::A;
+class unicode_line_break {
+public:
+    constexpr unicode_line_break() noexcept = default;
+    constexpr unicode_line_break(unicode_line_break const&) noexcept = default;
+    constexpr unicode_line_break(unicode_line_break&&) noexcept = default;
+    constexpr unicode_line_break& operator=(unicode_line_break const&) noexcept = default;
+    constexpr unicode_line_break& operator=(unicode_line_break&&) noexcept = default;
 
-    constexpr unicode_line_break_info() noexcept = default;
-    constexpr unicode_line_break_info(unicode_line_break_info const&) noexcept = default;
-    constexpr unicode_line_break_info(unicode_line_break_info&&) noexcept = default;
-    constexpr unicode_line_break_info& operator=(unicode_line_break_info const&) noexcept = default;
-    constexpr unicode_line_break_info& operator=(unicode_line_break_info&&) noexcept = default;
-
-    constexpr explicit unicode_line_break_info(
-        unicode_line_break_class break_class,
-        bool is_Cn,
-        bool is_extended_pictographic,
-        unicode_east_asian_width east_asian_width) noexcept :
-        original_class(break_class),
-        current_class(break_class),
-        is_Cn(is_Cn),
-        is_extended_pictographic(is_extended_pictographic),
-        east_asian_width(east_asian_width)
+    [[nodiscard]] constexpr std::span<unicode_break_opportunity const> opportunities() const noexcept
     {
+        return _opportunities;
     }
 
-    constexpr explicit operator unicode_line_break_class() const noexcept
+    constexpr void set_text(std::span<char32_t const> base_code_points)
     {
-        return current_class;
+        auto const text_size = base_code_points.size();
+
+        clear_and_resize(_opportunities, text_size + 1, unicode_break_opportunity::unassigned);
+        clear_and_resize(_infos, text_size, info_type{});
+
+        LB1(base_code_points);
+        LB2_3();
+        LB4_8a();
+        LB9();
+        LB10();
+        LB11_31();
     }
 
-    constexpr unicode_line_break_info& operator|=(unicode_line_break_class rhs) noexcept
+    /** Fold the text to a maximum width.
+     *
+     * @param advances The advances of the code points.
+     * @param maximum_width The maximum width of a line.
+     * @param [out] r The number of code points in each line.
+     * @return The maximum width of the text after folding.
+     */
+    template<typename T, std::ranges::random_access_range R>
+    [[nodiscard]] constexpr T fold(R const& advances, T maximum_width, std::vector<size_t>& r) const
+        requires (std::convertible_to<std::ranges::range_value_t<R>, T>)
     {
-        current_class = rhs;
-        return *this;
-    }
+        r.clear();
 
-    [[nodiscard]] constexpr bool operator==(unicode_line_break_class rhs) const noexcept
-    {
-        return current_class == rhs;
-    }
+        auto width = T{};
+        auto i = size_t{0};
+        while (i != advances.size()) {
+            auto const [next_i, line_width] = fit_line(advances, i, maximum_width);
+            assert(next_i > i);
 
-    [[nodiscard]] constexpr bool operator==(unicode_east_asian_width rhs) const noexcept
-    {
-        return east_asian_width == rhs;
-    }
-};
+            r.push_back(next_i - i);
 
-using unicode_line_break_info_vector = std::vector<unicode_line_break_info>;
-using unicode_line_break_info_iterator = unicode_line_break_info_vector::iterator;
-using unicode_line_break_info_const_iterator = unicode_line_break_info_vector::const_iterator;
-
-template<typename It, typename ItEnd, typename CodePointFunc>
-[[nodiscard]] constexpr std::vector<unicode_line_break_info>
-unicode_LB1(It first, ItEnd last, CodePointFunc const& code_point_func) noexcept
-{
-    auto r = std::vector<unicode_line_break_info>{};
-    r.reserve(std::distance(first, last));
-
-    for (auto it = first; it != last; ++it) {
-        auto const code_point = code_point_func(*it);
-        auto const east_asian_width = ucd_get_east_asian_width(code_point);
-        auto const break_class = ucd_get_line_break_class(code_point);
-        auto const general_category = ucd_get_general_category(code_point);
-        auto const grapheme_cluster_break = ucd_get_grapheme_cluster_break(code_point);
-
-        auto const resolved_break_class = [&]() {
-            switch (break_class) {
-                using enum unicode_line_break_class;
-            case AI:
-            case SG:
-            case XX:
-                return AL;
-            case CJ:
-                return NS;
-            case SA:
-                return is_Mn_or_Mc(general_category) ? CM : AL;
-            default:
-                return break_class;
-            }
-        }();
-
-        r.emplace_back(
-            resolved_break_class,
-            general_category == unicode_general_category::Cn,
-            grapheme_cluster_break == unicode_grapheme_cluster_break::Extended_Pictographic,
-            east_asian_width);
-    }
-
-    return r;
-}
-
-constexpr void unicode_LB2_3(unicode_break_vector& opportunities) noexcept
-{
-    hi_axiom(not opportunities.empty());
-    // LB2
-    opportunities.front() = unicode_break_opportunity::no;
-    // LB3
-    opportunities.back() = unicode_break_opportunity::mandatory;
-}
-
-template<typename MatchFunc>
-constexpr void unicode_LB_walk(
-    unicode_break_vector& opportunities,
-    std::vector<unicode_line_break_info> const& infos,
-    MatchFunc match_func) noexcept
-{
-    using enum unicode_line_break_class;
-
-    if (infos.empty()) {
-        return;
-    }
-
-    auto cur = infos.begin();
-    auto const last = infos.end() - 1;
-    auto const last2 = infos.end();
-    auto opportunity = opportunities.begin() + 1;
-
-    auto cur_sp_class = XX;
-    auto cur_nu_class = XX;
-    auto prev_class = XX;
-    auto num_ri = 0_uz;
-    while (cur != last) {
-        auto const next = cur + 1;
-        auto const cur_class = unicode_line_break_class{*cur};
-        auto const next2_class = cur + 2 == last2 ? XX : unicode_line_break_class{*(cur + 2)};
-
-        // Keep track of classes followed by zero or more SP.
-        if (cur_class != SP) {
-            cur_sp_class = cur_class;
+            i = next_i;
+            width = std::max(width, line_width);
         }
 
-        // Keep track of a "NU (NU|SY|IS)*" and "NU (NU|SY|IS)* (CL|CP)?".
-        if (cur_nu_class == CL) {
-            // Only a single CL|CP class may be at the end, then the number is closed.
-            cur_nu_class = XX;
-        } else if (cur_nu_class == NU) {
-            if (cur_class == CL or cur_class == CP) {
-                cur_nu_class = CL;
-            } else if (cur_class != NU and cur_class != SY and cur_class != IS) {
+        return width;
+    }
+
+private:
+    struct info_type {
+        unicode_line_break_class original_class = unicode_line_break_class::XX;
+        unicode_line_break_class current_class = unicode_line_break_class::XX;
+        bool is_extended_pictographic = false;
+        bool is_Cn = false;
+        unicode_east_asian_width east_asian_width = unicode_east_asian_width::A;
+
+        constexpr info_type() noexcept = default;
+        constexpr info_type(info_type const&) noexcept = default;
+        constexpr info_type(info_type&&) noexcept = default;
+        constexpr info_type& operator=(info_type const&) noexcept = default;
+        constexpr info_type& operator=(info_type&&) noexcept = default;
+
+        constexpr explicit info_type(
+            unicode_line_break_class break_class,
+            bool is_Cn,
+            bool is_extended_pictographic,
+            unicode_east_asian_width east_asian_width) noexcept :
+            original_class(break_class),
+            current_class(break_class),
+            is_Cn(is_Cn),
+            is_extended_pictographic(is_extended_pictographic),
+            east_asian_width(east_asian_width)
+        {
+        }
+
+        constexpr explicit operator unicode_line_break_class() const noexcept
+        {
+            return current_class;
+        }
+
+        constexpr info_type& operator|=(unicode_line_break_class rhs) noexcept
+        {
+            current_class = rhs;
+            return *this;
+        }
+
+        [[nodiscard]] constexpr bool operator==(unicode_line_break_class rhs) const noexcept
+        {
+            return current_class == rhs;
+        }
+
+        [[nodiscard]] constexpr bool operator==(unicode_east_asian_width rhs) const noexcept
+        {
+            return east_asian_width == rhs;
+        }
+
+        [[nodiscard]] constexpr bool is_white_space() const noexcept
+        {
+            using enum unicode_line_break_class;
+            auto const c = current_class;
+            return c == SP or c == ZW or c == BK or c == CR or c == LF or c == NL;
+        }
+    };
+
+    std::vector<info_type> _infos;
+    unicode_line_break_vector _opportunities;
+
+    constexpr void LB1(std::span<char32_t const> code_points) noexcept
+    {
+        auto i = size_t{0};
+        for (auto code_point : code_points) {
+            auto const east_asian_width = ucd_get_east_asian_width(code_point);
+            auto const break_class = ucd_get_line_break_class(code_point);
+            auto const general_category = ucd_get_general_category(code_point);
+            auto const grapheme_cluster_break = ucd_get_grapheme_cluster_break(code_point);
+
+            auto const resolved_break_class = [&]() {
+                switch (break_class) {
+                    using enum unicode_line_break_class;
+                case AI:
+                case SG:
+                case XX:
+                    return AL;
+                case CJ:
+                    return NS;
+                case SA:
+                    return is_Mn_or_Mc(general_category) ? CM : AL;
+                default:
+                    return break_class;
+                }
+            }();
+
+            _infos[i++] = info_type{
+                resolved_break_class,
+                general_category == unicode_general_category::Cn,
+                grapheme_cluster_break == unicode_grapheme_cluster_break::Extended_Pictographic,
+                east_asian_width};
+        }
+    }
+
+    constexpr void LB2_3() noexcept
+    {
+        assert(not _opportunities.empty());
+        // LB2
+        _opportunities.front() = unicode_break_opportunity::no;
+        // LB3
+        _opportunities.back() = unicode_break_opportunity::mandatory;
+    }
+
+    template<typename MatchFunc>
+    constexpr void LB_walk(MatchFunc match_func) noexcept
+    {
+        using enum unicode_line_break_class;
+
+        if (_infos.empty()) {
+            return;
+        }
+
+        auto cur = _infos.begin();
+        auto const last = _infos.end() - 1;
+        auto const last2 = _infos.end();
+        auto opportunity = _opportunities.begin() + 1;
+
+        auto cur_sp_class = XX;
+        auto cur_nu_class = XX;
+        auto prev_class = XX;
+        auto num_ri = 0_uz;
+        while (cur != last) {
+            auto const next = cur + 1;
+            auto const cur_class = unicode_line_break_class{*cur};
+            auto const next2_class = cur + 2 == last2 ? XX : unicode_line_break_class{*(cur + 2)};
+
+            // Keep track of classes followed by zero or more SP.
+            if (cur_class != SP) {
+                cur_sp_class = cur_class;
+            }
+
+            // Keep track of a "NU (NU|SY|IS)*" and "NU (NU|SY|IS)* (CL|CP)?".
+            if (cur_nu_class == CL) {
+                // Only a single CL|CP class may be at the end, then the number is closed.
                 cur_nu_class = XX;
+            } else if (cur_nu_class == NU) {
+                if (cur_class == CL or cur_class == CP) {
+                    cur_nu_class = CL;
+                } else if (cur_class != NU and cur_class != SY and cur_class != IS) {
+                    cur_nu_class = XX;
+                }
+            } else if (cur_class == NU) {
+                cur_nu_class = NU;
             }
-        } else if (cur_class == NU) {
-            cur_nu_class = NU;
-        }
 
-        // Keep track of consecutive RI, but only count the actual RIs.
-        if (cur->original_class == RI) {
-            ++num_ri;
-        } else if (*cur != RI) {
-            num_ri = 0;
-        }
+            // Keep track of consecutive RI, but only count the actual RIs.
+            if (cur->original_class == RI) {
+                ++num_ri;
+            } else if (*cur != RI) {
+                num_ri = 0;
+            }
 
-        if (*opportunity == unicode_break_opportunity::unassigned) {
-            *opportunity = match_func(prev_class, cur, next, next2_class, cur_sp_class, cur_nu_class, num_ri);
-        }
+            if (*opportunity == unicode_break_opportunity::unassigned) {
+                *opportunity = match_func(prev_class, cur, next, next2_class, cur_sp_class, cur_nu_class, num_ri);
+            }
 
-        prev_class = cur_class;
-        cur = next;
-        ++opportunity;
+            prev_class = cur_class;
+            cur = next;
+            ++opportunity;
+        }
     }
-}
 
-constexpr void unicode_LB4_8a(unicode_break_vector& opportunities, std::vector<unicode_line_break_info> const& infos) noexcept
-{
-    unicode_LB_walk(
-        opportunities, infos, [](auto const prev, auto const cur, auto const next, auto const next2, auto const cur_sp, auto const cur_nu, auto const num_ri) {
+    constexpr void LB4_8a() noexcept
+    {
+        LB_walk([](auto const prev,
+                   auto const cur,
+                   auto const next,
+                   auto const next2,
+                   auto const cur_sp,
+                   auto const cur_nu,
+                   auto const num_ri) {
             using enum unicode_break_opportunity;
             using enum unicode_line_break_class;
             if (*cur == BK) {
@@ -214,64 +271,69 @@ constexpr void unicode_LB4_8a(unicode_break_vector& opportunities, std::vector<u
                 return unassigned;
             }
         });
-}
-
-constexpr void unicode_LB9(unicode_break_vector& opportunities, std::vector<unicode_line_break_info>& infos) noexcept
-{
-    using enum unicode_line_break_class;
-    using enum unicode_break_opportunity;
-
-    if (infos.empty()) {
-        return;
     }
 
-    auto cur = infos.begin();
-    auto const last = infos.end() - 1;
-    auto opportunity = opportunities.begin() + 1;
+    constexpr void LB9() noexcept
+    {
+        using enum unicode_line_break_class;
+        using enum unicode_break_opportunity;
 
-    auto X = XX;
-    while (cur != last) {
-        auto const next = cur + 1;
-
-        if ((*cur == CM or *cur == ZWJ) and X != XX) {
-            // Treat all CM/ZWJ as X (if there is an X).
-            *cur |= X;
-        } else {
-            // Reset X on non-CM/ZWJ.
-            X = XX;
+        if (_infos.empty()) {
+            return;
         }
 
-        if ((*cur != BK and *cur != CR and *cur != LF and *cur != NL and *cur != SP and *cur != ZW) and
-            (*next == CM or *next == ZWJ)) {
-            // [^BK CR LF NL SP ZW] x [CM ZWJ]*
-            *opportunity = no;
+        auto cur = _infos.begin();
+        auto const last = _infos.end() - 1;
+        auto opportunity = _opportunities.begin() + 1;
 
-            if (X == XX) {
-                // The first character of [^BK CR LF NL SP ZW] x [CM ZWJ]* => X
-                X = static_cast<unicode_line_break_class>(*cur);
+        auto X = XX;
+        while (cur != last) {
+            auto const next = cur + 1;
+
+            if ((*cur == CM or *cur == ZWJ) and X != XX) {
+                // Treat all CM/ZWJ as X (if there is an X).
+                *cur |= X;
+            } else {
+                // Reset X on non-CM/ZWJ.
+                X = XX;
+            }
+
+            if ((*cur != BK and *cur != CR and *cur != LF and *cur != NL and *cur != SP and *cur != ZW) and
+                (*next == CM or *next == ZWJ)) {
+                // [^BK CR LF NL SP ZW] x [CM ZWJ]*
+                *opportunity = no;
+
+                if (X == XX) {
+                    // The first character of [^BK CR LF NL SP ZW] x [CM ZWJ]* => X
+                    X = static_cast<unicode_line_break_class>(*cur);
+                }
+            }
+
+            cur = next;
+            ++opportunity;
+        }
+    }
+
+    constexpr void LB10() noexcept
+    {
+        using enum unicode_line_break_class;
+
+        for (auto& x : _infos) {
+            if (x == CM or x == ZWJ) {
+                x |= AL;
             }
         }
-
-        cur = next;
-        ++opportunity;
     }
-}
 
-constexpr void unicode_LB10(std::vector<unicode_line_break_info>& infos) noexcept
-{
-    using enum unicode_line_break_class;
-
-    for (auto& x : infos) {
-        if (x == CM or x == ZWJ) {
-            x |= AL;
-        }
-    }
-}
-
-constexpr void unicode_LB11_31(unicode_break_vector& opportunities, std::vector<unicode_line_break_info> const& infos) noexcept
-{
-    unicode_LB_walk(
-        opportunities, infos, [&](auto const prev, auto const cur, auto const next, auto const next2, auto const cur_sp, auto const cur_nu, auto const num_ri) {
+    constexpr void LB11_31() noexcept
+    {
+        LB_walk([&](auto const prev,
+                    auto const cur,
+                    auto const next,
+                    auto const next2,
+                    auto const cur_sp,
+                    auto const cur_nu,
+                    auto const num_ri) {
             using enum unicode_break_opportunity;
             using enum unicode_line_break_class;
             using enum unicode_east_asian_width;
@@ -357,313 +419,132 @@ constexpr void unicode_LB11_31(unicode_break_vector& opportunities, std::vector<
                 return yes; // LB31: 999.0
             }
         });
-}
-
-/** Calculate the width of a line.
- *
- * @param first Iterator to the first character widths.
- * @param last Iterator to one beyond the last character width.
- * @return The length of the line.
- */
-[[nodiscard]] constexpr float
-unicode_LB_width(std::vector<float>::const_iterator first, std::vector<float>::const_iterator last) noexcept
-{
-    if (first == last) {
-        return 0.0f;
     }
 
-    auto rfirst = std::make_reverse_iterator(last);
-    auto rlast = std::make_reverse_iterator(first);
+    /** Calculate the width of a line, excluding trailing whitespace.
+     *
+     * @tparam T The type of the width.
+     * @param advances Width of each character in the text.
+     * @param first Index to the first character of the line
+     * @param last Index one past the last character of the line.
+     * @return The width of the line.
+     */
+    template<typename T>
+    [[nodiscard]] constexpr T width(std::span<T const> advances, size_t first, size_t last) noexcept
+    {
+        auto const first_info = _infos.begin() + first;
+        auto const last_info = _infos.begin() + last;
 
-    auto it = std::find_if(rfirst, rlast, [](auto const& width) {
-        return width >= 0.0;
-    });
-    return std::accumulate(it, rlast, 0.0f, [](float acc, auto const& width) {
-        return acc + abs(width);
-    });
-}
-
-/** Get the width of the entire text.
- *
- * @param widths Width of each character in the text.
- * @param lengths Number of characters on each line.
- * @return The maximum line width.
- */
-[[nodiscard]] constexpr float unicode_LB_width(std::vector<float> const& widths, std::vector<size_t> const& lengths)
-{
-    auto max_width = 0.0f;
-    auto it = widths.begin();
-    for (auto length : lengths) {
-        inplace_max(max_width, unicode_LB_width(it, it + length));
-        it += length;
-    }
-    return max_width;
-}
-
-/** Check if all the lines in the text fit the maximum width.
- *
- * @param widths Width of each character in the text.
- * @param lengths Number of characters on each line.
- * @param maximum_line_width The maximum line width allowed.
- * @return True if all the lines fit the maximum width.
- */
-[[nodiscard]] constexpr bool
-unicode_LB_width_check(std::vector<float> const& widths, std::vector<size_t> const& lengths, float maximum_line_width) noexcept
-{
-    auto it = widths.begin();
-    for (auto length : lengths) {
-        if (unicode_LB_width(it, it + length) > maximum_line_width) {
-            return false;
-        }
-        it += length;
-    }
-    return true;
-}
-
-/** Get the length of each line when broken with mandatory breaks.
- *
- * @return A list of line lengths.
- */
-[[nodiscard]] constexpr std::vector<size_t> unicode_LB_mandatory_lines(unicode_break_vector const& opportunities) noexcept
-{
-    auto r = std::vector<size_t>{};
-
-    auto length = 0_uz;
-    for (auto it = opportunities.begin() + 1; it != opportunities.end(); ++it) {
-        ++length;
-        if (*it == unicode_break_opportunity::mandatory) {
-            r.push_back(length);
-            length = 0_uz;
-        }
-    }
-
-    return r;
-}
-
-/** Get the length of each line when broken with mandatory and optional breaks.
- *
- * @return A list of line lengths.
- */
-[[nodiscard]] constexpr std::vector<size_t> unicode_LB_optional_lines(unicode_break_vector const& opportunities) noexcept
-{
-    auto r = std::vector<size_t>{};
-
-    auto length = 0_uz;
-    for (auto it = opportunities.begin() + 1; it != opportunities.end(); ++it) {
-        ++length;
-        if (*it != unicode_break_opportunity::no) {
-            r.push_back(length);
-            length = 0_uz;
-        }
-    }
-
-    return r;
-}
-
-[[nodiscard]] constexpr unicode_break_const_iterator unicode_LB_fast_fit_line(
-    unicode_break_const_iterator opportunity_it,
-    std::vector<float>::const_iterator width_it,
-    float maximum_line_width) noexcept
-{
-    using enum unicode_break_opportunity;
-
-    auto width = 0.0f;
-    auto end_of_line = opportunity_it;
-    while (true) {
-        width += abs(*width_it);
-        if (width > maximum_line_width) {
-            // This character makes the width too long.
-            return end_of_line;
-
-        } else if (*opportunity_it == mandatory) {
-            // This character is an end-of-line.
-            return opportunity_it;
-
-        } else if (*opportunity_it == yes) {
-            // This character is a valid break opportunity.
-            end_of_line = opportunity_it;
+        // Find the position of the last visible character.
+        auto const last_visible_it = rfind_if_not(first_info, last_info, [](auto const& x) { return x.is_white_space(); });
+        if (last_visible_it == last_info) {
+            // None of the characters on this line are visible.
+            return T{};
         }
 
-        ++opportunity_it;
-        ++width_it;
+        // Calculate the width of the line, excluding the trailing whitespace.
+        auto const first_advance = advances.begin() + first;
+        auto const last_advance = advances.begin() + std::distance(first_info, last_visible_it) + 1;
+        return std::accumulate(first_advance, last_advance, T{}, [&](auto acc, auto x) {
+            return acc + x;
+        });
     }
-    std::unreachable();
-}
 
-[[nodiscard]] constexpr unicode_break_const_iterator unicode_LB_slow_fit_line(
-    unicode_break_const_iterator first,
-    unicode_break_const_iterator end_of_line,
-    std::vector<float>::const_iterator first_width,
-    float maximum_line_width) noexcept
-{
-    using enum unicode_break_opportunity;
+    /** Get the width of the entire text.
+     *
+     * @tparam T The type of the width.
+     * @param advances Width of each character in the text.
+     * @param line_lengths Number of characters on each line.
+     * @return The width of the text.
+     */
+    template<typename T>
+    [[nodiscard]] constexpr T width(std::span<T const> advances, std::span<size_t const> line_lengths) noexcept
+    {
+        auto max_width = T{};
+        auto i = size_t{0};
+        for (auto length : line_lengths) {
+            inplace_max(max_width, width(advances, i, i + length));
+            i += length;
+        }
+        return max_width;
+    }
 
-    // Carefully look forward for a break opportunity.
-    auto it = end_of_line;
-    while (true) {
-        auto const num_characters = std::distance(first, it + 1);
-        auto const line_width = unicode_LB_width(first_width, first_width + num_characters);
+    /** Get the length of each line when broken with mandatory breaks.
+     *
+     * @return A list of line lengths.
+     */
+    constexpr void mandatory_lines(std::vector<size_t>& r)
+    {
+        r.clear();
 
-        if (line_width <= maximum_line_width) {
-            if (*it == mandatory) {
-                // The next mandatory break fits in the maximum width.
-                return it;
-
-            } else if (*it == yes) {
-                // The next break opportunity fits in the maximum width.
-                end_of_line = it;
+        auto length = 0_uz;
+        for (auto it = _opportunities.begin() + 1; it != _opportunities.end(); ++it) {
+            ++length;
+            if (*it == unicode_break_opportunity::mandatory) {
+                r.push_back(length);
+                length = 0_uz;
             }
-        } else {
-            // This break opportunity doesn't fit within the maximum width. Use the previous break opportunity.
-            return end_of_line;
-        }
-
-        ++it;
-    }
-    std::unreachable();
-}
-
-[[nodiscard]] constexpr unicode_break_const_iterator
-unicode_LB_finish_fit_line(unicode_break_const_iterator first, unicode_break_const_iterator end_of_line) noexcept
-{
-    if (first == end_of_line) {
-        // We couldn't break the line to fit the maximum line width.
-        while (*end_of_line == unicode_break_opportunity::no) {
-            ++end_of_line;
         }
     }
 
-    // Return iterator past the end-of-line.
-    return end_of_line + 1;
-}
+    /** Create a line which will fit to the maximum width.
+     *
+     * @tparam T The type of the width.
+     * @param advances Width of each character in the text.
+     * @param first Index to the first character of the line.
+     * @param maximum_width The maximum width of the line.
+     * @return Index beyond the last character of the line. And the width of the line.
+     */
+    template<typename T, std::ranges::random_access_range R>
+    [[nodiscard]] constexpr std::pair<size_t, T> fit_line(R const& advances, size_t first, T maximum_width) const noexcept
+        requires (std::convertible_to<std::ranges::range_value_t<R>, T>)
+    {
+        using enum unicode_break_opportunity;
 
-/** Get the length of each line when broken after folding text to a maximum width.
- *
- * @return A list of line lengths.
- */
-[[nodiscard]] constexpr std::vector<size_t> unicode_LB_fit_lines(
-    unicode_break_vector const& opportunities,
-    std::vector<float> const& widths,
-    float maximum_line_width) noexcept
-{
-    using enum unicode_break_opportunity;
+        assert(_opportunities.size() == advances.size() + 1);
+        assert(_opportunities.back() == mandatory);
 
-    auto r = std::vector<size_t>{};
-    if (widths.empty()) {
-        return r;
+        auto width = T{};
+        auto end_of_line = first;
+        auto width_of_line = T{};
+        auto found_visible = false;
+        for (auto i = first;; ++i) {
+            width += advances[i];
+            found_visible |= not _infos[i].is_white_space();
+
+            if (width > maximum_width and found_visible) {
+                if (i == first) {
+                    // Not even a single character fits, return a single character.
+                    return {first + 1, advances[first]};
+
+                } else if (end_of_line == first) {
+                    // There is not a single word that fits in the maximum
+                    // width. Return up to the previous character. trailing
+                    // non-breaking whitespace will be included in this word
+                    return {i, width - advances[i]};
+
+                } else {
+                    // Return the previous word.
+                    return {end_of_line, width_of_line};
+                }
+            }
+
+            // Check if there is a break opportunity after this character.
+            if (_opportunities[i + 1] == mandatory) {
+                // Found an end-of-line. If this character overflows the maximum width, it will be a white-space character.
+                return {i + 1, width};
+
+            } else if (_opportunities[i + 1] == yes) {
+                // Found a word, or a chunk of whitespace (possibly overflowing the maximum width).
+                end_of_line = i + 1;
+                width_of_line = width;
+                found_visible = false;
+            }
+        }
+
+        // We should never reach this point, as there is always a mandatory break at the end of the text.
+        std::unreachable();
     }
-
-    auto opportunity_it = opportunities.begin() + 1;
-    auto width_it = widths.begin();
-    while (width_it != widths.end()) {
-        // First quickly find when the line is too long.
-        auto opportunity_eol = unicode_LB_fast_fit_line(opportunity_it, width_it, maximum_line_width);
-        opportunity_eol = unicode_LB_slow_fit_line(opportunity_it, opportunity_eol, width_it, maximum_line_width);
-        opportunity_eol = unicode_LB_finish_fit_line(opportunity_it, opportunity_eol);
-
-        auto const num_characters = std::distance(opportunity_it, opportunity_eol);
-        r.push_back(num_characters);
-        opportunity_it += num_characters;
-        width_it += num_characters;
-    }
-
-    return r;
-}
-
-/** Get the maximum width of the text.
- *
- * The width of the text when using only the mandatory break-opportunity.
- *
- * @param opportunities The break-opportunity per character.
- * @param char_widths The width of each character.
- * @return The maximum line width of the text, number of lines.
- */
-[[nodiscard]] constexpr std::pair<float, std::vector<size_t>>
-unicode_LB_maximum_width(unicode_break_vector const& opportunities, std::vector<float> const& char_widths)
-{
-    auto line_lengths = detail::unicode_LB_mandatory_lines(opportunities);
-    auto const width = detail::unicode_LB_width(char_widths, line_lengths);
-    return {width, std::move(line_lengths)};
-}
-
-/** Get the minimum width of the text.
- *
- * The width of the text when using each and every break-opportunity.
- *
- * @param opportunities The break-opportunity per character.
- * @param char_widths The width of each character.
- * @return The minimum line width of the text, number of lines.
- */
-[[nodiscard]] constexpr std::pair<float, std::vector<size_t>>
-unicode_LB_minimum_width(unicode_break_vector const& opportunities, std::vector<float> const& char_widths)
-{
-    auto line_lengths = detail::unicode_LB_optional_lines(opportunities);
-    auto const width = detail::unicode_LB_width(char_widths, line_lengths);
-    return {width, std::move(line_lengths)};
-}
-
-/** Get the width of the text at a maximum width.
- *
- * The width of the text when folding the text to a maximum width.
- *
- * @param opportunities The break-opportunity per character.
- * @param char_widths The width of each character.
- * @param maximum_line_width The maximum width of the text
- * @return The minimum line width of the folded text, number of lines.
- */
-[[nodiscard]] constexpr std::pair<float, std::vector<size_t>>
-unicode_LB_width(unicode_break_vector const& opportunities, std::vector<float> const& char_widths, float maximum_line_width)
-{
-    auto line_lengths = detail::unicode_LB_fit_lines(opportunities, char_widths, maximum_line_width);
-    auto const width = detail::unicode_LB_width(char_widths, line_lengths);
-    return {width, std::move(line_lengths)};
-}
-
-} // namespace detail
-
-/** The unicode line break algorithm UAX #14
- *
- * @param first An iterator to the first character.
- * @param last An iterator to the last character.
- * @param code_point_func A function to get the code-point of a character.
- * @return A list of unicode_break_opportunity.
- */
-template<typename It, typename ItEnd, typename CodePointFunc>
-[[nodiscard]] inline unicode_break_vector
-unicode_line_break(It first, ItEnd last, CodePointFunc const& code_point_func) noexcept
-{
-    auto size = narrow_cast<size_t>(std::distance(first, last));
-    auto r = unicode_break_vector{size + 1, unicode_break_opportunity::unassigned};
-
-    auto infos = detail::unicode_LB1(first, last, code_point_func);
-    detail::unicode_LB2_3(r);
-    detail::unicode_LB4_8a(r, infos);
-    detail::unicode_LB9(r, infos);
-    detail::unicode_LB10(infos);
-    detail::unicode_LB11_31(r, infos);
-    return r;
-}
-
-/** Unicode break lines.
- *
- * @param opportunities The list of break opportunities.
- * @param widths The list of character widths
- * @param maximum_line_width The maximum line width.
- * @return A list of line lengths.
- */
-[[nodiscard]] constexpr std::vector<size_t>
-unicode_line_break(unicode_break_vector const& opportunities, std::vector<float> const& widths, float maximum_line_width)
-{
-    // See if the lines after mandatory breaks will fit the width and return.
-    auto r = detail::unicode_LB_mandatory_lines(opportunities);
-    if (detail::unicode_LB_width_check(widths, r, maximum_line_width)) {
-        return r;
-    }
-
-    r = detail::unicode_LB_fit_lines(opportunities, widths, maximum_line_width);
-    hi_axiom(detail::unicode_LB_width_check(widths, r, maximum_line_width));
-    return r;
-}
-
+};
 
 } // namespace hi::inline v1

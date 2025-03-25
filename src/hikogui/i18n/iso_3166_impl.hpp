@@ -367,7 +367,11 @@ constexpr auto iso_3166_number_by_code3 = iso_3166_number_by_code3_init();
 constexpr iso_3166::iso_3166(std::string_view str)
 {
     if (is_digit(str)) {
-        _v = from_string<uint16_t>(str);
+        if (auto code = from_string<uint16_t>(str)) {
+            _v = *code;
+        } else {
+            throw parse_error(std::format("Could not parse ISO-3166 code '{}'", str));
+        }
         hi_check(_v < 1000, "ISO-3166 number must be between 000 and 999, got '{}'", _v);
 
     } else if (str.size() == 2) {

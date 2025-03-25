@@ -66,36 +66,25 @@ public:
     {
         hi_axiom(loop::main().on_thread());
 
-        auto aperture = std::make_unique<scroll_aperture_widget>();
-        aperture->set_parent(this);
+        _aperture = std::make_unique<scroll_aperture_widget>();
+        _aperture->set_parent(this);
+        _grid.add_cell(0, 0, _aperture.get());
 
-        auto horizontal_scroll_bar =
-            std::make_unique<horizontal_scroll_bar_type>(aperture->content_width, aperture->aperture_width, aperture->offset_x);
-        horizontal_scroll_bar->set_parent(this);
-
-        auto vertical_scroll_bar =
-            std::make_unique<vertical_scroll_bar_type>(aperture->content_height, aperture->aperture_height, aperture->offset_y);
-        vertical_scroll_bar->set_parent(this);
-
-        if (to_bool(axis & axis::horizontal)) {
-            minimum->width() = 0;
-        } else {
-            horizontal_scroll_bar->set_mode(widget_mode::collapse);
+        if constexpr (std::to_underlying(axis & axis::horizontal)) {
+            _horizontal_scroll_bar = std::make_unique<horizontal_scroll_bar_type>(
+                _aperture->content_width, _aperture->aperture_width, _aperture->offset_x);
+            _horizontal_scroll_bar->set_parent(this);
+            _grid.add_cell(1, 0, _horizontal_scroll_bar.get());
         }
 
-        if (to_bool(axis & axis::vertical)) {
-            minimum->height() = 0;
-        } else {
-            vertical_scroll_bar->set_mode(widget_mode::collapse);
+        if constexpr (std::to_underlying(axis & axis::vertical)) {
+            _vertical_scroll_bar = std::make_unique<vertical_scroll_bar_type>(
+                _aperture->content_height, _aperture->aperture_height, _aperture->offset_y);
+            _vertical_scroll_bar->set_parent(this);
+            _grid.add_cell(0, 1, _vertical_scroll_bar.get());
         }
 
-        _aperture = aperture.get();
-        _horizontal_scroll_bar = horizontal_scroll_bar.get();
-        _vertical_scroll_bar = vertical_scroll_bar.get();
-
-        _grid.add_cell(0, 0, std::move(aperture));
-        _grid.add_cell(1, 0, std::move(vertical_scroll_bar));
-        _grid.add_cell(0, 1, std::move(horizontal_scroll_bar));
+        style.set_name("scroll-view");
     }
 
     /** Add a content widget directly to this scroll widget.
@@ -114,55 +103,56 @@ public:
     }
 
     /// @privatesection
-    [[nodiscard]] generator<widget_intf&> children(bool include_invisible) noexcept override
+    [[nodiscard]] generator<widget_intf&> children(bool include_invisible) const noexcept override
     {
         co_yield *_aperture;
-        co_yield *_vertical_scroll_bar;
-        co_yield *_horizontal_scroll_bar;
+        if constexpr (std::to_underlying(axis & axis::vertical)) {
+            co_yield *_vertical_scroll_bar;
+        }
+        if constexpr (std::to_underlying(axis & axis::horizontal)) {
+            co_yield *_horizontal_scroll_bar;
+        }
     }
 
     [[nodiscard]] box_constraints update_constraints() noexcept override
     {
-        _layout = {};
-
         for (auto& cell : _grid) {
             cell.set_constraints(cell.value->update_constraints());
         }
-        auto grid_constraints = _grid.constraints(os_settings::left_to_right());
+        auto grid_constraints = _grid.constraints(os_settings::left_to_right(), style.vertical_alignment);
         return grid_constraints.constrain(*minimum, *maximum);
     }
 
     void set_layout(widget_layout const& context) noexcept override
     {
-        if (compare_store(_layout, context)) {
-            _grid.set_layout(context.shape, theme().baseline_adjustment());
-        }
+        super::set_layout(context);
+
+        _grid.set_layout(context.shape);
 
         for (auto const& cell : _grid) {
             auto shape = cell.shape;
 
-            if (cell.value.get() == _aperture) {
-                // This is the content. Move the content slightly when the scroll-bars aren't visible.
-                // The grid cells are always ordered in row-major.
-                // This the vertical scroll bar is _grid[1] and the horizontal scroll bar is _grid[2].
-                if (not _vertical_scroll_bar->visible()) {
-                    shape.rectangle = aarectangle{0, shape.y(), _layout.width(), shape.height()};
+            if (cell.value == _aperture.get()) {
+                // This is the content. If the scroll bars are not visible make
+                // the shape of this cell overlap the entire layout.
+                auto x = shape.x();
+                auto y = shape.y();
+                auto width = shape.width();
+                auto height = shape.height();
+
+                if (not std::to_underlying(axis & axis::horizontal) or not _horizontal_scroll_bar->visible()) {
+                    y = 0;
+                    height = layout().height();
                 }
-                if (not _horizontal_scroll_bar->visible()) {
-                    shape.rectangle = aarectangle{shape.x(), 0, shape.width(), _layout.height()};
+                if (not std::to_underlying(axis & axis::vertical) or not _vertical_scroll_bar->visible()) {
+                    x = 0;
+                    width = layout().width();
                 }
+
+                shape.rectangle = aarectangle{x, y, width, height};
             }
 
             cell.value->set_layout(context.transform(shape, transform_command::level));
-        }
-    }
-
-    void draw(draw_context const& context) noexcept override
-    {
-        if (mode() > widget_mode::invisible) {
-            for (auto const& cell : _grid) {
-                cell.value->draw(context);
-            }
         }
     }
 
@@ -170,13 +160,17 @@ public:
     {
         hi_axiom(loop::main().on_thread());
 
-        if (mode() >= widget_mode::partial) {
+        if (enabled()) {
             auto r = _aperture->hitbox_test_from_parent(position);
-            r = _horizontal_scroll_bar->hitbox_test_from_parent(position, r);
-            r = _vertical_scroll_bar->hitbox_test_from_parent(position, r);
+            if constexpr (std::to_underlying(axis & axis::horizontal)) {
+                r = _horizontal_scroll_bar->hitbox_test_from_parent(position, r);
+            }
+            if constexpr (std::to_underlying(axis & axis::vertical)) {
+                r = _vertical_scroll_bar->hitbox_test_from_parent(position, r);
+            }
 
             if (layout().contains(position)) {
-                r = std::max(r, hitbox{id, _layout.elevation});
+                r = std::max(r, hitbox{id(), layout().elevation});
             }
             return r;
 
@@ -186,11 +180,11 @@ public:
     }
     // @endprivatesection
 private:
-    grid_layout<std::unique_ptr<widget>> _grid;
+    grid_layout<widget_intf*> _grid;
 
-    scroll_aperture_widget* _aperture;
-    horizontal_scroll_bar_type* _horizontal_scroll_bar;
-    vertical_scroll_bar_type* _vertical_scroll_bar;
+    std::unique_ptr<scroll_aperture_widget> _aperture;
+    std::unique_ptr<horizontal_scroll_bar_type> _horizontal_scroll_bar;
+    std::unique_ptr<vertical_scroll_bar_type> _vertical_scroll_bar;
 };
 
 /** Vertical scroll widget.

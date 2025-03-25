@@ -14,9 +14,6 @@ set_target_properties(minimum_custom_widget_example PROPERTIES MACOSX_BUNDLE TRU
 set_target_properties(minimum_custom_widget_example PROPERTIES MACOSX_FRAMEWORK_IDENTIFIER org.hikogui.hikogui.minimum_custom_widget_example)
 set_target_properties(minimum_custom_widget_example PROPERTIES DEBUG_POSTFIX "-dbg")
 set_target_properties(minimum_custom_widget_example PROPERTIES RELWITHDEBINFO_POSTFIX "-rdi")
-if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
-  set_target_properties(minimum_custom_widget_example PROPERTIES BUILD_WITH_INSTALL_RPATH true)
-endif()
 
 add_executable(custom_widget_with_child_example WIN32 MACOSX_BUNDLE)
 target_sources(custom_widget_with_child_example PRIVATE custom_widget_with_child_example_impl.cpp)
@@ -26,9 +23,6 @@ set_target_properties(custom_widget_with_child_example PROPERTIES MACOSX_BUNDLE 
 set_target_properties(custom_widget_with_child_example PROPERTIES MACOSX_FRAMEWORK_IDENTIFIER org.hikogui.hikogui.custom_widget_with_child_example)
 set_target_properties(custom_widget_with_child_example PROPERTIES DEBUG_POSTFIX "-dbg")
 set_target_properties(custom_widget_with_child_example PROPERTIES RELWITHDEBINFO_POSTFIX "-rdi")
-if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
-  set_target_properties(custom_widget_with_child_example PROPERTIES BUILD_WITH_INSTALL_RPATH true)
-endif()
 
 add_executable(custom_widget_command_example WIN32 MACOSX_BUNDLE)
 target_sources(custom_widget_command_example PRIVATE custom_widget_command_example_impl.cpp)
@@ -38,9 +32,6 @@ set_target_properties(custom_widget_command_example PROPERTIES MACOSX_BUNDLE TRU
 set_target_properties(custom_widget_command_example PROPERTIES MACOSX_FRAMEWORK_IDENTIFIER org.hikogui.hikogui.custom_widget_command_example)
 set_target_properties(custom_widget_command_example PROPERTIES DEBUG_POSTFIX "-dbg")
 set_target_properties(custom_widget_command_example PROPERTIES RELWITHDEBINFO_POSTFIX "-rdi")
-if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
-  set_target_properties(custom_widget_command_example PROPERTIES BUILD_WITH_INSTALL_RPATH true)
-endif()
 
 add_executable(custom_widget_drawing_example WIN32 MACOSX_BUNDLE)
 target_sources(custom_widget_drawing_example PRIVATE custom_widget_drawing_example_impl.cpp)
@@ -51,9 +42,6 @@ set_target_properties(custom_widget_drawing_example PROPERTIES MACOSX_BUNDLE TRU
 set_target_properties(custom_widget_drawing_example PROPERTIES MACOSX_FRAMEWORK_IDENTIFIER org.hikogui.hikogui.custom_widget_drawing_example)
 set_target_properties(custom_widget_drawing_example PROPERTIES DEBUG_POSTFIX "-dbg")
 set_target_properties(custom_widget_drawing_example PROPERTIES RELWITHDEBINFO_POSTFIX "-rdi")
-if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
-  set_target_properties(custom_widget_drawing_example PROPERTIES BUILD_WITH_INSTALL_RPATH true)
-endif()
 
 add_dependencies(examples
     minimum_custom_widget_example

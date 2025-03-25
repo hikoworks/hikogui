@@ -1983,15 +1983,14 @@ inline language_tag::language_tag(std::string_view str) : language(), script(), 
     }
     str = std::string_view{str_};
 
-    for (auto const element_view : std::views::split(str, std::string_view{"-"})) {
-        auto const element = std::string_view{element_view.begin(), element_view.end()};
+    for (auto const element : split_string_view(str, "-")) {
         if (extension_first_char) {
             // Once inside the extensions portion of a language tag you can no
             // longer determine validity based on just the element size.
             ;
 
         } else if (not language) {
-            if (element == "*") {
+            if (element.empty() or element == "*") {
                 // wild card.
                 language = {};
 

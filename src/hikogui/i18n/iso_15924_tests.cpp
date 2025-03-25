@@ -30,8 +30,8 @@ TEST_CASE(to_code4_test)
 
 TEST_CASE(to_code4_open_type_test)
 {
-    REQUIRE(hi::iso_15924{215}.code4_open_type() == "latn");
-    REQUIRE(hi::iso_15924{460}.code4_open_type() == "yi  ");
+    REQUIRE(hi::iso_15924{215}.code4_open_type() == hi::fourcc<"latn">());
+    REQUIRE(hi::iso_15924{460}.code4_open_type() == hi::fourcc<"yi  ">());
 }
 
 };

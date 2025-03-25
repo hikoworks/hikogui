@@ -526,7 +526,7 @@ private:
         // try {
         auto wave_device = win32_wave_device::find_matching_end_point(direction(), _end_point_id);
         auto device_interface = wave_device.open_device_interface();
-        auto format_ranges = make_vector(device_interface.get_format_ranges(direction()));
+        auto format_ranges = std::ranges::to<std::vector>(device_interface.get_format_ranges(direction()));
         auto tmp = std::vector<audio_format_range>{};
 
         auto first = format_ranges.begin();

@@ -160,9 +160,13 @@ inline auto sRGB_gamma8_to_linear16_table = sRGB_gamma8_to_linear16_table_genera
  * @param a Alpha value, between 0 and 255. not-premultiplied
  * @return A linear color.
  */
-[[nodiscard]] inline color color_from_sRGB(uint8_t r, uint8_t g, uint8_t b, uint8_t a) noexcept
+template<unsigned int BitDepth>
+[[nodiscard]] inline color color_from_sRGB(unsigned int r, unsigned int g, unsigned int b, unsigned int a = (1u << BitDepth) - 1) noexcept
 {
-    return color_from_sRGB(r / 255.0f, g / 255.0f, b / 255.0f, a / 255.0f);
+    constexpr unsigned int max_value = (1u << BitDepth) - 1;
+    constexpr float scale = 1.0f / max_value;
+
+    return color_from_sRGB(r * scale, g * scale, b * scale, a * scale);
 }
 
 [[nodiscard]] inline color color_from_sRGB(std::string_view str)
@@ -179,13 +183,15 @@ inline auto sRGB_gamma8_to_linear16_table = sRGB_gamma8_to_linear16_table_genera
         tmp += "ff";
     }
 
-    auto packed = from_string<uint32_t>(tmp, 16);
-
-    uint8_t const r = truncate<uint8_t>(packed >> 24);
-    uint8_t const g = truncate<uint8_t>(packed >> 16);
-    uint8_t const b = truncate<uint8_t>(packed >> 8);
-    uint8_t const a = truncate<uint8_t>(packed);
-    return color_from_sRGB(r, g, b, a);
+    if (auto packed = from_string<uint32_t>(tmp, 16)) {
+        uint8_t const r = truncate<uint8_t>(*packed >> 24);
+        uint8_t const g = truncate<uint8_t>(*packed >> 16);
+        uint8_t const b = truncate<uint8_t>(*packed >> 8);
+        uint8_t const a = truncate<uint8_t>(*packed);
+        return color_from_sRGB<8>(r, g, b, a);
+    } else {
+        throw parse_error(std::format("Expecting 6 or 8 hex-digit sRGB color string, got {}.", str));
+    }
 }
 
 }} // namespace hi::v1

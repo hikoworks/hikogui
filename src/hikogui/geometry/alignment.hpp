@@ -23,10 +23,6 @@ hi_export namespace hi { inline namespace v1 {
  * @ingroup geometry
  */
 enum class vertical_alignment : uint8_t {
-    /** No alignment.
-     */
-    none = 0,
-
     /** Align to the top.
      */
     top = 1,
@@ -72,8 +68,6 @@ enum class vertical_alignment : uint8_t {
     auto const guideline_middle = (bottom + top - guideline_width) / 2.0f;
 
     switch (alignment) {
-    case vertical_alignment::none:
-        return {};
     case vertical_alignment::top:
         if (guideline_bottom <= top) {
             return guideline_top;
@@ -100,10 +94,6 @@ enum class vertical_alignment : uint8_t {
  * @ingroup geometry
  */
 enum class horizontal_alignment : uint8_t {
-    /** No alignment.
-     */
-    none = 0,
-
     /** Align the text naturally based on the writing direction of each paragraph.
      *
      * This will act as flush_left if the paragraph is in left-to-right direction,
@@ -169,8 +159,6 @@ enum class horizontal_alignment : uint8_t {
     auto const guideline_center = (left + right - guideline_width) / 2.0f;
 
     switch (alignment) {
-    case horizontal_alignment::none:
-        return {};
     case horizontal_alignment::left:
         if (guideline_left <= right) {
             return guideline_left;
@@ -251,14 +239,14 @@ public:
 
     constexpr explicit alignment(uint8_t value) noexcept : _value(value) {}
 
-    constexpr alignment(horizontal_alignment t, vertical_alignment v = vertical_alignment::none) noexcept :
+    constexpr alignment(horizontal_alignment t, vertical_alignment v = vertical_alignment::top) noexcept :
         _value((std::to_underlying(v) << 4) | std::to_underlying(t))
     {
         hi_axiom(std::to_underlying(v) <= 0xf);
         hi_axiom(std::to_underlying(t) <= 0xf);
     }
 
-    constexpr alignment(vertical_alignment v, horizontal_alignment h = horizontal_alignment::none) noexcept :
+    constexpr alignment(vertical_alignment v, horizontal_alignment h = horizontal_alignment::left) noexcept :
         _value((std::to_underlying(v) << 4) | std::to_underlying(h))
     {
         hi_axiom(std::to_underlying(v) <= 0xf);

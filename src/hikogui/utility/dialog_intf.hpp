@@ -11,7 +11,6 @@
 #include <concepts>
 #include <expected>
 #include <system_error>
-#include <utility>
 
 hi_export_module(hikogui.utility.dialog : intf);
 
@@ -33,10 +32,10 @@ enum class dialog_button_mask : uint64_t {
     cancel = 1 << dialog_button::cancel,
 
     /** A dialog box with just a "ok" button.
-     *
+     * 
      * There was a serious error, but the user can only accept the dialog as
      * a notification.
-     *
+     * 
      * @note Valid on windows.
      */
     ok = 1 << dialog_button::ok,
@@ -44,53 +43,53 @@ enum class dialog_button_mask : uint64_t {
     _continue = 1 << dialog_button::_continue,
 
     /** A dialog box with "cancel", "retry" and "continue" buttons.
-     *
+     * 
      * There was a serious error, but the user has some interation:
      *  - "cancel": Cancel the processing the list of jobs.
      *  - "retry": Retry the current job and when successful continue with the list of jobs.
      *  - "continue": Skip the current job and continue with the next job in the list.
-     *
+     * 
      * @note Valid on windows.
      */
     cancel_retry_continue = cancel | retry | _continue,
 
     /** A dialog box with "yes" and "no" buttons.
-     *
+     * 
      * An important yes/no question:
      *  - "yes"
      *  - "no"
-     *
+     * 
      * @note Valid on windows.
      */
     yes_no = yes | no,
 
     /** A dialog box with "ok" and "cancel" buttons.
-     *
+     * 
      * About to perform a dangerous operation:
      *  - "ok": Perform the dangerous operation.
      *  - "cancel": Cancel the dangerous operation.
-     *
+     * 
      * @note Valid on windows.
      */
     ok_cancel = ok | cancel,
 
     /** A dialog box with "retry" and "cancel" buttons.
-     *
+     * 
      * A error during processing:
      *  - "retry": Retry the operation.
      *  - "cancel": Cancel the operation.
-     *
+     * 
      * @note Valid on windows.
      */
     retry_cancel = retry | cancel,
 
     /** A dialog box with "yes", "no" and "cancel" buttons.
-     *
+     * 
      * An important yes/no question, but we can still cancel:
      *  - "yes"
      *  - "no"
      *  - "cancel": Cancel the operation
-     *
+     * 
      * @note Valid on windows.
      */
     yes_no_cancel = yes | no | cancel,

@@ -5,6 +5,7 @@
 #pragma once
 
 #include "color_intf.hpp" // export
+#include "color_impl.hpp" // export
 #include "color_space.hpp" // export
 #include "quad_color.hpp" // export
 #include "Rec2020.hpp" // export

@@ -131,18 +131,6 @@ public:
     {
     }
 
-    /** Create a rectangle event.
-     *
-     * @param type The type of the rectangle event.
-     * @param rectangle The rectangle for this event.
-     */
-    gui_event(gui_event_type type, aarectangle rectangle) noexcept :
-        gui_event(type, std::chrono::utc_clock::now(), keyboard_modifiers::none, keyboard_state::idle)
-    {
-        hi_assert(variant() == gui_event_variant::rectangle);
-        this->rectangle() = rectangle;
-    }
-
     /** Create a GUI event.
      *
      * @param type The type of the key event.
@@ -247,9 +235,6 @@ public:
             case gui_event_variant::keyboard_target:
                 _data = keyboard_target_data{};
                 break;
-            case gui_event_variant::rectangle:
-                _data = aarectangle{};
-                break;
             case gui_event_variant::clipboard_data:
                 _data = gstring{};
             default:;
@@ -315,18 +300,6 @@ public:
     {
         hi_assert(variant() == gui_event_variant::grapheme);
         return std::get<hi::grapheme>(_data);
-    }
-
-    [[nodiscard]] aarectangle& rectangle() noexcept
-    {
-        hi_assert(variant() == gui_event_variant::rectangle);
-        return std::get<aarectangle>(_data);
-    }
-
-    [[nodiscard]] aarectangle const& rectangle() const noexcept
-    {
-        hi_assert(variant() == gui_event_variant::rectangle);
-        return std::get<aarectangle>(_data);
     }
 
     [[nodiscard]] keyboard_target_data& keyboard_target() noexcept
@@ -414,7 +387,7 @@ public:
 
 private:
     using data_type =
-        std::variant<mouse_event_data, keyboard_virtual_key, keyboard_target_data, hi::grapheme, aarectangle, gstring>;
+        std::variant<mouse_event_data, keyboard_virtual_key, keyboard_target_data, hi::grapheme, gstring>;
 
     gui_event_type _type;
     data_type _data;

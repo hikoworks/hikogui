@@ -22,9 +22,29 @@ enum class unicode_break_opportunity : uint8_t {
     unassigned,
 };
 
-using unicode_break_vector = std::vector<unicode_break_opportunity>;
-using unicode_break_iterator = unicode_break_vector::iterator;
-using unicode_break_const_iterator = unicode_break_vector::const_iterator;
+class unicode_grapheme_break_vector : public std::vector<unicode_break_opportunity> {
+public:
+    using super = std::vector<unicode_break_opportunity>;
+    using super::super;
+};
+
+class unicode_line_break_vector : public std::vector<unicode_break_opportunity> {
+public:
+    using super = std::vector<unicode_break_opportunity>;
+    using super::super;
+};
+
+class unicode_word_break_vector : public std::vector<unicode_break_opportunity> {
+public:
+    using super = std::vector<unicode_break_opportunity>;
+    using super::super;
+};
+
+class unicode_sentence_break_vector : public std::vector<unicode_break_opportunity> {
+public:
+    using super = std::vector<unicode_break_opportunity>;
+    using super::super;
+};
 
 inline std::ostream &operator<<(std::ostream &lhs, unicode_break_opportunity const &rhs) {
     auto const *s = [&] () {

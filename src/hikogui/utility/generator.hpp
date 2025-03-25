@@ -117,6 +117,13 @@ public:
         using reference = value_type const&;
         using iterator_category = std::input_iterator_tag;
 
+        constexpr const_iterator() = default;
+        const_iterator(const_iterator const&) = default;
+        const_iterator& operator=(const_iterator const&) = default;
+        const_iterator(const_iterator&&) = default;
+        const_iterator& operator=(const_iterator&&) = default;
+        [[nodiscard]] friend constexpr bool operator==(const_iterator const&, const_iterator const&) noexcept = default;
+
         explicit const_iterator(handle_type coroutine) : _coroutine{coroutine}
         {
             _coroutine.promise().rethrow();
@@ -309,6 +316,13 @@ public:
         using pointer = value_type const *;
         using reference = value_type const&;
         using iterator_category = std::input_iterator_tag;
+
+        constexpr const_iterator() = default;
+        const_iterator(const_iterator const&) = default;
+        const_iterator& operator=(const_iterator const&) = default;
+        const_iterator(const_iterator&&) = default;
+        const_iterator& operator=(const_iterator&&) = default;
+        [[nodiscard]] friend constexpr bool operator==(const_iterator const&, const_iterator const&) noexcept = default;
 
         explicit const_iterator(handle_type coroutine) : _coroutine{coroutine} {}
 

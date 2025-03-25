@@ -80,8 +80,38 @@ endif()
 if(VCPKG_TOOLCHAIN)
     find_package(ms-gsl)
 else()
-    FetchContent_Declare(GSL GIT_REPOSITORY https://github.com/microsoft/GSL GIT_TAG v4.0.0)
+    FetchContent_Declare(GSL
+        GIT_REPOSITORY https://github.com/microsoft/GSL
+        GIT_TAG v4.0.0)
     FetchContent_MakeAvailable(GSL)
+endif()
+
+if(VCPKG_TOOLCHAIN)
+    find_package(ZLIB)
+else()
+    FetchContent_Declare(ZLIB
+        GIT_REPOSITORY https://github.com/madler/zlib
+        GIT_TAG v1.3.1
+        PATCH_COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/patches/CMakeLists_zlib.cmake" "CMakeLists.txt"
+        EXCLUDE_FROM_ALL)
+    FetchContent_MakeAvailable(ZLIB)
+
+    # The ZLIB_ROOT and ZLIB_LIBRARY are set by find_package(zlib) when using
+    # vcpkg.
+    set(ZLIB_ROOT "${zlib_SOURCE_DIR}")
+    set(ZLIB_LIBRARY "zlib")
+endif()
+
+if(VCPKG_TOOLCHAIN)
+    find_package(PNG)
+else()
+    FetchContent_Declare(PNG
+        URL https://sourceforge.net/projects/libpng/files/libpng-1.6.44.tar.gz
+        URL_HASH SHA256=8c25a7792099a0089fa1cc76c94260d0bb3f1ec52b93671b572f8bb61577b732
+#        PATCH_COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/patches/CMakeLists_png.cmake" "CMakeLists.txt"
+        EXCLUDE_FROM_ALL)
+    FetchContent_MakeAvailable(PNG)
+    add_library(PNG::PNG ALIAS png_static)
 endif()
 
 #
@@ -194,6 +224,8 @@ target_link_libraries(hikogui ${HI_SCOPE} ${Vulkan_LIBRARIES})
 target_include_directories(hikogui ${HI_SCOPE} ${Vulkan_INCLUDE_DIRS})
 
 target_link_libraries(hikogui ${HI_SCOPE} Microsoft.GSL::GSL)
+target_link_libraries(hikogui ${HI_SCOPE} ZLIB::ZLIB)
+target_link_libraries(hikogui ${HI_SCOPE} PNG::PNG)
 
 # HikoGUI only uses Vulkan-1.2; we can limit VMA to that version as well.
 # This solves a common issue with: "Cant find entrypoint for vkGetDeviceBufferMemoryRequirements procedure"
@@ -316,6 +348,10 @@ elseif (MSVC)
     target_compile_options(hikogui ${HI_SCOPE} "-external:IC:\\Program Files\\Microsoft Visual Studio")
     target_compile_options(hikogui ${HI_SCOPE} "-external:IC:\\Program Files (x86)\\Windows Kits")
     target_compile_options(hikogui ${HI_SCOPE} "-external:I${Vulkan_INCLUDE_DIRS}")
+
+    # C4061: enumerator '...' in a switch of enum '...' is not explicitly handled by a case label.
+    # This warning happens even if you added a default label.
+    target_compile_options(hikogui ${HI_SCOPE} -wd4061)
 
     # C4068: unknown pragma.
     # Ignore unknown pragmas, needed for other compilers.
@@ -501,7 +537,10 @@ set(INSTALL_RESOURCEDIR "${CMAKE_INSTALL_DATADIR}/hikogui/resources")
 set(INSTALL_CMAKEDIR "${CMAKE_INSTALL_DATADIR}/hikogui/CMake")
 set(INSTALL_MODULEDIR "module")
 
-install(TARGETS hikogui GSL EXPORT hikogui
+
+install(TARGETS hikogui GSL ZLIB png_static EXPORT hikogui
+    FILE_SET zlib_public_include_files
+    FILE_SET zlib_generated_public_include_files
     FILE_SET hikogui_include_files
     FILE_SET hikogui_generated_include_files
     FILE_SET CXX_MODULES DESTINATION "${INSTALL_MODULEDIR}"

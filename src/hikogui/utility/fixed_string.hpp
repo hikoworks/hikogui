@@ -258,6 +258,12 @@ hi_export template<fixed_string Tag>
         (static_cast<uint32_t>(get<2>(Tag)) << 8) | static_cast<uint32_t>(get<3>(Tag));
 }
 
+[[nodiscard]] constexpr uint32_t fourcc(fixed_string<4> const& tag) noexcept
+{
+    return (static_cast<uint32_t>(get<0>(tag)) << 24) | (static_cast<uint32_t>(get<1>(tag)) << 16) |
+        (static_cast<uint32_t>(get<2>(tag)) << 8) | static_cast<uint32_t>(get<3>(tag));
+}
+
 hi_export template<fixed_string Tag>
 consteval uint32_t operator"" _fcc()
 {

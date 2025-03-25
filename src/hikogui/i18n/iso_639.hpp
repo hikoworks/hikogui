@@ -173,6 +173,24 @@ public:
         return r;
     }
 
+    [[nodiscard]] constexpr uint32_t open_type_code() const noexcept
+    {
+        uint32_t r = 0;
+        if (size() == 2) {
+            r |= get<0>(*this) << 24;
+            r |= get<1>(*this) << 16;
+            r |= 0x2020;
+        } else if (size() == 3) {
+            r |= get<0>(*this) << 24;
+            r |= get<1>(*this) << 16;
+            r |= get<2>(*this) << 8;
+            r |= 0x20;
+        } else {
+            r = 0x20202020;
+        }
+        return r;
+    }
+
     [[nodiscard]] constexpr friend std::string to_string(iso_639 const &rhs) noexcept
     {
         return rhs.code();

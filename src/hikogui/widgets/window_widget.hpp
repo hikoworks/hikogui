@@ -55,16 +55,18 @@ public:
 
         _content = std::make_unique<grid_widget>();
         _content->set_parent(this);
+
+        style.set_name("window");
     }
 
     /** The background color of the window.
      * This function is used during rendering to use the optimized
      * GPU clear function.
      */
-    [[nodiscard]] color background_color() noexcept
+    [[nodiscard]] color background_color() const noexcept override
     {
         hi_axiom(loop::main().on_thread());
-        return theme().fill_color(_layout.layer);
+        return theme().fill_color(layout().layer);
     }
 
     /** Get a reference to the window's content widget.
@@ -91,7 +93,7 @@ public:
     }
 
     /// @privatesection
-    [[nodiscard]] generator<widget_intf&> children(bool include_invisible) noexcept override
+    [[nodiscard]] generator<widget_intf&> children(bool include_invisible) const noexcept override
     {
         if (_toolbar) {
             co_yield *_toolbar;
@@ -105,7 +107,6 @@ public:
         hi_assert_not_null(_content);
         hi_assert_not_null(_toolbar);
 
-        _layout = {};
         _content_constraints = _content->update_constraints();
         _toolbar_constraints = _toolbar->update_constraints();
 
@@ -160,35 +161,31 @@ public:
 
     void set_layout(widget_layout const& context) noexcept override
     {
-        if (compare_store(_layout, context)) {
-            auto const toolbar_height = _toolbar_constraints.preferred.height();
-            auto const between_margin = std::max(_toolbar_constraints.margins.bottom(), _content_constraints.margins.top());
+        super::set_layout(context);
 
-            auto const toolbar_rectangle = aarectangle{
-                point2{
-                    _toolbar_constraints.margins.left(), context.height() - toolbar_height - _toolbar_constraints.margins.top()},
-                point2{
-                    context.width() - _toolbar_constraints.margins.right(),
-                    context.height() - _toolbar_constraints.margins.top()}};
-            _toolbar_shape = box_shape{_toolbar_constraints, toolbar_rectangle, theme().baseline_adjustment()};
+        auto const toolbar_height = _toolbar_constraints.preferred.height();
+        auto const between_margin = std::max(_toolbar_constraints.margins.bottom(), _content_constraints.margins.top());
 
-            auto const content_rectangle = aarectangle{
-                point2{_content_constraints.margins.left(), _content_constraints.margins.bottom()},
-                point2{context.width() - _content_constraints.margins.right(), toolbar_rectangle.bottom() - between_margin}};
-            _content_shape = box_shape{_content_constraints, content_rectangle, theme().baseline_adjustment()};
-        }
+        auto const toolbar_rectangle = aarectangle{
+            point2{_toolbar_constraints.margins.left(), context.height() - toolbar_height - _toolbar_constraints.margins.top()},
+            point2{
+                context.width() - _toolbar_constraints.margins.right(), context.height() - _toolbar_constraints.margins.top()}};
+        _toolbar_shape = box_shape{toolbar_rectangle};
+
+        auto const content_rectangle = aarectangle{
+            point2{_content_constraints.margins.left(), _content_constraints.margins.bottom()},
+            point2{context.width() - _content_constraints.margins.right(), toolbar_rectangle.bottom() - between_margin}};
+        _content_shape = box_shape{content_rectangle};
+
         _toolbar->set_layout(context.transform(_toolbar_shape));
         _content->set_layout(context.transform(_content_shape));
     }
-    void draw(draw_context const& context) noexcept override
+    void draw(draw_context const& context) const noexcept override
     {
-        if (mode() > widget_mode::invisible) {
-            context.draw_box(_layout, _layout.rectangle(), background_color(), background_color());
-
-            _toolbar->draw(context);
-            _content->draw(context);
-        }
+        context.draw_box(layout(), layout().rectangle(), background_color(), background_color());
+        return super::draw(context);
     }
+    
     [[nodiscard]] hitbox hitbox_test(point2 position) const noexcept override
     {
         constexpr float BORDER_WIDTH = 10.0f;
@@ -206,48 +203,48 @@ public:
         // Corner resize has always priority.
         if (is_on_l_edge and is_on_b_edge) {
             if (_can_resize_width and _can_resize_height) {
-                return {id, _layout.elevation, hitbox_type::bottom_left_resize_corner};
+                return {id(), layout().elevation, hitbox_type::bottom_left_resize_corner};
             } else if (_can_resize_width) {
-                return {id, _layout.elevation, hitbox_type::left_resize_border};
+                return {id(), layout().elevation, hitbox_type::left_resize_border};
             } else if (_can_resize_height) {
-                return {id, _layout.elevation, hitbox_type::bottom_resize_border};
+                return {id(), layout().elevation, hitbox_type::bottom_resize_border};
             }
         } else if (is_on_r_edge and is_on_b_edge) {
             if (_can_resize_width and _can_resize_height) {
-                return {id, _layout.elevation, hitbox_type::bottom_right_resize_corner};
+                return {id(), layout().elevation, hitbox_type::bottom_right_resize_corner};
             } else if (_can_resize_width) {
-                return {id, _layout.elevation, hitbox_type::right_resize_border};
+                return {id(), layout().elevation, hitbox_type::right_resize_border};
             } else if (_can_resize_height) {
-                return {id, _layout.elevation, hitbox_type::bottom_resize_border};
+                return {id(), layout().elevation, hitbox_type::bottom_resize_border};
             }
         } else if (is_on_l_edge and is_on_t_edge) {
             if (_can_resize_width and _can_resize_height) {
-                return {id, _layout.elevation, hitbox_type::top_left_resize_corner};
+                return {id(), layout().elevation, hitbox_type::top_left_resize_corner};
             } else if (_can_resize_width) {
-                return {id, _layout.elevation, hitbox_type::left_resize_border};
+                return {id(), layout().elevation, hitbox_type::left_resize_border};
             } else if (_can_resize_height) {
-                return {id, _layout.elevation, hitbox_type::top_resize_border};
+                return {id(), layout().elevation, hitbox_type::top_resize_border};
             }
         } else if (is_on_r_edge and is_on_t_edge) {
             if (_can_resize_width and _can_resize_height) {
-                return {id, _layout.elevation, hitbox_type::top_right_resize_corner};
+                return {id(), layout().elevation, hitbox_type::top_right_resize_corner};
             } else if (_can_resize_width) {
-                return {id, _layout.elevation, hitbox_type::right_resize_border};
+                return {id(), layout().elevation, hitbox_type::right_resize_border};
             } else if (_can_resize_height) {
-                return {id, _layout.elevation, hitbox_type::top_resize_border};
+                return {id(), layout().elevation, hitbox_type::top_resize_border};
             }
         }
 
         // Border resize only has priority if there is no scroll-bar in the way.
         if (r.type != hitbox_type::scroll_bar) {
             if (is_on_l_edge and _can_resize_width) {
-                return {id, _layout.elevation, hitbox_type::left_resize_border};
+                return {id(), layout().elevation, hitbox_type::left_resize_border};
             } else if (is_on_r_edge and _can_resize_width) {
-                return {id, _layout.elevation, hitbox_type::right_resize_border};
+                return {id(), layout().elevation, hitbox_type::right_resize_border};
             } else if (is_on_b_edge and _can_resize_height) {
-                return {id, _layout.elevation, hitbox_type::bottom_resize_border};
+                return {id(), layout().elevation, hitbox_type::bottom_resize_border};
             } else if (is_on_t_edge and _can_resize_height) {
-                return {id, _layout.elevation, hitbox_type::top_resize_border};
+                return {id(), layout().elevation, hitbox_type::top_resize_border};
             }
         }
 
@@ -259,21 +256,12 @@ public:
 
         switch (event.type()) {
         case gui_toolbar_open:
-            process_event(
-                gui_event::window_set_keyboard_target(id, keyboard_focus_group::toolbar, keyboard_focus_direction::forward));
+            send_to_window(
+                gui_event::window_set_keyboard_target(id(), keyboard_focus_group::toolbar, keyboard_focus_direction::forward));
             return true;
         default:;
         }
         return super::handle_event(event);
-    }
-    bool process_event(gui_event const& event) const noexcept override
-    {
-        if (window) {
-            return window->process_event(event);
-        } else {
-            // Since there is no window, pretend that the message was handled.
-            return true;
-        }
     }
     /// @endprivatesection
 private:

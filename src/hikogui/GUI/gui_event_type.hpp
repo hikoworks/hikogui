@@ -43,10 +43,6 @@ enum class gui_event_type {
     mouse_exit_window,
 
     // window-events
-    window_redraw, ///< Request that part of the window gets redrawn on the next frame.
-    window_relayout, ///< Request that widgets get laid out on the next frame.
-    window_reconstrain, ///< Request that widget get constraint on the next frame.
-    window_resize, ///< Request that the window resizes to desired constraints on the next frame.
     window_minimize, ///< Request the window to minimize.
     window_maximize, ///< Request the window to maximize.
     window_normalize, ///< Request the window to be restored to the original size after a minimize and maximize commands.
@@ -129,10 +125,6 @@ constexpr auto gui_event_type_metadata = enum_metadata{
     gui_event_type::mouse_enter, "mouse_enter",
     gui_event_type::mouse_exit, "mouse_exit",
     gui_event_type::mouse_exit_window, "mouse_exit_window",
-    gui_event_type::window_redraw, "window_redraw",
-    gui_event_type::window_relayout, "window_relayout",
-    gui_event_type::window_reconstrain, "window_reconstrain",
-    gui_event_type::window_resize, "window_resize",
     gui_event_type::window_minimize, "window_minimize",
     gui_event_type::window_maximize, "window_maximize",
     gui_event_type::window_normalize, "window_normalize",

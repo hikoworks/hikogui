@@ -16,7 +16,8 @@
 
 hi_export_module(hikogui.widgets.grid_widget);
 
-hi_export namespace hi { inline namespace v1 {
+hi_export namespace hi {
+inline namespace v1 {
 
 /** A GUI widget that lays out child-widgets in a grid with variable sized cells.
  * @ingroup widgets
@@ -52,6 +53,7 @@ public:
      */
     grid_widget() noexcept : widget()
     {
+        style.set_name("grid-view");
     }
 
     /* Add a widget to the grid.
@@ -76,22 +78,22 @@ public:
         hi_log_info("grid_widget::insert({}, {}, {}, {})", first_column, first_row, last_column, last_row);
 
         ++global_counter<"grid_widget:insert:constrain">;
-        process_event({gui_event_type::window_reconstrain});
+        request_reconstrain();
     }
 
     /** Insert a widget to the front of the grid.
-     * 
+     *
      * All the widgets currently on the grid are moved 1 backward
      * and the new widget is added to the front-top cell.
-     * 
+     *
      * In left-to-right mode 'front' means 'left'.
-     * 
+     *
      * @param widget The widget to take ownership of
      * @return A reference to the widget being added.
      */
     void push_front(std::unique_ptr<widget> widget) noexcept
     {
-        for (auto &cell: _grid) {
+        for (auto& cell : _grid) {
             ++cell.first_column;
             ++cell.last_column;
         }
@@ -99,17 +101,17 @@ public:
     }
 
     /** Insert a widget to the back of the grid.
-     * 
+     *
      * The widget is places at back-top.
-     * 
+     *
      * In left-to-right mode 'front' means 'left'.
-     * 
+     *
      * @param widget The widget to take ownership of
      * @return A reference to the widget being added.
      */
     void push_back(std::unique_ptr<widget> widget) noexcept
     {
-        auto it = std::max_element(_grid.begin(), _grid.end(), [](auto const &a, auto const &b) {
+        auto it = std::max_element(_grid.begin(), _grid.end(), [](auto const& a, auto const& b) {
             return a.last_column < b.last_column;
         });
 
@@ -121,16 +123,16 @@ public:
     }
 
     /** Insert a widget to the top of the grid.
-     * 
+     *
      * All the widgets currently on the grid are moved 1 lower
      * and the new widget is added to the front-top cell.
-     * 
+     *
      * @param widget The widget to take ownership of
      * @return A reference to the widget being added.
      */
     void push_top(std::unique_ptr<widget> widget) noexcept
     {
-        for (auto &cell: _grid) {
+        for (auto& cell : _grid) {
             ++cell.first_row;
             ++cell.last_row;
         }
@@ -138,15 +140,15 @@ public:
     }
 
     /** Insert a widget to the bottom of the grid.
-     * 
+     *
      * The widget is places at front-bottom.
-     * 
+     *
      * @param widget The widget to take ownership of
      * @return A reference to the widget being added.
      */
     void push_bottom(std::unique_ptr<widget> widget) noexcept
     {
-        auto it = std::max_element(_grid.begin(), _grid.end(), [](auto const &a, auto const &b) {
+        auto it = std::max_element(_grid.begin(), _grid.end(), [](auto const& a, auto const& b) {
             return a.last_row < b.last_row;
         });
 
@@ -169,12 +171,12 @@ public:
      */
     template<typename Widget, typename... Args>
     Widget&
-    emplace(std::size_t first_column, std::size_t first_row, std::size_t last_column, std::size_t last_row, Args&&...args)
+    emplace(std::size_t first_column, std::size_t first_row, std::size_t last_column, std::size_t last_row, Args&&... args)
     {
         hi_axiom(first_column < last_column);
         hi_axiom(first_row < last_row);
         auto tmp = std::make_unique<Widget>(std::forward<Args>(args)...);
-        auto &ref = *tmp;
+        auto& ref = *tmp;
         insert(first_column, first_row, last_column, last_row, std::move(tmp));
         return ref;
     }
@@ -188,7 +190,7 @@ public:
      * @return A reference to the widget that was created.
      */
     template<typename Widget, typename... Args>
-    Widget& emplace(std::size_t column, std::size_t row, Args&&...args)
+    Widget& emplace(std::size_t column, std::size_t row, Args&&... args)
     {
         return emplace<Widget>(column, row, column + 1, row + 1, std::forward<Args>(args)...);
     }
@@ -202,9 +204,9 @@ public:
      * @return A reference to the widget that was created.
      */
     template<typename Widget, typename... Args>
-    Widget& emplace(std::string_view address, Args&&...args)
+    Widget& emplace(std::string_view address, Args&&... args)
     {
-        auto const[column_first, row_first, column_last, row_last] = parse_spreadsheet_range(address);
+        auto const [column_first, row_first, column_last, row_last] = parse_spreadsheet_range(address);
         return emplace<Widget>(column_first, row_first, column_last, row_last, std::forward<Args>(args)...);
     }
 
@@ -212,15 +214,15 @@ public:
      *
      * All the widgets currently on the grid are moved 1 backward
      * and the new widget is added to the front-top cell.
-     * 
+     *
      * In left-to-right mode 'front' means 'left'.
-     * 
+     *
      * @tparam Widget The type of the widget to be constructed.
      * @param args The arguments passed to the constructor of the widget.
      * @return A reference to the widget that was created.
      */
     template<typename Widget, typename... Args>
-    Widget& emplace_front(Args&&...args)
+    Widget& emplace_front(Args&&... args)
     {
         return static_cast<Widget&>(push_front(std::make_unique<Widget>(this, std::forward<Args>(args)...)));
     }
@@ -228,15 +230,15 @@ public:
     /** Emplace a widget to the back.
      *
      * The widget is places at back-top.
-     * 
+     *
      * In left-to-right mode 'front' means 'left'.
-     * 
+     *
      * @tparam Widget The type of the widget to be constructed.
      * @param args The arguments passed to the constructor of the widget.
      * @return A reference to the widget that was created.
      */
     template<typename Widget, typename... Args>
-    Widget& emplace_back(Args&&...args)
+    Widget& emplace_back(Args&&... args)
     {
         return static_cast<Widget&>(push_back(std::make_unique<Widget>(this, std::forward<Args>(args)...)));
     }
@@ -251,7 +253,7 @@ public:
      * @return A reference to the widget that was created.
      */
     template<typename Widget, typename... Args>
-    Widget& emplace_top(Args&&...args)
+    Widget& emplace_top(Args&&... args)
     {
         return static_cast<Widget&>(push_top(std::make_unique<Widget>(this, std::forward<Args>(args)...)));
     }
@@ -259,16 +261,16 @@ public:
     /** Emplace a widget to the back.
      *
      * The widget is places at front-bottom.
-     * 
+     *
      * @tparam Widget The type of the widget to be constructed.
      * @param args The arguments passed to the constructor of the widget.
      * @return A reference to the widget that was created.
      */
     template<typename Widget, typename... Args>
-    Widget& emplace_bottom(Args&&...args)
+    Widget& emplace_bottom(Args&&... args)
     {
         auto tmp = std::make_unique<Widget>(std::forward<Args>(args)...);
-        auto &ref = *tmp;
+        auto& ref = *tmp;
         push_bottom(std::move(tmp));
         return ref;
     }
@@ -281,7 +283,7 @@ public:
     }
 
     /// @privatesection
-    [[nodiscard]] generator<widget_intf &> children(bool include_invisible) noexcept override
+    [[nodiscard]] generator<widget_intf&> children(bool include_invisible) const noexcept override
     {
         for (auto const& cell : _grid) {
             co_yield *cell.value;
@@ -290,32 +292,20 @@ public:
 
     [[nodiscard]] box_constraints update_constraints() noexcept override
     {
-        _layout = {};
-
         for (auto& cell : _grid) {
             cell.set_constraints(cell.value->update_constraints());
         }
 
-        return _grid.constraints(os_settings::left_to_right());
+        return _grid.constraints(os_settings::left_to_right(), style.vertical_alignment);
     }
 
     void set_layout(widget_layout const& context) noexcept override
     {
-        if (compare_store(_layout, context)) {
-            _grid.set_layout(context.shape, theme().baseline_adjustment());
-        }
+        super::set_layout(context);
 
+        _grid.set_layout(context.shape);
         for (auto const& cell : _grid) {
             cell.value->set_layout(context.transform(cell.shape, transform_command::level));
-        }
-    }
-
-    void draw(draw_context const& context) noexcept override
-    {
-        if (mode() > widget_mode::invisible) {
-            for (auto const& cell : _grid) {
-                cell.value->draw(context);
-            }
         }
     }
 
@@ -323,19 +313,16 @@ public:
     {
         hi_axiom(loop::main().on_thread());
 
-        if (mode() >= widget_mode::partial) {
-            auto r = hitbox{};
-            for (auto const& cell : _grid) {
-                r = cell.value->hitbox_test_from_parent(position, r);
-            }
-            return r;
-        } else {
-            return {};
+        auto r = hitbox{};
+        for (auto const& cell : _grid) {
+            r = cell.value->hitbox_test_from_parent(position, r);
         }
+        return r;
     }
     /// @endprivatesection
 private:
     grid_layout<std::unique_ptr<widget>> _grid;
 };
 
-}} // namespace hi::v1
+} // namespace v1
+} // namespace hi::v1

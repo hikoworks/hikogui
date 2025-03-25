@@ -5,9 +5,7 @@
 #pragma once
 
 #include "awaitable_stop_token_intf.hpp"
-#if HI_OPERATING_SYSTEM == HI_OS_WINDOWS
 #include "loop_win32_intf.hpp"
-#endif
 #include "../macros.hpp"
 #include <utility>
 #include <coroutine>

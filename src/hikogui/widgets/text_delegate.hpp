@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include "widget_delegate.hpp"
 #include "../observer/observer.hpp"
 #include "../utility/utility.hpp"
 #include "../concurrency/concurrency.hpp"
@@ -24,31 +25,35 @@
 hi_export_module(hikogui.widgets.text_delegate);
 
 hi_export namespace hi { inline namespace v1 {
-class text_widget;
 
 /** A delegate that controls the state of a text_widget.
  *
  * @ingroup widget_delegates
  */
-class text_delegate {
+class text_delegate : public virtual widget_delegate {
 public:
-    virtual ~text_delegate() = default;
-
-    virtual void init(widget_intf const& sender) noexcept {}
-    virtual void deinit(widget_intf const& sender) noexcept {}
+    [[nodiscard]] virtual bool empty_text(widget_intf const* sender) const = 0;
 
     /** Read text as a string of graphemes.
      */
-    [[nodiscard]] virtual gstring read(widget_intf const& sender) noexcept = 0;
+    [[nodiscard]] virtual gstring get_text(widget_intf const* sender) const = 0;
+
+    [[nodiscard]] virtual bool mutable_text(widget_intf const* sender) const
+    {
+        return false;
+    }
 
     /** Write text from a string of graphemes.
      */
-    virtual void write(widget_intf const& sender, gstring const& text) noexcept = 0;
+    virtual void set_text(widget_intf const* sender, gstring const& text)
+    {
+        std::unreachable();
+    }
 
     /** Subscribe a callback for notifying the widget of a data change.
      */
     template<forward_of<void()> Func>
-    [[nodiscard]] callback<void()> subscribe(Func&& func, callback_flags flags = callback_flags::synchronous) noexcept
+    [[nodiscard]] callback<void()> subscribe(widget_intf const* sender, Func&& func, callback_flags flags = callback_flags::synchronous)
     {
         return _notifier.subscribe(std::forward<Func>(func), flags);
     }
@@ -62,8 +67,28 @@ protected:
  * @ingroup widget_delegates
  * @tparam T The type of the observer value.
  */
-template<typename T>
+template<typename...>
 class default_text_delegate;
+
+template<>
+class default_text_delegate<> : public text_delegate {
+public:
+    /** Construct a delegate.
+     */
+    default_text_delegate() = default;
+
+    /// @privatesection
+    [[nodiscard]] bool empty_text(widget_intf const* sender) const override
+    {
+        return true;
+    }
+
+    [[nodiscard]] gstring get_text(widget_intf const* sender) const override
+    {
+        return {};
+    }
+    /// @endprivatesection
+};
 
 /** A default text delegate specialization for `std::string`.
  *
@@ -74,31 +99,31 @@ class default_text_delegate<char const *> : public text_delegate {
 public:
     using value_type = char const *;
 
-    observer<value_type> value;
-
     /** Construct a delegate.
      *
      * @param value A value or observer-value used as a representation of the state.
      */
     template<forward_of<observer<value_type>> Value>
-    explicit default_text_delegate(Value&& value) noexcept : value(std::forward<Value>(value))
+    explicit default_text_delegate(Value&& value) : _value(std::forward<Value>(value))
     {
-        _value_cbt = this->value.subscribe([&](auto...) {
+        _value_cbt = _value.subscribe([&](auto...) {
             this->_notifier();
         });
     }
 
-    [[nodiscard]] gstring read(widget_intf const& sender) noexcept override
+    /// @privatesection
+    [[nodiscard]] bool empty_text(widget_intf const* sender) const override
     {
-        return to_gstring(std::string{*value});
+        return _value == nullptr or _value[0] == '\0';
     }
 
-    void write(widget_intf const& sender, gstring const& text) noexcept override
+    [[nodiscard]] gstring get_text(widget_intf const* sender) const override
     {
-        hi_no_default();
+        return to_gstring(std::string{*_value});
     }
-
+    /// @endprivatesection
 private:
+    observer<value_type> _value;
     callback<void(value_type)> _value_cbt;
 };
 
@@ -111,31 +136,41 @@ class default_text_delegate<std::string> : public text_delegate {
 public:
     using value_type = std::string;
 
-    observer<value_type> value;
-
     /** Construct a delegate.
      *
      * @param value A value or observer-value used as a representation of the state.
      */
     template<forward_of<observer<value_type>> Value>
-    explicit default_text_delegate(Value&& value) noexcept : value(std::forward<Value>(value))
+    explicit default_text_delegate(Value&& value) : _value(std::forward<Value>(value))
     {
-        _value_cbt = this->value.subscribe([&](auto...) {
+        _value_cbt = _value.subscribe([&](auto...) {
             this->_notifier();
         });
     }
 
-    [[nodiscard]] gstring read(widget_intf const& sender) noexcept override
+    /// @privatesection
+    [[nodiscard]] bool empty_text(widget_intf const* sender) const override
     {
-        return to_gstring(*value);
+        return _value->empty();
     }
 
-    void write(widget_intf const& sender, gstring const& text) noexcept override
+    [[nodiscard]] gstring get_text(widget_intf const* sender) const override
     {
-        value = to_string(text);
+        return to_gstring(*_value);
     }
 
+    [[nodiscard]] bool mutable_text(widget_intf const* sender) const override
+    {
+        return true;
+    }
+
+    void set_text(widget_intf const* sender, gstring const& text) override
+    {
+        _value = to_string(text);
+    }
+    /// @endprivatesection
 private:
+    observer<value_type> _value;
     callback<void(value_type)> _value_cbt;
 };
 
@@ -148,31 +183,41 @@ class default_text_delegate<gstring> : public text_delegate {
 public:
     using value_type = gstring;
 
-    observer<value_type> value;
-
     /** Construct a delegate.
      *
      * @param value A value or observer-value used as a representation of the state.
      */
     template<forward_of<observer<value_type>> Value>
-    explicit default_text_delegate(Value&& value) noexcept : value(std::forward<Value>(value))
+    explicit default_text_delegate(Value&& value) : _value(std::forward<Value>(value))
     {
-        _value_cbt = this->value.subscribe([&](auto...) {
+        _value_cbt = _value.subscribe([&](auto...) {
             this->_notifier();
         });
     }
 
-    [[nodiscard]] gstring read(widget_intf const& sender) noexcept override
+    /// @privatesection
+    [[nodiscard]] bool empty_text(widget_intf const* sender) const override
     {
-        return *value;
+        return _value->empty();
     }
 
-    void write(widget_intf const& sender, gstring const& text) noexcept override
+    [[nodiscard]] gstring get_text(widget_intf const* sender) const override
     {
-        value = text;
+        return *_value;
     }
 
+    [[nodiscard]] bool mutable_text(widget_intf const* sender) const override
+    {
+        return true;
+    }
+
+    void set_text(widget_intf const* sender, gstring const& text) override
+    {
+        _value = text;
+    }
+    /// @endprivatesection
 private:
+    observer<value_type> _value;
     callback<void(value_type)> _value_cbt;
 };
 
@@ -185,46 +230,49 @@ class default_text_delegate<txt> : public text_delegate {
 public:
     using value_type = txt;
 
-    observer<value_type> value;
-
     /** Construct a delegate.
      *
      * @param value A value or observer-value used as a representation of the state.
      */
     template<forward_of<observer<value_type>> Value>
-    explicit default_text_delegate(Value&& value) noexcept : value(std::forward<Value>(value))
+    explicit default_text_delegate(Value&& value) : _value(std::forward<Value>(value))
     {
-        _value_cbt = this->value.subscribe([&](auto...) {
+        _value_cbt = _value.subscribe([&](auto...) {
             this->_notifier();
         });
     }
 
-    [[nodiscard]] gstring read(widget_intf const& sender) noexcept override
+    /// @privatesection
+    [[nodiscard]] bool empty_text(widget_intf const* sender) const override
     {
-        return value->translate();
+        return _value->empty();
     }
 
-    void write(widget_intf const& sender, gstring const& text) noexcept override
+    [[nodiscard]] gstring get_text(widget_intf const* sender) const override
     {
-        hi_no_default();
+        return _value->translate();
     }
-
+    /// @endprivatesection
 private:
+    observer<value_type> _value;
     callback<void(value_type)> _value_cbt;
 };
 
-/** Create a shared pointer to a default text delegate.
- *
- * @ingroup widget_delegates
- * @see default_text_delegate
- * @param value The observer value which represents the displayed text.
- * @return shared pointer to a text delegate
- */
-template<typename Value>
-std::shared_ptr<text_delegate> make_default_text_delegate(Value&& value) noexcept
-    requires requires { default_text_delegate<observer_decay_t<Value>>{std::forward<Value>(value)}; }
-{
-    return std::make_shared<default_text_delegate<observer_decay_t<Value>>>(std::forward<Value>(value));
-}
+default_text_delegate() -> default_text_delegate<>;
+default_text_delegate(char const*) -> default_text_delegate<char const*>;
+default_text_delegate(std::string const&) -> default_text_delegate<std::string>;
+default_text_delegate(std::string&&) -> default_text_delegate<std::string>;
+default_text_delegate(gstring const&) -> default_text_delegate<gstring>;
+default_text_delegate(gstring&&) -> default_text_delegate<gstring>;
+default_text_delegate(txt const&) -> default_text_delegate<txt>;
+default_text_delegate(txt&&) -> default_text_delegate<txt>;
+default_text_delegate(hi::observer<char const*> const&) -> default_text_delegate<char const*>;
+default_text_delegate(hi::observer<char const*>&&) -> default_text_delegate<char const*>;
+default_text_delegate(hi::observer<std::string> const&) -> default_text_delegate<std::string>;
+default_text_delegate(hi::observer<std::string>&&) -> default_text_delegate<std::string>;
+default_text_delegate(hi::observer<hi::gstring> const&) -> default_text_delegate<gstring>;
+default_text_delegate(hi::observer<hi::gstring>&&) -> default_text_delegate<gstring>;
+default_text_delegate(hi::observer<hi::txt> const&) -> default_text_delegate<txt>;
+default_text_delegate(hi::observer<hi::txt>&&) -> default_text_delegate<txt>;
 
 }} // namespace hi::v1

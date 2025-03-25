@@ -44,8 +44,8 @@ public:
 
     keyboard_key(std::string_view key_combination) : modifiers(keyboard_modifiers::none), virtual_key(keyboard_virtual_key::nul)
     {
-        auto const modifiers_and_vkey = split(key_combination, '+');
-        hi_assert(modifiers_and_vkey.cbegin() != modifiers_and_vkey.cend());
+        auto const modifiers_and_vkey = split_string_view(key_combination, "+");
+        assert(not modifiers_and_vkey.empty());
 
         auto const end_modifiers = modifiers_and_vkey.cend() - 1;
         for (auto i = modifiers_and_vkey.cbegin(); i != end_modifiers; ++i) {

@@ -22,8 +22,7 @@
 hi_export_module(hikogui.GFX : gfx_surface_impl);
 
 hi_export namespace hi::inline v1 {
-
-inline void gfx_surface::set_device(gfx_device *new_device) noexcept
+inline void gfx_surface::set_device(gfx_device* new_device) noexcept
 {
     hi_assert_not_null(new_device);
 
@@ -46,7 +45,7 @@ inline void gfx_surface::set_device(gfx_device *new_device) noexcept
     _graphics_queue = std::addressof(_device->get_graphics_queue(intrinsic));
 }
 
-inline void gfx_surface::add_delegate(gfx_surface_delegate *delegate) noexcept
+inline void gfx_surface::add_delegate(gfx_surface_delegate* delegate) noexcept
 {
     auto const lock = std::scoped_lock(gfx_system_mutex);
 
@@ -70,7 +69,7 @@ inline void gfx_surface::add_delegate(gfx_surface_delegate *delegate) noexcept
     }
 }
 
-inline void gfx_surface::remove_delegate(gfx_surface_delegate *delegate) noexcept
+inline void gfx_surface::remove_delegate(gfx_surface_delegate* delegate) noexcept
 {
     auto const lock = std::scoped_lock(gfx_system_mutex);
 
@@ -230,7 +229,7 @@ inline gfx_surface_loss gfx_surface::build_for_new_device() noexcept
 inline gfx_surface_loss gfx_surface::build_for_new_swapchain(extent2 new_size) noexcept
 {
     try {
-        auto const[clamped_count, clamped_size] = get_image_count_and_size(defaultNumberOfSwapchainImages, new_size);
+        auto const [clamped_count, clamped_size] = get_image_count_and_size(defaultNumberOfSwapchainImages, new_size);
         if (not new_size) {
             // Minimized window, can not build a new swap chain.
             return gfx_surface_loss::swapchain_lost;
@@ -240,7 +239,7 @@ inline gfx_surface_loss gfx_surface::build_for_new_swapchain(extent2 new_size) n
             return loss;
         }
 
-        auto const[clamped_count_check, clamped_size_check] = get_image_count_and_size(clamped_count, clamped_size);
+        auto const [clamped_count_check, clamped_size_check] = get_image_count_and_size(clamped_count, clamped_size);
         if (clamped_count_check != clamped_count or clamped_size_check != clamped_size) {
             // Window has changed during swap chain creation, it is in a inconsistent bad state.
             // This is a bug in the Vulkan specification.
@@ -393,6 +392,12 @@ inline draw_context gfx_surface::render_start(aarectangle redraw_rectangle)
     // Extent the redraw_rectangle to the render-area-granularity to improve performance on tile based GPUs.
     redraw_rectangle = ceil(redraw_rectangle, _render_area_granularity);
 
+    // Accumulate the redraw_rectangle for all swapchain images, since those
+    // parts of each swapchain image will need to be redrawn in the future.
+    for (auto& item : swapchain_image_infos) {
+        item.redraw_rectangle |= redraw_rectangle;
+    }
+
     auto const lock = std::scoped_lock(gfx_system_mutex);
 
     auto r = draw_context{
@@ -408,25 +413,18 @@ inline draw_context gfx_surface::render_start(aarectangle redraw_rectangle)
     }
 
     auto const optional_frame_buffer_index = acquire_next_image_from_swapchain();
-    if (!optional_frame_buffer_index) {
+    if (not optional_frame_buffer_index) {
         // No image is ready to be rendered, yet, possibly because our vertical sync function
         // is not working correctly.
         return r;
     }
 
     // Setting the frame buffer index, also enabled the draw_context.
-    r.frame_buffer_index = narrow_cast<size_t>(*optional_frame_buffer_index);
+    r.frame_buffer_index = gsl::narrow<size_t>(*optional_frame_buffer_index);
 
-    // Record which part of the image will be redrawn on the current swapchain image.
+    // Extract which part of the swapchain image needs to be redrawn.
     auto& current_image = swapchain_image_infos.at(r.frame_buffer_index);
-    current_image.redraw_rectangle = redraw_rectangle;
-
-    // Calculate the scissor rectangle, from the combined redraws of the complete swapchain.
-    // We need to do this so that old redraws are also executed in the current swapchain image.
-    r.scissor_rectangle =
-        std::accumulate(swapchain_image_infos.cbegin(), swapchain_image_infos.cend(), aarectangle{}, [](auto const& sum, auto const& item) {
-            return sum | item.redraw_rectangle;
-        });
+    r.scissor_rectangle = std::exchange(current_image.redraw_rectangle, {});
 
     // Wait until previous rendering has finished, before the next rendering.
     _device->waitForFences({renderFinishedFence}, VK_TRUE, std::numeric_limits<uint64_t>::max());
@@ -489,10 +487,8 @@ inline void gfx_surface::render_finish(draw_context const& context)
     teardown();
 }
 
-inline void gfx_surface::fill_command_buffer(
-    swapchain_image_info const& current_image,
-    draw_context const& context,
-    vk::Rect2D render_area)
+inline void
+gfx_surface::fill_command_buffer(swapchain_image_info const& current_image, draw_context const& context, vk::Rect2D render_area)
 {
     hi_axiom(gfx_system_mutex.recurse_lock_count());
 
@@ -656,7 +652,7 @@ inline gfx_surface_loss gfx_surface::build_swapchain(std::size_t new_count, exte
 
     VmaAllocationCreateInfo depthAllocationCreateInfo = {};
     depthAllocationCreateInfo.flags = VMA_ALLOCATION_CREATE_USER_DATA_COPY_STRING_BIT;
-    depthAllocationCreateInfo.pUserData = const_cast<char *>("vk::Image depth attachment");
+    depthAllocationCreateInfo.pUserData = const_cast<char*>("vk::Image depth attachment");
     depthAllocationCreateInfo.usage = _device->lazyMemoryUsage;
     std::tie(depthImage, depthImageAllocation) = _device->createImage(depthImageCreateInfo, depthAllocationCreateInfo);
     _device->setDebugUtilsObjectNameEXT(depthImage, "vk::Image depth attachment");
@@ -679,7 +675,7 @@ inline gfx_surface_loss gfx_surface::build_swapchain(std::size_t new_count, exte
 
     VmaAllocationCreateInfo colorAllocationCreateInfo = {};
     colorAllocationCreateInfo.flags = VMA_ALLOCATION_CREATE_USER_DATA_COPY_STRING_BIT;
-    colorAllocationCreateInfo.pUserData = const_cast<char *>("vk::Image color attachment");
+    colorAllocationCreateInfo.pUserData = const_cast<char*>("vk::Image color attachment");
     colorAllocationCreateInfo.usage = _device->lazyMemoryUsage;
 
     std::tie(colorImages[0], colorImageAllocations[0]) = _device->createImage(colorImageCreateInfo, colorAllocationCreateInfo);
@@ -825,7 +821,8 @@ inline void gfx_surface::build_render_passes()
 
     auto const depth_attachment_reference = vk::AttachmentReference{0, vk::ImageLayout::eDepthStencilAttachmentOptimal};
     auto const color_attachment_references = std::array{vk::AttachmentReference{1, vk::ImageLayout::eColorAttachmentOptimal}};
-    auto const color_input_attachment_references = std::array{vk::AttachmentReference{1, vk::ImageLayout::eShaderReadOnlyOptimal}};
+    auto const color_input_attachment_references =
+        std::array{vk::AttachmentReference{1, vk::ImageLayout::eShaderReadOnlyOptimal}};
     auto const swapchain_attachment_references = std::array{vk::AttachmentReference{2, vk::ImageLayout::eColorAttachmentOptimal}};
 
     auto const subpass_descriptions = std::array{
@@ -986,7 +983,8 @@ inline void gfx_surface::build_command_buffers()
 {
     hi_axiom(gfx_system_mutex.recurse_lock_count());
 
-    auto const commandBuffers = _device->allocateCommandBuffers({_graphics_queue->command_pool, vk::CommandBufferLevel::ePrimary, 1});
+    auto const commandBuffers =
+        _device->allocateCommandBuffers({_graphics_queue->command_pool, vk::CommandBufferLevel::ePrimary, 1});
 
     commandBuffer = commandBuffers.at(0);
 }
@@ -999,7 +997,7 @@ inline void gfx_surface::teardown_command_buffers()
     _device->freeCommandBuffers(_graphics_queue->command_pool, commandBuffers);
 }
 
-[[nodiscard]] inline std::unique_ptr<gfx_surface> make_unique_gfx_surface(os_handle instance, void *os_window)
+[[nodiscard]] inline std::unique_ptr<gfx_surface> make_unique_gfx_surface(os_handle instance, void* os_window)
 {
     auto const lock = std::scoped_lock(gfx_system_mutex);
 
@@ -1009,7 +1007,7 @@ inline void gfx_surface::teardown_command_buffers()
     auto vulkan_surface = vulkan_instance().createWin32SurfaceKHR(surface_create_info);
 
     auto surface = std::make_unique<gfx_surface>(vulkan_surface);
-    
+
     // Now that we have a physical window and render surface it is time to find the gfx-device
     // for rendering on this surface.
     auto device = find_best_device(*surface);

@@ -7,6 +7,7 @@
 #include "../win32_headers.hpp"
 
 #include "function_timer.hpp"
+#include "function_predicate.hpp"
 #include "socket_event.hpp"
 #include "notifier.hpp"
 #include "../container/container.hpp"
@@ -131,6 +132,14 @@ public:
         return *start_subsystem_or_terminate(_timer, nullptr, timer_init, timer_deinit);
     }
 
+    /** Request all windows to be redrawn on the next frame.
+     * 
+     */
+    void request_redraw() noexcept
+    {
+        _request_redraw.store(true, std::memory_order::relaxed);
+    }
+
     /** Set maximum frame rate.
      *
      * A frame rate above 30.0 may will cause the vsync thread to block on
@@ -191,6 +200,8 @@ public:
         return future;
     }
 
+    
+
     /** Call a function at a certain time.
      *
      * @param time_point The time at which to call the function.
@@ -241,20 +252,29 @@ public:
         return std::move(callback);
     }
 
-    void subscribe_render(weak_callback<void(utc_nanoseconds)> callback) noexcept
+    
+    template<forward_of<void()> Func>
+    [[nodiscard]] callback<void()> delay_function_until(std::function<bool()> predicate, Func&& func) noexcept
     {
+        return _function_predicate.add(std::move(predicate), std::forward<Func>(func));
     }
+
+    //void subscribe_render(weak_callback<void(utc_nanoseconds)> callback) noexcept
+    //{
+    //}
 
     /** Subscribe a render function to be called on vsync.
      *
-     * @param f A function to be called when vsync occurs.
+     * @param f A function to be called when vsync occurs. The function will be
+     *          called with the time of the vsync and a boolean indicating if
+     *          the window must be fully redrawn.
      */
-    template<forward_of<void(utc_nanoseconds)> Func>
-    callback<void(utc_nanoseconds)> subscribe_render(Func &&func) noexcept
+    template<forward_of<void(utc_nanoseconds, bool)> Func>
+    callback<void(utc_nanoseconds, bool)> subscribe_render(Func &&func) noexcept
     {
         hi_axiom(on_thread());
 
-        auto cb = callback<void(utc_nanoseconds)>{std::forward<Func>(func)};
+        auto cb = callback<void(utc_nanoseconds, bool)>{std::forward<Func>(func)};
 
         _render_functions.push_back(cb);
 
@@ -397,7 +417,10 @@ public:
             handle_vsync();
 
         } else if (wait_r == WAIT_OBJECT_0 + _function_handle_idx) {
-            // handle_functions() and handle_timers() is called after every wake-up of MsgWaitForMultipleObjects
+            // handle_functions() and handle_timers() is called after every
+            // wake-up of MsgWaitForMultipleObjects(). This is done below the
+            // if-cascade to make sure that the function-event is triggered
+            // after any kind of wake-up.
             ;
 
         } else if (wait_r >= WAIT_OBJECT_0 + _socket_handle_idx and wait_r < WAIT_OBJECT_0 + _handles.size()) {
@@ -465,6 +488,10 @@ public:
         // When functions are added wait-free, the function-event is never triggered.
         // So handle messages after any kind of wake up.
         handle_functions();
+
+        // The predicate functions are functions that are called when a certain
+        // condition is met.
+        handle_predicate_functions();
     }
 
     /** Check if the current thread is the same as the loop's thread.
@@ -489,14 +516,16 @@ private:
 
     function_fifo<> _function_fifo;
     function_timer _function_timer;
+    function_predicate _function_predicate;
 
     std::optional<int> _exit_code = {};
     double _maximum_frame_rate = 30.0;
     std::chrono::nanoseconds _minimum_frame_time = std::chrono::nanoseconds(33'333'333);
     thread_id _thread_id;
-    std::vector<weak_callback<void(utc_nanoseconds)>> _render_functions;
+    std::vector<weak_callback<void(utc_nanoseconds, bool)>> _render_functions;
+    std::atomic<bool> _request_redraw = false;
 
-struct socket_type {
+    struct socket_type {
         int fd;
         socket_event mode;
         std::function<void(int, socket_events const&)> callback;
@@ -642,9 +671,10 @@ struct socket_type {
 
         auto const display_time = _vsync_time.load(std::memory_order::relaxed) + std::chrono::milliseconds(30);
 
+        auto request_redraw = _request_redraw.exchange(false);
         for (auto& render_function : _render_functions) {
             if (auto rf = render_function.lock()) {
-                rf(display_time);
+                rf(display_time, request_redraw);
             }
         }
 
@@ -667,6 +697,11 @@ struct socket_type {
     void handle_functions() noexcept
     {
         _function_fifo.run_all();
+    }
+
+    void handle_predicate_functions() noexcept
+    {
+        _function_predicate.run_all();
     }
 
     void handle_timers() noexcept

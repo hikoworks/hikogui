@@ -6,13 +6,11 @@
 #if defined(HI_GENERIC)
 #include "debugger_generic_impl.hpp" // export
 #else
-#if HI_OPERATING_SYSTEM == HI_OS_WINDOWS
 #include "debugger_win32_impl.hpp" // export
-#endif
 #endif
 
 /** Support for debugging.
- *
+ * 
  * On Windows:
  *  - hi_debug_break() will break if a debugger is attached; otherwise the
  *    application will continue.
@@ -24,7 +22,7 @@
  *    instruction.
  *  - hi_assert_break() and hi_debug_break() will optionally launch the
  *    just-in-time debugger if this was configured.
- *
+ *  
  * @module hikogui.utility.debugger
  */
 hi_export_module(hikogui.utility.debugger);

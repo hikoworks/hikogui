@@ -16,7 +16,8 @@
 
 hi_export_module(hikogui.l10n.po_parser);
 
-hi_export namespace hi { inline namespace v1 {
+hi_export namespace hi {
+inline namespace v1 {
 
 namespace detail {
 
@@ -120,13 +121,13 @@ constexpr void parse_po_header(po_translations& r, std::string_view header)
 {
     using namespace std::literals;
 
-    for (auto const line : std::views::split(header, "\\n"sv)) {
+    for (auto const line : split_string_view(header, "\\n"sv)) {
         if (line.empty()) {
             // Skip empty header lines.
             continue;
         }
 
-        auto split_line = make_vector<std::string_view>(std::views::split(line, ":"sv));
+        auto split_line = split_string_view(line, ":");
         if (split_line.size() < 2) {
             throw parse_error(std::format("Unknown header '{}'", std::string_view{line}));
         }
@@ -178,4 +179,5 @@ template<std::input_iterator It, std::sentinel_for<It> ItEnd>
     return parse_po(as_string_view(file_view{path}), path.string());
 }
 
-}} // namespace hi::inline v1
+} // namespace v1
+} // namespace hi::inline v1

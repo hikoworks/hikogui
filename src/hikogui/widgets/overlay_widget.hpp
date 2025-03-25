@@ -50,7 +50,10 @@ public:
      *
      * @param parent The parent widget.
      */
-    overlay_widget() noexcept : super() {}
+    overlay_widget() noexcept : super()
+    {
+        style.set_name("overlay");
+    }
 
     void set_widget(std::unique_ptr<widget> new_widget) noexcept
     {
@@ -63,7 +66,7 @@ public:
         }
 
         ++global_counter<"overlay_widget:set_widget:constrain">;
-        process_event({gui_event_type::window_reconstrain});
+        request_reconstrain();
     }
 
     /** Add a content widget directly to this overlay widget.
@@ -88,7 +91,7 @@ public:
     }
 
     /// @privatesection
-    [[nodiscard]] generator<widget_intf&> children(bool include_invisible) noexcept override
+    [[nodiscard]] generator<widget_intf&> children(bool include_invisible) const noexcept override
     {
         if (_content) {
             co_yield *_content;
@@ -97,43 +100,48 @@ public:
 
     [[nodiscard]] box_constraints update_constraints() noexcept override
     {
-        _layout = {};
         _content_constraints = _content->update_constraints();
         return _content_constraints;
     }
 
     void set_layout(widget_layout const& context) noexcept override
     {
-        _layout = context;
-
         // The clipping rectangle of the overlay matches the rectangle exactly, with a border around it.
-        _layout.clipping_rectangle = context.rectangle() + theme().border_width();
+        auto context_ = context;
+        context_.clipping_rectangle = context_.rectangle() + style.border_width_px;
+
+        super::set_layout(context_);
 
         auto const content_rectangle = context.rectangle();
-        _content_shape = box_shape{_content_constraints, content_rectangle, theme().baseline_adjustment()};
+        _content_shape = box_shape{content_rectangle, baseline{}};
 
         // The content should not draw in the border of the overlay, so give a tight clipping rectangle.
-        _content->set_layout(_layout.transform(_content_shape, context.rectangle()));
+        _content->set_layout(layout().transform(_content_shape, context.rectangle()));
     }
 
-    void draw(draw_context const& context) noexcept override
+    void draw(draw_context const& context) const noexcept override
     {
-        if (mode() > widget_mode::invisible) {
-            if (overlaps(context, layout())) {
-                draw_background(context);
-            }
-            _content->draw(context);
+        if (overlaps(context, layout())) {
+            context.draw_box(
+                layout(),
+                layout().rectangle(),
+                background_color(),
+                foreground_color(),
+                theme().border_width(),
+                border_side::outside);
         }
+
+        return super::draw(context);
     }
 
     [[nodiscard]] color background_color() const noexcept override
     {
-        return theme().fill_color(_layout.layer + 1);
+        return theme().fill_color(layout().layer + 1);
     }
 
     [[nodiscard]] color foreground_color() const noexcept override
     {
-        return theme().border_color(_layout.layer + 1);
+        return theme().border_color();
     }
 
     void scroll_to_show(hi::aarectangle rectangle) noexcept override
@@ -145,12 +153,7 @@ public:
     [[nodiscard]] hitbox hitbox_test(point2 position) const noexcept override
     {
         hi_axiom(loop::main().on_thread());
-
-        if (mode() >= widget_mode::partial) {
-            return _content->hitbox_test_from_parent(position);
-        } else {
-            return {};
-        }
+        return _content->hitbox_test_from_parent(position);
     }
 
     bool handle_event(gui_event const& event) noexcept override
@@ -163,12 +166,6 @@ private:
     std::unique_ptr<widget> _content;
     box_constraints _content_constraints;
     box_shape _content_shape;
-
-    void draw_background(draw_context const& context) noexcept
-    {
-        context.draw_box(
-            layout(), layout().rectangle(), background_color(), foreground_color(), theme().border_width(), border_side::outside);
-    }
 };
 
 } // namespace v1

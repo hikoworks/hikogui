@@ -29,12 +29,12 @@ hi_export namespace hi { inline namespace v1 {
 class tab_delegate {
 public:
     virtual ~tab_delegate() = default;
-    virtual void init(widget_intf const& sender) noexcept {}
-    virtual void deinit(widget_intf const& sender) noexcept {}
+    virtual void init(widget_intf const* sender) {}
+    virtual void deinit(widget_intf const* sender) {}
 
-    virtual void add_tab(widget_intf const& sender, std::size_t key, std::size_t index) noexcept {}
+    virtual void add_tab(widget_intf const* sender, std::size_t key, std::size_t index) {}
 
-    virtual std::ptrdiff_t index(widget_intf const& sender) noexcept
+    virtual std::ptrdiff_t index(widget_intf const* sender)
     {
         return -1;
     }
@@ -42,7 +42,7 @@ public:
     /** Subscribe a callback for notifying the widget of a data change.
      */
     template<forward_of<void()> Func>
-    [[nodiscard]] callback<void()> subscribe(Func&& func, callback_flags flags = callback_flags::synchronous) noexcept
+    [[nodiscard]] callback<void()> subscribe(widget_intf const* sender, Func&& func, callback_flags flags = callback_flags::synchronous)
     {
         return _notifier.subscribe(std::forward<Func>(func), flags);
     }
@@ -69,7 +69,7 @@ public:
      * @param value The observer value which represents the selected tab.
      */
     template<forward_of<observer<value_type>> Value>
-    default_tab_delegate(Value&& value) noexcept : value(std::forward<Value>(value))
+    default_tab_delegate(Value&& value) : value(std::forward<Value>(value))
     {
         _value_cbt = this->value.subscribe([&](auto...) {
             this->_notifier();
@@ -77,13 +77,13 @@ public:
     }
 
     // XXX key should really be of value_type, not sure how to handle that with the tab_widget not knowing the type of key.
-    void add_tab(widget_intf const& sender, std::size_t key, std::size_t index) noexcept override
+    void add_tab(widget_intf const* sender, std::size_t key, std::size_t index) override
     {
         hi_assert(not tab_indices.contains(key));
         tab_indices[key] = index;
     }
 
-    [[nodiscard]] std::ptrdiff_t index(widget_intf const& sender) noexcept override
+    [[nodiscard]] std::ptrdiff_t index(widget_intf const* sender) override
     {
         auto it = tab_indices.find(*value);
         if (it == tab_indices.end()) {
@@ -105,7 +105,7 @@ private:
  * @return shared pointer to a tab delegate
  */
 template<typename Value>
-std::shared_ptr<tab_delegate> make_default_tab_delegate(Value&& value) noexcept
+std::shared_ptr<tab_delegate> make_default_tab_delegate(Value&& value)
     requires requires { default_tab_delegate<observer_decay_t<Value>>{std::forward<Value>(value)}; }
 {
     using value_type = observer_decay_t<Value>;

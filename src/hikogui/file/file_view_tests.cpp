@@ -10,7 +10,7 @@ TEST_SUITE(file_view) {
 
 TEST_CASE(read)
 {
-    auto const view = hi::file_view{hi::library_test_data_dir() / "file_view.txt"};
+    auto const view = hi::file_view{hi::get_path(hi::library_test_data_dirs(), "file_view.txt")};
 
     REQUIRE(as_string_view(view) == "The quick brown fox jumps over the lazy dog.");
 }

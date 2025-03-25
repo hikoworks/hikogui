@@ -13,9 +13,7 @@
 #include "charconv.hpp" // export
 #include "compare.hpp" // export
 #include "concepts.hpp" // export
-#if HI_OPERATING_SYSTEM == HI_OS_WINDOWS
 #include "console_win32.hpp" // export
-#endif
 #include "debugger.hpp" // export
 #include "defer.hpp" // export
 #include "device_type.hpp" // export

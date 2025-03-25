@@ -7,42 +7,23 @@
 
 #pragma once
 
+#include "txt.hpp"
+#include "icon.hpp"
 #include "../utility/utility.hpp"
 #include "../unicode/unicode.hpp"
 #include "../image/image.hpp"
 #include "../font/font.hpp"
-#include "txt.hpp"
 #include "../macros.hpp"
 #include <string>
 #include <type_traits>
 #include <memory>
 #include <variant>
 
-hi_export_module(hikogui.l10n.label);
+hi_export_module(hikogui.l10n : label);
 
 
 hi_export namespace hi::inline v1 {
 
-/** A variant of icon.
- *
- * May be:
- *  - `std::monostate`
- *  - `hi::elusive_icon`
- *  - `hi::hikogui_icon`
- *  - `hi::font_glyph_ids`
- *  - `hi::pixmap<hi::sfloat_rgba16>`
- */
-class icon : public std::variant<std::monostate, elusive_icon, hikogui_icon, font_glyph_ids, pixmap<sfloat_rgba16>>
-{
-    using std::variant<std::monostate, elusive_icon, hikogui_icon, font_glyph_ids, pixmap<sfloat_rgba16>>::variant;
-
-    /** Check if icon contains an image.
-     */
-    [[nodiscard]] constexpr friend bool to_bool(icon const& rhs) noexcept
-    {
-        return not std::holds_alternative<std::monostate>(rhs);
-    }
-};
 
 /** A label consisting of localizable text and an icon.
  *
@@ -98,7 +79,7 @@ public:
 
     [[nodiscard]] constexpr bool empty() const noexcept
     {
-        return not(to_bool(icon) or to_bool(text));
+        return icon.empty() and text.empty();
     }
 
     constexpr explicit operator bool() const noexcept

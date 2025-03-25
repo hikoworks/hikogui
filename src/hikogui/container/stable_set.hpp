@@ -5,7 +5,6 @@
 #pragma once
 
 #include "../utility/utility.hpp"
-#include "../concurrency/concurrency.hpp"
 #include "../macros.hpp"
 #include <mutex>
 #include <memory>
@@ -128,6 +127,6 @@ private:
 
     vector_type _vector;
     map_type _map;
-    mutable unfair_mutex _mutex;
+    mutable std::mutex _mutex;
 };
 } // namespace hi::inline v1

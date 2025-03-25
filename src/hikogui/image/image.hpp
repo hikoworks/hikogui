@@ -4,8 +4,10 @@
 
 #pragma once
 
-#include "pixmap.hpp" // export
+#include "image_loader.hpp" // export
 #include "pixmap_span.hpp" // export
+#include "pixmap.hpp" // export
+#include "png_loader.hpp" // export
 #include "sdf_r8.hpp" // export
 #include "sfloat_rg32.hpp" // export
 #include "sfloat_rgb32.hpp" // export

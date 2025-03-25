@@ -19,7 +19,8 @@
 
 hi_export_module(hikogui.widgets.system_menu_widget);
 
-hi_export namespace hi { inline namespace v1 {
+hi_export namespace hi {
+inline namespace v1 {
 
 /** The system menu widget.
  * This widget displays an icon in the menu bar of the window and is used to call-up
@@ -39,17 +40,18 @@ public:
     {
         _icon_widget = std::make_unique<icon_widget>(icon);
         _icon_widget->set_parent(this);
+
+        style.set_name("system-menu");
     }
 
     template<forward_of<observer<hi::icon>> Icon>
-    system_menu_widget(Icon&& icon) noexcept :
-        system_menu_widget()
+    system_menu_widget(Icon&& icon) noexcept : system_menu_widget()
     {
         this->icon = std::forward<Icon>(icon);
     }
 
     /// @privatesection
-    [[nodiscard]] generator<widget_intf &> children(bool include_invisible) noexcept override
+    [[nodiscard]] generator<widget_intf&> children(bool include_invisible) const noexcept override
     {
         co_yield *_icon_widget;
     }
@@ -58,46 +60,36 @@ public:
     {
         hi_assert_not_null(_icon_widget);
 
-        _layout = {};
         _icon_constraints = _icon_widget->update_constraints();
+        _icon_padding = max(_icon_constraints.margins, style.padding_px);
 
-        auto const size = extent2{theme().large_size(), theme().large_size()};
-        return {size, size, size};
+        return {
+            _icon_constraints.minimum + _icon_padding,
+            _icon_constraints.preferred + _icon_padding,
+            _icon_constraints.maximum + _icon_padding,
+            style.margins_px,
+            embed(_icon_constraints.baseline, unit::pixels(_icon_padding.bottom()), unit::pixels(_icon_padding.top()))};
     }
 
     void set_layout(widget_layout const& context) noexcept override
     {
-        if (compare_store(_layout, context)) {
-            auto const icon_height =
-                context.height() < round_cast<int>(theme().large_size() * 1.2f) ? context.height() : theme().large_size();
-            auto const icon_rectangle = aarectangle{0, context.height() - icon_height, context.width(), icon_height};
-            _icon_shape = box_shape{_icon_constraints, icon_rectangle, theme().baseline_adjustment()};
-            // Leave space for window resize handles on the left and top.
-            _system_menu_rectangle = aarectangle{
-                theme().margin<float>(),
-                0.0f,
-                context.width() - theme().margin<float>(),
-                context.height() - theme().margin<float>()};
-        }
+        super::set_layout(context);
 
-        _icon_widget->set_layout(context.transform(_icon_shape));
-    }
+        auto const icon_rectangle = context.rectangle() - _icon_padding;
+        auto const icon_shape = box_shape{
+            icon_rectangle, lift(context.baseline(), unit::pixels(_icon_padding.bottom()), unit::pixels(_icon_padding.top()))};
 
-    void draw(draw_context const& context) noexcept override
-    {
-        if (mode() > widget_mode::invisible and overlaps(context, layout())) {
-            _icon_widget->draw(context);
-        }
+        _icon_widget->set_layout(context.transform(icon_shape));
     }
 
     [[nodiscard]] hitbox hitbox_test(point2 position) const noexcept override
     {
         hi_axiom(loop::main().on_thread());
 
-        if (mode() >= widget_mode::partial and layout().contains(position)) {
+        if (enabled() and layout().contains(position)) {
             // Only the top-left square should return ApplicationIcon, leave
             // the reset to the toolbar implementation.
-            return {id, _layout.elevation, hitbox_type::application_icon};
+            return {id(), layout().elevation, hitbox_type::application_icon};
         } else {
             return {};
         }
@@ -107,9 +99,8 @@ public:
 private:
     std::unique_ptr<icon_widget> _icon_widget;
     box_constraints _icon_constraints;
-    box_shape _icon_shape;
-
-    aarectangle _system_menu_rectangle;
+    margins _icon_padding;
 };
 
-}} // namespace hi::v1
+} // namespace v1
+} // namespace hi::v1

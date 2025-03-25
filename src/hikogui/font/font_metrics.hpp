@@ -50,16 +50,6 @@ hi_export struct font_metrics {
      */
     au::Quantity<Unit, T> digit_advance;
 
-    /** The multiplier for the space between lines of the same paragraph.
-     * @note This is not an actual font property, but comes from the text-style.
-     */
-    float line_spacing = 0.0f;
-
-    /** The multiplier for the space between two paragraphs.
-     * @note This is not an actual font property, but comes from the text-style.
-     */
-    float paragraph_spacing = 0.0f;
-
     ~font_metrics() = default;
     constexpr font_metrics() noexcept = default;
     constexpr font_metrics(font_metrics const&) noexcept = default;
@@ -88,8 +78,6 @@ hi_export struct font_metrics {
         r.cap_height = lhs * rhs.cap_height;
         r.x_height = lhs * rhs.x_height;
         r.digit_advance = lhs * rhs.digit_advance;
-        r.line_spacing = rhs.line_spacing;
-        r.paragraph_spacing = rhs.paragraph_spacing;
         return r;
     }
 
@@ -102,8 +90,6 @@ hi_export struct font_metrics {
         r.cap_height = std::max(a.cap_height, b.cap_height);
         r.x_height = std::max(a.x_height, b.x_height);
         r.digit_advance = std::max(a.digit_advance, b.digit_advance);
-        r.line_spacing = std::max(a.line_spacing, b.line_spacing);
-        r.paragraph_spacing = std::max(a.paragraph_spacing, b.paragraph_spacing);
         return r;
     }
 };

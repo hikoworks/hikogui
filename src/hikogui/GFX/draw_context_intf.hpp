@@ -447,17 +447,17 @@ public:
      * @param text The shaped text to draw.
      * @param attributes The drawing attributes to use.
      */
-    template<std::same_as<widget_layout> WidgetLayout>
-    void
-    draw_text(WidgetLayout const& layout, matrix3 const& transform, text_shaper const& text, draw_attributes const& attributes)
-        const noexcept
-    {
-        return _draw_text(
-            layout.clipping_rectangle_on_window(attributes.clipping_rectangle),
-            layout.to_window3() * transform,
-            text,
-            attributes);
-    }
+    //template<std::same_as<widget_layout> WidgetLayout>
+    //void
+    //draw_text(WidgetLayout const& layout, matrix3 const& transform, text_shaper const& text, draw_attributes const& attributes)
+    //    const noexcept
+    //{
+    //    return _draw_text(
+    //        layout.clipping_rectangle_on_window(attributes.clipping_rectangle),
+    //        layout.to_window3() * transform,
+    //        text,
+    //        attributes);
+    //}
 
     /** Draw shaped text.
      *
@@ -466,12 +466,12 @@ public:
      * @param text The shaped text to draw.
      * @param attributes The drawing attributes to use, see: `draw_attributes::draw_attributes()`.
      */
-    template<std::same_as<widget_layout> WidgetLayout, draw_attribute... Attributes>
-    void draw_text(WidgetLayout const& layout, matrix3 const& transform, text_shaper const& text, Attributes const&...attributes)
-        const noexcept
-    {
-        return draw_text(layout, transform, text, draw_attributes{attributes...});
-    }
+    //template<std::same_as<widget_layout> WidgetLayout, draw_attribute... Attributes>
+    //void draw_text(WidgetLayout const& layout, matrix3 const& transform, text_shaper const& text, Attributes const&...attributes)
+    //    const noexcept
+    //{
+    //    return draw_text(layout, transform, text, draw_attributes{attributes...});
+    //}
 
     /** Draw shaped text.
      *
@@ -479,11 +479,11 @@ public:
      * @param text The shaped text to draw.
      * @param attributes The drawing attributes to use, see: `draw_attributes::draw_attributes()`.
      */
-    template<std::same_as<widget_layout> WidgetLayout, draw_attribute... Attributes>
-    void draw_text(WidgetLayout const& layout, text_shaper const& text, Attributes const&...attributes) const noexcept
-    {
-        return draw_text(layout, matrix3{}, text, draw_attributes{attributes...});
-    }
+    //template<std::same_as<widget_layout> WidgetLayout, draw_attribute... Attributes>
+    //void draw_text(WidgetLayout const& layout, text_shaper const& text, Attributes const&...attributes) const noexcept
+    //{
+    //    return draw_text(layout, matrix3{}, text, draw_attributes{attributes...});
+    //}
 
     /** Draw text-selection of shaped text.
      *
@@ -492,16 +492,16 @@ public:
      * @param selection The text selection.
      * @param attributes The drawing attributes to use.
      */
-    template<std::same_as<widget_layout> WidgetLayout>
-    void draw_text_selection(
-        WidgetLayout const& layout,
-        text_shaper const& text,
-        text_selection const& selection,
-        draw_attributes const& attributes) const noexcept
-    {
-        return _draw_text_selection(
-            layout.clipping_rectangle_on_window(attributes.clipping_rectangle), layout.to_window3(), text, selection, attributes);
-    }
+    //template<std::same_as<widget_layout> WidgetLayout>
+    //void draw_text_selection(
+    //    WidgetLayout const& layout,
+    //    text_shaper const& text,
+    //    text_selection const& selection,
+    //    draw_attributes const& attributes) const noexcept
+    //{
+    //    return _draw_text_selection(
+    //        layout.clipping_rectangle_on_window(attributes.clipping_rectangle), layout.to_window3(), text, selection, attributes);
+    //}
 
     /** Draw text-selection of shaped text.
      *
@@ -510,15 +510,15 @@ public:
      * @param selection The text selection.
      * @param attributes The drawing attributes to use, see: `draw_attributes::draw_attributes()`.
      */
-    template<std::same_as<widget_layout> WidgetLayout, draw_attribute... Attributes>
-    void draw_text_selection(
-        WidgetLayout const& layout,
-        text_shaper const& text,
-        text_selection const& selection,
-        Attributes const&...attributes) const noexcept
-    {
-        return draw_text_selection(layout, text, selection, draw_attributes{attributes...});
-    }
+    //template<std::same_as<widget_layout> WidgetLayout, draw_attribute... Attributes>
+    //void draw_text_selection(
+    //    WidgetLayout const& layout,
+    //    text_shaper const& text,
+    //    text_selection const& selection,
+    //    Attributes const&...attributes) const noexcept
+    //{
+    //    return draw_text_selection(layout, text, selection, draw_attributes{attributes...});
+    //}
 
     /** Draw text cursors of shaped text.
      *
@@ -529,24 +529,24 @@ public:
      * @param dead_character_mode If true draw the dead-character cursor. The dead_character_mode overrides all other cursors.
      * @param attributes The drawing attributes to use.
      */
-    template<std::same_as<widget_layout> WidgetLayout>
-    void draw_text_cursors(
-        WidgetLayout const& layout,
-        text_shaper const& text,
-        text_cursor cursor,
-        bool overwrite_mode,
-        bool dead_character_mode,
-        draw_attributes const& attributes) const noexcept
-    {
-        return _draw_text_cursors(
-            layout.clipping_rectangle_on_window(attributes.clipping_rectangle),
-            layout.to_window3(),
-            text,
-            cursor,
-            overwrite_mode,
-            dead_character_mode,
-            attributes);
-    }
+    //template<std::same_as<widget_layout> WidgetLayout>
+    //void draw_text_cursors(
+    //    WidgetLayout const& layout,
+    //    text_shaper const& text,
+    //    text_cursor cursor,
+    //    bool overwrite_mode,
+    //    bool dead_character_mode,
+    //    draw_attributes const& attributes) const noexcept
+    //{
+    //    return _draw_text_cursors(
+    //        layout.clipping_rectangle_on_window(attributes.clipping_rectangle),
+    //        layout.to_window3(),
+    //        text,
+    //        cursor,
+    //        overwrite_mode,
+    //        dead_character_mode,
+    //        attributes);
+    //}
 
     /** Draw text cursors of shaped text.
      *
@@ -557,17 +557,17 @@ public:
      * @param dead_character_mode If true draw the dead-character cursor. The dead_character_mode overrides all other cursors.
      * @param attributes The drawing attributes to use, see: `draw_attributes::draw_attributes()`.
      */
-    template<std::same_as<widget_layout> WidgetLayout, draw_attribute... Attributes>
-    void draw_text_cursors(
-        WidgetLayout const& layout,
-        text_shaper const& text,
-        text_cursor cursor,
-        bool overwrite_mode,
-        bool dead_character_mode,
-        Attributes const&...attributes) const noexcept
-    {
-        return draw_text_cursors(layout, text, cursor, overwrite_mode, dead_character_mode, draw_attributes{attributes...});
-    }
+    //template<std::same_as<widget_layout> WidgetLayout, draw_attribute... Attributes>
+    //void draw_text_cursors(
+    //    WidgetLayout const& layout,
+    //    text_shaper const& text,
+    //    text_cursor cursor,
+    //    bool overwrite_mode,
+    //    bool dead_character_mode,
+    //    Attributes const&...attributes) const noexcept
+    //{
+    //    return draw_text_cursors(layout, text, cursor, overwrite_mode, dead_character_mode, draw_attributes{attributes...});
+    //}
 
     /** Make a hole in the user interface.
      *
@@ -689,47 +689,47 @@ private:
 
     void _draw_box(aarectangle const& clipping_rectangle, quad box, draw_attributes const& attributes) const noexcept;
 
-    void _draw_text(
-        aarectangle const& clipping_rectangle,
-        matrix3 const& transform,
-        text_shaper const& text,
-        draw_attributes const& attributes) const noexcept;
-
-    void _draw_text_selection(
-        aarectangle const& clipping_rectangle,
-        matrix3 const& transform,
-        text_shaper const& text,
-        text_selection const& selection,
-        draw_attributes const& attributes) const noexcept;
-
-    void _draw_text_insertion_cursor_empty(
-        aarectangle const& clipping_rectangle,
-        matrix3 const& transform,
-        text_shaper const& text,
-        draw_attributes const& attributes) const noexcept;
-
-    void _draw_text_insertion_cursor(
-        aarectangle const& clipping_rectangle,
-        matrix3 const& transform,
-        text_shaper const& text,
-        text_cursor cursor,
-        bool show_flag,
-        draw_attributes const& attributes) const noexcept;
-
-    void _draw_text_overwrite_cursor(
-        aarectangle const& clipping_rectangle,
-        matrix3 const& transform,
-        text_shaper::char_const_iterator it,
-        draw_attributes const& attributes) const noexcept;
-
-    void _draw_text_cursors(
-        aarectangle const& clipping_rectangle,
-        matrix3 const& transform,
-        text_shaper const& text,
-        text_cursor cursor,
-        bool overwrite_mode,
-        bool dead_character_mode,
-        draw_attributes const& attributes) const noexcept;
+    //void _draw_text(
+    //    aarectangle const& clipping_rectangle,
+    //    matrix3 const& transform,
+    //    text_shaper const& text,
+    //    draw_attributes const& attributes) const noexcept;
+//
+    //void _draw_text_selection(
+    //    aarectangle const& clipping_rectangle,
+    //    matrix3 const& transform,
+    //    text_shaper const& text,
+    //    text_selection const& selection,
+    //    draw_attributes const& attributes) const noexcept;
+//
+    //void _draw_text_insertion_cursor_empty(
+    //    aarectangle const& clipping_rectangle,
+    //    matrix3 const& transform,
+    //    text_shaper const& text,
+    //    draw_attributes const& attributes) const noexcept;
+//
+    //void _draw_text_insertion_cursor(
+    //    aarectangle const& clipping_rectangle,
+    //    matrix3 const& transform,
+    //    text_shaper const& text,
+    //    text_cursor cursor,
+    //    bool show_flag,
+    //    draw_attributes const& attributes) const noexcept;
+//
+    //void _draw_text_overwrite_cursor(
+    //    aarectangle const& clipping_rectangle,
+    //    matrix3 const& transform,
+    //    text_shaper::char_const_iterator it,
+    //    draw_attributes const& attributes) const noexcept;
+//
+    //void _draw_text_cursors(
+    //    aarectangle const& clipping_rectangle,
+    //    matrix3 const& transform,
+    //    text_shaper const& text,
+    //    text_cursor cursor,
+    //    bool overwrite_mode,
+    //    bool dead_character_mode,
+    //    draw_attributes const& attributes) const noexcept;
 
     void _draw_glyph(
         aarectangle const& clipping_rectangle,

@@ -181,15 +181,6 @@ inline gfx_pipeline_image::paged_image::paged_image(gfx_surface const *surface, 
     }
 }
 
-inline gfx_pipeline_image::paged_image::paged_image(gfx_surface const *surface, png const& image) noexcept :
-    paged_image(surface, narrow_cast<std::size_t>(image.width()), narrow_cast<std::size_t>(image.height()))
-{
-    if (this->device) {
-        auto const lock = std::scoped_lock(gfx_system_mutex);
-        this->upload(image);
-    }
-}
-
 inline gfx_pipeline_image::paged_image::paged_image(paged_image&& other) noexcept :
     state(other.state.exchange(state_type::uninitialized)),
     device(std::exchange(other.device, nullptr)),
@@ -220,23 +211,6 @@ inline gfx_pipeline_image::paged_image::~paged_image()
 {
     if (device) {
         device->image_pipeline->free_pages(pages);
-    }
-}
-
-inline void gfx_pipeline_image::paged_image::upload(png const& image) noexcept
-{
-    hi_assert(image.width() == width and image.height() == height);
-
-    if (device) {
-        auto const lock = std::scoped_lock(gfx_system_mutex);
-
-        state = state_type::drawing;
-
-        auto staging_image = device->image_pipeline->get_staging_pixmap(image.width(), image.height());
-        image.decode_image(staging_image);
-        device->image_pipeline->update_atlas_with_staging_pixmap(*this);
-
-        state = state_type::uploaded;
     }
 }
 

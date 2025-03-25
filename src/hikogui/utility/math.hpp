@@ -61,7 +61,7 @@ template<typename Iterator, typename T>
     return count > 0.0 ? sum / count : sum;
 }
 
-template<typename T>
+template<std::equality_comparable T>
 constexpr bool inplace_max(T& a, T const& b) noexcept
 {
     using std::max;
@@ -69,12 +69,26 @@ constexpr bool inplace_max(T& a, T const& b) noexcept
     return a == b;
 }
 
-template<typename T>
+template<std::equality_comparable T>
 constexpr bool inplace_min(T& a, T const& b) noexcept
 {
     using std::min;
     a = min(a, b);
     return a == b;
+}
+
+template<typename T>
+constexpr void inplace_max(T& a, T const& b) noexcept
+{
+    using std::max;
+    a = max(a, b);
+}
+
+template<typename T>
+constexpr void inplace_min(T& a, T const& b) noexcept
+{
+    using std::min;
+    a = min(a, b);
 }
 
 template<typename T>

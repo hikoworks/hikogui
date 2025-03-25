@@ -29,10 +29,10 @@ public:
 
     [[nodiscard]] constexpr bool empty() const noexcept
     {
-        uint32_t tmp = 0;
+        auto tmp = false;
         tmp |= _font_valid;
         tmp |= _color_valid;
-        tmp |= _size_valid;
+        tmp |= _scale_valid;
         tmp |= _line_spacing_valid;
         tmp |= _paragraph_spacing_valid;
         return not tmp;
@@ -40,10 +40,10 @@ public:
 
     [[nodiscard]] constexpr bool complete() const noexcept
     {
-        uint32_t tmp = 1;
+        auto tmp = true;
         tmp &= _font_valid;
         tmp &= _color_valid;
-        tmp &= _size_valid;
+        tmp &= _scale_valid;
         tmp &= _line_spacing_valid;
         tmp &= _paragraph_spacing_valid;
         return tmp;
@@ -66,7 +66,7 @@ public:
     {
         if (important or not _font_important) {
             _font_important |= static_cast<uint32_t>(important);
-            _font_valid = 1;
+            _font_valid = true;
             if (important) {
                 _font_chain = std::move(font_chain);
             } else {
@@ -85,23 +85,23 @@ public:
     {
         if (important or not _color_important) {
             _color_important |= static_cast<uint32_t>(important);
-            _color_valid = 1;
+            _color_valid = true;
             _color = color;
         }
     }
 
-    [[nodiscard]] constexpr unit::font_size_s size() const
+    [[nodiscard]] constexpr float scale() const
     {
-        hi_axiom(_size_valid);
-        return _size;
+        hi_axiom(_scale_valid);
+        return _scale;
     }
 
-    constexpr void set_size(unit::font_size_s size, bool important = false)
+    constexpr void set_scale(float scale, bool important = false)
     {
-        if (important or not _size_important) {
-            _size_important |= static_cast<uint32_t>(important);
-            _size_valid = 1;
-            _size = size;
+        if (important or not _scale_important) {
+            _scale_important |= static_cast<uint32_t>(important);
+            _scale_valid = true;
+            _scale = scale;
         }
     }
 
@@ -115,7 +115,7 @@ public:
     {
         if (important or not _line_spacing_important) {
             _line_spacing_important |= static_cast<uint32_t>(important);
-            _line_spacing_valid = 1;
+            _line_spacing_valid = true;
             _line_spacing = line_spacing;
         }
     }
@@ -130,7 +130,7 @@ public:
     {
         if (important or not _paragraph_spacing_important) {
             _paragraph_spacing_important |= static_cast<uint32_t>(important);
-            _paragraph_spacing_valid = 1;
+            _paragraph_spacing_valid = true;
             _paragraph_spacing = paragraph_spacing;
         }
     }
@@ -152,8 +152,8 @@ public:
             set_color(other._color, other._color_important);
         }
 
-        if (other._size_valid) {
-            set_size(other._size, other._size_important);
+        if (other._scale_valid) {
+            set_scale(other._scale, other._scale_important);
         }
 
         if (other._line_spacing_valid) {
@@ -168,20 +168,20 @@ public:
 private:
     lean_vector<font_id> _font_chain = {};
     hi::color _color = {};
-    unit::font_size_s _size = {};
+    float _scale = 1.0f;
     float _line_spacing = 1.0f;
     float _paragraph_spacing = 1.5f;
 
-    uint32_t _color_valid : 1 = 0;
-    uint32_t _color_important : 1 = 0;
-    uint32_t _font_valid : 1 = 0;
-    uint32_t _font_important : 1 = 0;
-    uint32_t _size_valid : 1 = 0;
-    uint32_t _size_important : 1 = 0;
-    uint32_t _line_spacing_valid : 1 = 0;
-    uint32_t _line_spacing_important : 1 = 0;
-    uint32_t _paragraph_spacing_valid : 1 = 0;
-    uint32_t _paragraph_spacing_important : 1 = 0;
+    bool _color_valid : 1 = false;
+    bool _color_important : 1 = false;
+    bool _font_valid : 1 = false;
+    bool _font_important : 1 = false;
+    bool _scale_valid : 1 = false;
+    bool _scale_important : 1 = false;
+    bool _line_spacing_valid : 1 = false;
+    bool _line_spacing_important : 1 = false;
+    bool _paragraph_spacing_valid : 1 = false;
+    bool _paragraph_spacing_important : 1 = false;
 };
 
 } // namespace hi::inline v1

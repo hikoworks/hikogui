@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "otype_error.hpp"
 #include "../geometry/geometry.hpp"
 #include "../telemetry/telemetry.hpp"
 #include "../utility/utility.hpp"
@@ -15,60 +16,70 @@ hi_export_module(hikogui.font.otype_coverage);
 
 hi_export namespace hi::inline v1 {
 
-struct coverage_format1 {
-    big_int16_buf_t coverage_format;
-    big_int16_buf_t glyph_count;
-};
-
-struct coverage_format2 {
-    big_int16_buf_t coverage_format;
-    big_int16_buf_t range_count;
-};
-
-struct coverage_format2_range {
-    big_int16_buf_t start_glyph_id;
-    big_int16_buf_t end_glyph_id;
-    big_int16_buf_t start_coverage_index;
-};
-
-[[nodiscard]] std::ptrdiff_t true_type_font::get_coverage_index(std::span<std::byte const> bytes, hi::glyph_id glyph_id)
+[[nodiscard]] inline std::optional<uint16_t> otype_coverage_1_search(std::span<std::byte const> bytes, glyph_id id)
 {
-    std::size_t offset = 0;
+    struct header_type {
+        big_uint16_buf_t format;
+        big_uint16_buf_t glyph_count;
+    };
 
-    hi_assert_or_return(*glyph_id >= 0 && *glyph_id < num_glyphs, -2);
+    auto offset = size_t{0};
+    auto const header = implicit_cast<header_type>(offset, bytes);
+    assert(*header.format == 1);
 
-    auto const header1 = make_placement_ptr<coverage_format1>(bytes, offset);
-    if (*header1->coverage_format == 1) {
-        auto const table = make_placement_array<big_uint16_buf_t>(bytes, offset, *header1->glyph_count);
+    auto const glyph_ids = implicit_cast<big_uint16_buf_t>(offset, bytes, *header.glyph_count);
+    auto const it = std::lower_bound(glyph_ids.begin(), glyph_ids.end(), id, [](auto const& a, auto b) {
+        return *a < b.value();
+    });
+    if (it == glyph_ids.end() or **it != id.value()) {
+        return std::nullopt;
+    }
+    return gsl::narrow<uint16_t>(std::distance(glyph_ids.begin(), it));
+}
 
-        auto const it = std::lower_bound(table.begin(), table.end(), glyph_id, [](auto const &item, auto const &value) {
-            return *item < *value;
-        });
+[[nodiscard]] inline std::optional<uint16_t> otype_coverage_2_search(std::span<std::byte const> bytes, glyph_id id)
+{
+    struct header_type {
+        big_uint16_buf_t format;
+        big_uint16_buf_t range_count;
+    };
 
-        if (it != table.end() and **it == *glyph_id) {
-            return std::distance(table.begin(), it);
-        } else {
-            return -1;
-        }
+    struct range_record_type {
+        big_uint16_buf_t start_glyph_id;
+        big_uint16_buf_t end_glyph_id;
+        big_uint16_buf_t start_coverage_index;
+    };
 
-    } else if (*header1->coverage_format == 2) {
-        offset = 0;
-        auto const header2 = make_placement_ptr<coverage_format2>(bytes, offset);
+    auto offset = size_t{0};
+    auto const header = implicit_cast<header_type>(offset, bytes);
+    assert(*header.format == 2);
 
-        auto const table = make_placement_array<coverage_format2_range>(bytes, offset, *header2->range_count);
+    auto const records = implicit_cast<range_record_type>(offset, bytes, *header.range_count);
+    auto const it = std::lower_bound(records.begin(), records.end(), id, [](auto const& a, auto b) {
+        return *a.end_glyph_id < b.value();
+    });
+    if (it == records.end() or id.value() < *it->start_glyph_id) {
+        return std::nullopt;
+    }
 
-        auto const it = std::lower_bound(table.begin(), table.end(), glyph_id, [](auto const &item, auto const &value) {
-            return *item.end_glyph_id < *value;
-        });
+    return *it->start_coverage_index + (id.value() - *it->start_glyph_id);
+}
 
-        if (it != table.end() and *it->start_glyph_id <= *glyph_id and *glyph_id <= *it->end_glyph_id) {
-            return *it->start_coverage_index + *glyph_id - *it->start_glyph_id;
-        } else {
-            return -1;
-        }
+[[nodiscard]] inline std::optional<uint16_t> otype_coverage_search(std::span<std::byte const> bytes, glyph_id id)
+{
+    struct header_type {
+        big_uint16_buf_t coverage_format;
+    };
 
-    } else {
-        return -2;
+    auto const header = implicit_cast<header_type>(bytes);
+
+    switch (*header.coverage_format) {
+    case 1:
+        return otype_coverage_1_search(bytes, id);
+    case 2:
+        return otype_coverage_2_search(bytes, id);
+    default:
+        throw otype_file_error("unsupported coverage format");
     }
 }
 

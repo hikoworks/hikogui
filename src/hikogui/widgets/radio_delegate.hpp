@@ -17,17 +17,17 @@ class radio_delegate {
 public:
     virtual ~radio_delegate() = default;
 
-    virtual void init(widget_intf const& sender) noexcept {}
+    virtual void init(widget_intf const* sender) {}
 
-    virtual void deinit(widget_intf const& sender) noexcept {}
+    virtual void deinit(widget_intf const* sender) {}
 
     /** Called when the button is pressed by the user.
      */
-    virtual void activate(widget_intf const& sender) noexcept {}
+    virtual void activate(widget_intf const* sender) {}
 
     /** Used by the widget to check the state of the button.
      */
-    [[nodiscard]] virtual widget_value state(widget_intf const& sender) const noexcept
+    [[nodiscard]] virtual widget_value state(widget_intf const* sender) const
     {
         return widget_value::off;
     }
@@ -35,7 +35,7 @@ public:
     /** Subscribe a callback for notifying the widget of a data change.
      */
     template<forward_of<void()> Func>
-    [[nodiscard]] callback<void()> subscribe(Func&& func, callback_flags flags = callback_flags::synchronous) noexcept
+    [[nodiscard]] callback<void()> subscribe(widget_intf const* sender, Func&& func, callback_flags flags = callback_flags::synchronous)
     {
         return _notifier.subscribe(std::forward<Func>(func), flags);
     }
@@ -68,7 +68,7 @@ public:
     template<forward_of<observer<value_type>> Value, forward_of<observer<value_type>> OnValue>
     default_radio_delegate(
         Value&& value,
-        OnValue&& on_value) noexcept :
+        OnValue&& on_value) :
         value(std::forward<Value>(value)), on_value(std::forward<OnValue>(on_value))
     {
         // clang-format off
@@ -78,7 +78,7 @@ public:
     }
 
     /// @privatesection
-    [[nodiscard]] widget_value state(widget_intf const& sender) const noexcept override
+    [[nodiscard]] widget_value state(widget_intf const* sender) const override
     {
         if (*value == *on_value) {
             return widget_value::on;
@@ -87,7 +87,7 @@ public:
         }
     }
 
-    void activate(widget_intf const& sender) noexcept override
+    void activate(widget_intf const* sender) override
     {
         value = *on_value;
     }

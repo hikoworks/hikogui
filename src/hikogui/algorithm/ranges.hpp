@@ -32,54 +32,89 @@ template<typename Value, typename Range>
     return Value{value};
 }
 
-/** @see make_vector
- */
 template<typename Range>
 [[nodiscard]] constexpr Range::value_type get_first(Range&& range)
 {
     return get_first<typename Range::value_type>(std::forward<Range>(range));
 }
 
-/** Make a vector from a view.
- * This function will make a vector with a copy of the elements of a view.
+/** clear and reserve space in a container.
+ * 
+ * This function will clear the container and reserve space for the given size.
+ * This is useful when you want to reuse a container and avoid reallocations.
+ * 
+ * When the container is used for the first time, the reservation will match
+ * the given size.
+ * 
+ * If the @a size is larger than the current capacity of the container, the
+ * reservation will be increased 1.5 times the size.
+ * 
+ * If the @a size is larger than 1.5 times the current capacity of the container,
+ * the reservation will be increased to the next power of two that is larger or
+ * equal to the given size.
+ * 
+ * If the @a size is smaller than the current capacity of the container, the
+ * reservation will not be changed.
+ * 
+ * @param container The container to clear and reserve space in.
+ * @param size The size to reserve.
  */
-template<typename Value, typename Range>
-[[nodiscard]] constexpr std::vector<Value> make_vector(Range&& range)
+template<std::ranges::range Container>
+constexpr void clear_and_reserve(Container& container, size_t size)
+    requires requires(Container& c) {
+        c.clear();
+        c.capacity();
+        c.reserve(size);
+    }
 {
-    auto const first = std::ranges::begin(range);
-    auto const last = std::ranges::end(range);
+    auto const capacity = container.capacity();
+    container.clear();
 
-    if constexpr (requires(std::vector<Value> & x) { std::ranges::copy(first, last, std::back_inserter(x)); }) {
-        // This should handle almost everything.
-        auto r = std::vector<Value>{};
-        if constexpr (requires { std::distance(first, last); }) {
-            r.reserve(std::distance(first, last));
-        }
-        std::ranges::copy(first, last, std::back_inserter(r));
-        return r;
+    if (size <= capacity) {
+        return;
+    }
 
-    } else if constexpr (requires { Value{std::string_view{(*first).begin(), (*first).end()}}; }) {
-        // std::views::split returns a range of ranges, handle the string_view cases.
-        auto r = std::vector<Value>{};
-        if constexpr (requires { std::distance(first, last); }) {
-            r.reserve(std::distance(first, last));
-        }
-        for (auto it = first; it != last; ++it) {
-            r.emplace_back(std::string_view{(*it).begin(), (*it).end()});
-        }
-        return r;
-
+    auto const next_golden_ratio = capacity + capacity / 2;
+    if (size > next_golden_ratio) {
+        auto const next_power_of_two = std::bit_ceil(size);
+        container.reserve(next_power_of_two);
     } else {
-        hi_static_not_implemented();
+        container.reserve(next_golden_ratio);
     }
 }
 
-/** @see make_vector
+/** clear and resize a container.
+ * 
+ * This function will clear the container and resize it to the given size.
+ * This is useful when you want to reuse a container and avoid reallocations.
+ * 
+ * When the container is used for the first time, the size will match the given size.
+ * 
+ * If the @a size is larger than the current capacity of the container, the
+ * reservation will be increased 1.5 times the size.
+ * 
+ * If the @a size is larger than 1.5 times the current capacity of the container,
+ * the reservation will be increased to the next power of two that is larger or
+ * equal to the given size.
+ * 
+ * If the @a size is smaller than the current capacity of the container, the
+ * reservation will not be changed.
+ * 
+ * @param container The container to clear and resize.
+ * @param size The size to resize to.
+ * @param value The value to fill the container with.
  */
-template<typename Range>
-[[nodiscard]] constexpr std::vector<typename Range::value_type> make_vector(Range&& range)
+template<std::ranges::range Container>
+constexpr void clear_and_resize(Container& container, size_t size, typename Container::value_type const& value)
+    requires requires(Container& c) {
+        c.clear();
+        c.capacity();
+        c.reserve(size);
+        c.resize(size, value);
+    }
 {
-    return make_vector<typename Range::value_type>(std::forward<Range>(range));
+    clear_and_reserve(container, size);
+    container.resize(size, value);
 }
 
 } // namespace hi::inline v1

@@ -6,6 +6,6 @@
   "license": "BSL-1.0",
   "supports": "windows & x64",
   "dependencies": [
-    "vulkan", "ms-gsl"
+    "vulkan", "ms-gsl", "zlib", "libpng"
   ]
 }

@@ -149,7 +149,15 @@ inline int gfx_device::score(vk::SurfaceKHR surface) const
 
 inline void gfx_device::initialize_device()
 {
-    auto const device_queue_create_infos = make_device_queue_create_infos();
+    auto const default_queue_priority = std::array{1.0f};
+    uint32_t queue_family_index = 0;
+
+    auto device_queue_create_infos = std::vector<vk::DeviceQueueCreateInfo>{};
+    for (auto queue_family_properties : physicalIntrinsic.getQueueFamilyProperties()) {
+        auto const num_queues = 1;
+        hi_assert(size(default_queue_priority) >= num_queues);
+        device_queue_create_infos.emplace_back(vk::DeviceQueueCreateFlags(), queue_family_index++, num_queues, default_queue_priority.data());
+    }
 
     auto const available_device_features = physicalIntrinsic.getFeatures();
 
@@ -196,6 +204,8 @@ inline void gfx_device::initialize_device()
     }
 
     initialize_queues(device_queue_create_infos);
+    queue_family_indices.clear();
+    queue_family_indices.push_back(get_graphics_queue().family_queue_index);
     initialize_quad_index_buffer();
 
     box_pipeline = std::make_unique<gfx_pipeline_box::device_shared>(*this);

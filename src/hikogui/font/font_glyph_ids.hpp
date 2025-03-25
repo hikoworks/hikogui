@@ -6,7 +6,6 @@
 
 #include "glyph_id.hpp"
 #include "font_id.hpp"
-#include "font_metrics.hpp"
 #include "../container/container.hpp"
 #include "../macros.hpp"
 
@@ -19,8 +18,8 @@ struct font_glyph_ids {
     using iterator = container_type::iterator;
     using const_iterator = container_type::const_iterator;
 
-    hi::font_id font = {};
     container_type glyphs = {};
+    hi::font_id font = {};
 
     font_glyph_ids(font_glyph_ids const&) noexcept = default;
     font_glyph_ids(font_glyph_ids &&) noexcept = default;
@@ -30,7 +29,7 @@ struct font_glyph_ids {
     [[nodiscard]] friend bool operator==(font_glyph_ids const&, font_glyph_ids const&) noexcept = default;
 
     font_glyph_ids(hi::font_id font, lean_vector<glyph_id> glyphs) :
-        font(font), glyphs(std::move(glyphs))
+        glyphs(std::move(glyphs)), font(font)
     {
         hi_axiom(not this->font.empty());
         hi_axiom(not this->glyphs.empty());
@@ -39,9 +38,20 @@ struct font_glyph_ids {
         }
     }
 
+    void clear() noexcept
+    {
+        glyphs.clear();
+        font = {};
+    }
+
+    [[nodiscard]] constexpr size_t size() const noexcept
+    {
+        return glyphs.size();
+    }
+
     [[nodiscard]] constexpr bool empty() const noexcept
     {
-        return font.empty();
+        return size() == 0 or font.empty();
     }
 
     constexpr explicit operator bool() const noexcept
@@ -96,22 +106,14 @@ struct font_glyph_ids {
         return glyphs[i];
     }
 
-    [[nodiscard]] font_metrics_em const& font_metrics() const
+    [[nodiscard]] glyph_id& operator[](size_t i)
     {
-        hi_axiom(not font.empty());
-        return font->metrics;
+        return glyphs[i];
     }
 
-    [[nodiscard]] hi::glyph_metrics glyph_metrics(size_t i) const
+    void push_back(glyph_id glyph)
     {
-        hi_axiom(i < glyphs.size());
-        hi_axiom(not font.empty());
-        return font->get_metrics(glyphs[i]);
-    }
-
-    [[nodiscard]] hi::glyph_metrics front_glyph_metrics() const
-    {
-        return glyph_metrics(0);
+        glyphs.push_back(glyph);
     }
 };
 

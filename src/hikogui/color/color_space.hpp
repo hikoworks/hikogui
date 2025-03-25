@@ -17,6 +17,17 @@ hi_export_module(hikogui.color.color_space);
 hi_export namespace hi {
 inline namespace v1 {
 
+struct color_primaries {
+    float wx;
+    float wy;
+    float rx;
+    float ry;
+    float gx;
+    float gy;
+    float bx;
+    float by;
+};
+
 /** Create a color space conversion matrix.
  *
  * Coordinates for color primaries and white-point are in the CIE xy chromaticity
@@ -50,6 +61,11 @@ color_primaries_to_RGBtoXYZ(float wx, float wy, float rx, float ry, float gx, fl
     auto const S = scale3{~C * W};
 
     return C * S;
+}
+
+[[nodiscard]] constexpr matrix3 color_primaries_to_RGBtoXYZ(color_primaries const &cp) noexcept
+{
+    return color_primaries_to_RGBtoXYZ(cp.wx, cp.wy, cp.rx, cp.ry, cp.gx, cp.gy, cp.bx, cp.by);
 }
 
 }} // namespace hi::inline v1

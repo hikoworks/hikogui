@@ -31,7 +31,7 @@ TEST_CASE(relativePath)
 
 TEST_CASE(glob1)
 {
-    auto txt_files = hi::make_vector(hi::glob(hi::library_test_data_dir() / "*.txt"));
+    auto txt_files = std::ranges::to<std::vector>(hi::glob(hi::library_test_data_dir() / "*.txt"));
 
     REQUIRE(std::any_of(txt_files.begin(), txt_files.end(), [](auto x) {
         return x.filename() == "file_view.txt";
@@ -43,7 +43,7 @@ TEST_CASE(glob1)
 
 TEST_CASE(glob2)
 {
-    auto txt_files = hi::make_vector(hi::glob(hi::library_test_data_dir() / "**" / "*.txt"));
+    auto txt_files = std::ranges::to<std::vector>(hi::glob(hi::library_test_data_dir() / "**" / "*.txt"));
 
     REQUIRE(std::any_of(txt_files.begin(), txt_files.end(), [](auto x) {
         return x.filename() == "glob2.txt";

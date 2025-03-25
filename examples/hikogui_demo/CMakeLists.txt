@@ -14,9 +14,6 @@ set_target_properties(hikogui_demo PROPERTIES MACOSX_BUNDLE TRUE)
 set_target_properties(hikogui_demo PROPERTIES MACOSX_FRAMEWORK_IDENTIFIER org.hikogui.hikogui.hikogui_demo)
 set_target_properties(hikogui_demo PROPERTIES DEBUG_POSTFIX "-dbg")
 set_target_properties(hikogui_demo PROPERTIES RELWITHDEBINFO_POSTFIX "-rdi")
-if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
-  set_target_properties(hikogui_demo PROPERTIES BUILD_WITH_INSTALL_RPATH true)
-endif()
 
 target_sources(hikogui_demo PRIVATE
     src/main_impl.cpp

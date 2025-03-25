@@ -6,6 +6,7 @@
 
 #include "notifier.hpp"
 #include "awaitable.hpp"
+#include "loop_win32_intf.hpp"
 #include "../utility/utility.hpp"
 #include "../concurrency/unfair_mutex.hpp" // XXX #616
 #include "../concurrency/thread.hpp" // XXX #616
@@ -19,7 +20,6 @@
 hi_export_module(hikogui.dispatch : task);
 
 hi_export namespace hi::inline v1 {
-
 /** A task.
  *
  * This implements a asynchronous co-routine task.
@@ -52,15 +52,22 @@ public:
 
         std::suspend_always final_suspend() noexcept
         {
+            // The notifier is posted on the loop to ensure the coroutine
+            // gets completed. That way the callback will see the coroutine
+            // as completed.
             if (value) {
                 // Trigger the notifier with the co_return value.
-                notifier(*value);
+                loop::local().post_function([this] {
+                    this->notifier(*this->value);
+                });
 
             } else {
                 // Notify also in case of exception.
                 hi_assert_not_null(exception);
                 if constexpr (std::is_default_constructible_v<value_type>) {
-                    notifier(value_type{});
+                    loop::local().post_function([this] {
+                        this->notifier(value_type{});
+                    });
                 }
             }
 
@@ -116,7 +123,7 @@ public:
     }
 
     /** Check if the co-routine was started.
-    */
+     */
     [[nodiscard]] bool started() const noexcept
     {
         return _coroutine;
@@ -173,7 +180,7 @@ public:
      * @return The callback token used to manage the lifetime of the callback
      */
     template<forward_of<void(value_type)> Func>
-    [[nodiscard]] callback<void(value_type)> subscribe(Func &&func, callback_flags flags = callback_flags::synchronous) noexcept
+    [[nodiscard]] callback<void(value_type)> subscribe(Func&& func, callback_flags flags = callback_flags::synchronous) noexcept
     {
         return _coroutine.promise().notifier.subscribe(std::forward<Func>(func), flags);
     }
@@ -213,7 +220,12 @@ public:
 
         std::suspend_always final_suspend() noexcept
         {
-            notifier();
+            // The notifier is posted on the loop to ensure the coroutine
+            // gets completed. That way the callback will see the coroutine
+            // as completed.
+            loop::local().post_function([this] {
+                notifier();
+            });
             return {};
         }
 
@@ -261,7 +273,7 @@ public:
     }
 
     /** Check if the co-routine was started.
-    */
+     */
     [[nodiscard]] bool started() const noexcept
     {
         return _coroutine;
@@ -300,7 +312,7 @@ public:
      * @sa notifier<>::subscribe()
      */
     template<forward_of<void()> Func>
-    [[nodiscard]] callback<void()> subscribe(Func &&func, callback_flags flags = callback_flags::synchronous) noexcept
+    [[nodiscard]] callback<void()> subscribe(Func&& func, callback_flags flags = callback_flags::synchronous) noexcept
     {
         return _coroutine.promise().notifier.subscribe(std::forward<Func>(func), flags);
     }
@@ -321,7 +333,7 @@ template<typename T = void>
 using scoped_task = task<T, true>;
 
 /** type-trait to determine if the given type @a T is a task.
-*/
+ */
 template<typename T>
 struct is_task : std::false_type {};
 
@@ -329,7 +341,7 @@ template<typename ResultType, bool DestroyFrame>
 struct is_task<hi::task<ResultType, DestroyFrame>> : std::true_type {};
 
 /** type-trait to determine if the given type @a T is a task.
-*/
+ */
 template<typename T>
 constexpr bool is_task_v = is_task<T>::value;
 
@@ -345,16 +357,21 @@ template<typename T>
 using task_value_type_t = task_value_type<T>::type;
 
 /** type-trait to determining if the given invocable @a Func is a task.
-*/
+ */
 template<typename Func, typename... ArgTypes>
 struct is_invocable_task {
     constexpr static bool value = is_task_v<std::invoke_result_t<Func, ArgTypes...>>;
 };
 
 /** type-trait to determining if the given invocable @a Func is a task.
-*/
+ */
 template<typename Func, typename... ArgTypes>
 constexpr bool is_invocable_task_v = is_invocable_task<Func, ArgTypes...>::value;
+
+/** Concept for a invocable that returns a task.
+ */
+template<typename Func, typename... ArgTypes>
+concept invocable_task = std::invocable<Func, ArgTypes...> and is_invocable_task_v<Func, ArgTypes...>;
 
 template<typename Func, typename... ArgTypes>
 struct invoke_task_result {

@@ -880,6 +880,9 @@ private:
 hi_export [[nodiscard]] inline generator<std::filesystem::path> glob(glob_pattern pattern) noexcept
 {
     auto path = pattern.base_path();
+    if (not std::filesystem::is_directory(path)) {
+        co_return;
+    }
 
     auto const last = std::filesystem::recursive_directory_iterator{};
 

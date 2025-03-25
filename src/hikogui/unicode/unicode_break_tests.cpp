@@ -32,14 +32,14 @@ static std::optional<test_type> parse_test_line(std::string_view line, int line_
 {
     auto r = test_type{};
 
-    auto const split_line = hi::split(line, "\t#");
+    auto const split_line = hi::split_string(line, "\t", "#");
     if (split_line.size() < 2) {
         return {};
     }
     r.comment = std::format("{}: {}", line_nr, split_line[1]);
     r.line_nr = line_nr;
 
-    auto const columns = hi::split(split_line[0]);
+    auto const columns = hi::split_string(split_line[0], " ");
     if (columns.size() < 2) {
         return {};
     }
@@ -86,35 +86,42 @@ TEST_CASE(grapheme_break)
 
 TEST_CASE(word_break)
 {
-    for (auto const& test : parse_tests(hi::library_test_data_dir() / "WordBreakTest.txt")) {
-        auto const result =
-            hi::unicode_word_break(test.code_points.begin(), test.code_points.end(), [](auto const code_point) -> decltype(auto) {
-                return code_point;
-            });
+    auto wb = hi::unicode_word_break{};
 
-        REQUIRE(test.expected == result, test.comment);
+    for (auto const& test : parse_tests(hi::library_test_data_dir() / "WordBreakTest.txt")) {
+        wb.set_text(test.code_points);
+
+        auto opportunities = std::ranges::to<std::vector<hi::unicode_break_opportunity>>(wb.opportunities());
+
+        REQUIRE(test.expected == opportunities, test.comment);
     }
 }
 
 TEST_CASE(sentence_break)
 {
-    for (auto const& test : parse_tests(hi::library_test_data_dir() / "SentenceBreakTest.txt")) {
-        auto const result =
-            hi::unicode_sentence_break(test.code_points.begin(), test.code_points.end(), [](auto const code_point) -> decltype(auto) {
-                return code_point;
-            });
+    auto sb = hi::unicode_sentence_break{};
 
-        REQUIRE(test.expected == result, test.comment);
+    for (auto const& test : parse_tests(hi::library_test_data_dir() / "SentenceBreakTest.txt")) {
+        sb.set_text(test.code_points);
+
+        auto opportunities = std::ranges::to<std::vector<hi::unicode_break_opportunity>>(sb.opportunities());
+
+        REQUIRE(test.expected == opportunities, test.comment);
     }
 }
 
 TEST_CASE(line_break)
 {
+    auto lb = hi::unicode_line_break{};
+
     for (auto const& test : parse_tests(hi::library_test_data_dir() / "LineBreakTest.txt")) {
-        auto result =
-            hi::unicode_line_break(test.code_points.begin(), test.code_points.end(), [](auto const code_point) -> decltype(auto) {
-                return code_point;
-            });
+        //if (test.line_nr < 29) {
+        //    continue;
+        //}
+
+        lb.set_text(test.code_points);
+
+        auto result = std::ranges::to<std::vector<hi::unicode_break_opportunity>>(lb.opportunities());
 
         // The algorithm produces mandatory-break in the result, but LineBreakTest.txt only has break/no-break.
         for (auto& x : result) {

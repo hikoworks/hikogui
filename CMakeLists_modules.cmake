@@ -462,7 +462,7 @@ target_sources(hikogui PUBLIC FILE_SET CXX_MODULES BASE_DIRS "${CMAKE_CURRENT_SO
     ${CMAKE_CURRENT_SOURCE_DIR}/mod/hikogui/widgets/label_widget.ixx
     ${CMAKE_CURRENT_SOURCE_DIR}/mod/hikogui/widgets/menu_button_widget.ixx
     ${CMAKE_CURRENT_SOURCE_DIR}/mod/hikogui/widgets/widgets.ixx
-    ${CMAKE_CURRENT_SOURCE_DIR}/mod/hikogui/widgets/momentary_button_widget.ixx
+    ${CMAKE_CURRENT_SOURCE_DIR}/mod/hikogui/widgets/button_widget.ixx
     ${CMAKE_CURRENT_SOURCE_DIR}/mod/hikogui/widgets/overlay_widget.ixx
     ${CMAKE_CURRENT_SOURCE_DIR}/mod/hikogui/widgets/radio_delegate.ixx
     ${CMAKE_CURRENT_SOURCE_DIR}/mod/hikogui/widgets/radio_widget.ixx

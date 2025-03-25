@@ -184,5 +184,5 @@ private:
 
     void updateUniformBuffers(Uniform const& uniform);
 
-    void draw(uint32_t currentBuffer, VkSemaphore presentCompleteSemaphore, VkSemaphore renderCompleteSemaphore);
+    void draw(uint32_t currentBuffer, VkSemaphore presentCompleteSemaphore, VkSemaphore renderCompleteSemaphore) const;
 };

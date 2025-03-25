@@ -11,6 +11,7 @@
 #include "shlobj_core.hpp" // export
 #include "stringapiset.hpp" // export
 #include "synchapi.hpp" // export
+#include "sysinfoapi.hpp" // export
 #include "utility.hpp" // export
 #include "win32_error_intf.hpp" // export
 #include "win32_error_impl.hpp" // export

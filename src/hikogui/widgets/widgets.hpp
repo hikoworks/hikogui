@@ -2,8 +2,6 @@
 #pragma once
 
 #include "abstract_button_widget.hpp" // export
-#include "async_delegate.hpp" // export
-#include "async_widget.hpp" // export
 #include "audio_device_widget.hpp" // export
 #include "button_delegate.hpp" // export
 #include "checkbox_widget.hpp" // export
@@ -11,7 +9,7 @@
 #include "icon_widget.hpp" // export
 #include "label_widget.hpp" // export
 #include "menu_button_widget.hpp" // export
-#include "momentary_button_widget.hpp" // export
+#include "button_widget.hpp" // export
 #include "overlay_widget.hpp" // export
 #include "radio_delegate.hpp" // export
 #include "radio_widget.hpp" // export
@@ -30,7 +28,6 @@
 #include "text_widget.hpp" // export
 #include "toggle_delegate.hpp" // export
 #include "toggle_widget.hpp" // export
-#include "toolbar_button_widget.hpp" // export
 #include "toolbar_tab_button_widget.hpp" // export
 #include "toolbar_widget.hpp" // export
 #include "widget.hpp" // export

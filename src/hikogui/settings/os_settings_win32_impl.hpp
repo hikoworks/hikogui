@@ -406,25 +406,18 @@ hi_export namespace hi { inline namespace v1 {
 {
     using namespace std::literals;
 
-    auto const executable_file_ = executable_file();
-    if (not executable_file_) {
-        hi_log_error("Could not get path to executable: {}", executable_file_.error().message());
-        return policy::unspecified;
-    }
-
     auto const user_gpu_preferences_key = "Software\\Microsoft\\DirectX\\UserGpuPreferences";
-    if (auto const result = win32_RegGetValue<std::string>(HKEY_CURRENT_USER, user_gpu_preferences_key, executable_file_->string())) {
-        for (auto entry : std::views::split(std::string_view{*result}, ";"sv)) {
-            auto entry_sv = std::string_view{entry};
-            if (entry_sv.starts_with("GpuPreference=")) {
-                if (entry_sv.ends_with("=0")) {
+    if (auto const result = win32_RegGetValue<std::string>(HKEY_CURRENT_USER, user_gpu_preferences_key, executable_file().string())) {
+        for (auto entry : split_string_view(*result, ";")) {
+            if (entry.starts_with("GpuPreference=")) {
+                if (entry.ends_with("=0")) {
                     return policy::unspecified;
-                } else if (entry_sv.ends_with("=1")) {
+                } else if (entry.ends_with("=1")) {
                     return policy::low_power;
-                } else if (entry_sv.ends_with("=2")) {
+                } else if (entry.ends_with("=2")) {
                     return policy::high_performance;
                 } else {
-                    hi_log_error("Unexpected GpuPreference value \"{}\".", entry_sv);
+                    hi_log_error("Unexpected GpuPreference value \"{}\".", entry);
                     return policy::unspecified;
                 }
             }
@@ -440,6 +433,12 @@ hi_export namespace hi { inline namespace v1 {
         hi_log_error("Could not read gpu profile policy: {}", std::error_code{result.error()}.message());
         return policy::unspecified;
     }
+}
+
+[[nodiscard]] inline size_t os_settings::gather_num_logical_processors()
+{
+    auto info = win32_GetSystemInfo();
+    return info.dwNumberOfProcessors;
 }
 
 }} // namespace hi::v1

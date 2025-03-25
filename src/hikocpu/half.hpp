@@ -57,13 +57,69 @@ struct half {
         return *this;
     }
 
+    [[nodiscard]] constexpr friend bool isnan(half const &rhs) noexcept
+    {
+        auto const e = (rhs.v >> 10) & 0x1f;
+        auto const m = rhs.v & 0x3ff;
+        return e == 0x1f and m != 0;
+    }
+
+    [[nodiscard]] constexpr friend bool iszero(half const &rhs) noexcept
+    {
+        return rhs.v == 0 or rhs.v == 0x8000;
+    }
+
+    [[nodiscard]] constexpr friend bool isinf(half const &rhs) noexcept
+    {
+        return rhs.v == 0x7c00 or rhs.v == 0xfc00;
+    }
+
+    [[nodiscard]] constexpr friend bool isnormal(half const &rhs) noexcept
+    {
+        auto const e = (rhs.v >> 10) & 0x1f;
+        return e != 0 and e != 0x1f;
+    }
+
+    [[nodiscard]] constexpr friend bool issubnormal(half const &rhs) noexcept
+    {
+        auto const e = (rhs.v >> 10) & 0x1f;
+        auto const m = rhs.v & 0x3ff;
+        return e == 0 and m != 0;
+    }
+
+    [[nodiscard]] constexpr friend bool isfinite(half const &rhs) noexcept
+    {
+        return not isnan(rhs) and not isinf(rhs);
+    }
+
+    [[nodiscard]] constexpr friend half abs(half const &rhs) noexcept
+    {
+        return half(std::in_place, rhs.v & 0x7fff);
+    }
+
+    [[nodiscard]] constexpr friend half copysign(half const &lhs, half const &rhs) noexcept
+    {
+        return half(std::in_place, (lhs.v & 0x7fff) | (rhs.v & 0x8000));
+    }
+
     [[nodiscard]] std::size_t hash() const noexcept
     {
         return std::hash<uint16_t>{}(v);
     }
 
+    [[nodiscard]] constexpr friend bool operator==(half lhs, half rhs) noexcept
+    {
+        if (isnan(lhs) or isnan(rhs)) [[unlikely]] {
+            return false;
+        }
+        if (iszero(lhs) and iszero(rhs)) [[unlikely]] {
+            return true;
+        }
+        return lhs.v == rhs.v;
+    }
+
     template<typename LHS, typename RHS>
-    [[nodiscard]] constexpr friend bool operator==(LHS lhs, RHS rhs) noexcept requires requires {
+    [[nodiscard]] constexpr friend bool operator==(LHS const &lhs, RHS const &rhs) noexcept requires requires {
         static_cast<float>(lhs);
         static_cast<float>(rhs);
     }
@@ -72,7 +128,7 @@ struct half {
     }
 
     template<typename LHS, typename RHS>
-    [[nodiscard]] constexpr friend auto operator<=>(LHS lhs, RHS rhs) noexcept requires requires {
+    [[nodiscard]] constexpr friend auto operator<=>(LHS const &lhs, RHS const &rhs) noexcept requires requires {
         static_cast<float>(lhs);
         static_cast<float>(rhs);
     }
@@ -82,7 +138,7 @@ struct half {
 
 #define HI_X_binary_math_op(op) \
     template<typename LHS, typename RHS> \
-    [[nodiscard]] constexpr friend float operator op(LHS lhs, RHS rhs) noexcept requires requires { \
+    [[nodiscard]] constexpr friend float operator op(LHS const &lhs, RHS const &rhs) noexcept requires requires { \
         static_cast<float>(lhs); \
         static_cast<float>(rhs); \
     } \

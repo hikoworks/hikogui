@@ -22,6 +22,8 @@ public:
      */
     hi::grapheme grapheme;
 
+    unit::font_size_f font_size;
+
     /** The style of how to display the grapheme.
      */
     hi::text_style style;
@@ -106,7 +108,7 @@ public:
 
     /** The font size in pixels, rounded so that the x-height is rounded to the nearest pixel.
      */
-    au::Quantity<unit::PixelsPerEm, float> font_size;
+    au::Quantity<unit::PixelsPerEm, float> scaled_font_size;
 
     /** The width used for this grapheme when folding lines.
      *
@@ -127,8 +129,9 @@ public:
      */
     bool glyph_is_initial = false;
 
-    [[nodiscard]] text_shaper_char(hi::grapheme const& grapheme, text_style_set const& style, unit::pixel_density pixel_density) noexcept :
+    [[nodiscard]] text_shaper_char(hi::grapheme const& grapheme, unit::font_size_f const &font_size, text_style_set const& style, unit::pixel_density pixel_density) noexcept :
         grapheme(grapheme),
+        font_size(font_size),
         style(style[grapheme.attributes()]),
         pixel_density(pixel_density),
         line_nr(std::numeric_limits<size_t>::max()),
@@ -181,7 +184,7 @@ public:
     [[nodiscard]] font_metrics_px font_metrics() const noexcept
     {
         hi_axiom(not glyphs.font.empty());
-        return font_size * glyphs.font->metrics;
+        return scaled_font_size * glyphs.font->metrics;
     }
 
     [[nodiscard]] friend bool operator==(text_shaper_char const& lhs, char32_t const& rhs) noexcept
@@ -201,8 +204,8 @@ private:
     {
         glyphs = std::move(new_glyphs);
         hi_axiom(not glyphs.font.empty());
-        font_size = round(style.size() * pixel_density, glyphs.font_metrics().x_height);
-        metrics = font_size.in(unit::pixels_per_em) * glyphs.front_glyph_metrics();
+        scaled_font_size = round(font_size * style.scale() * pixel_density, glyphs.font_metrics().x_height);
+        metrics = scaled_font_size.in(unit::pixels_per_em) * glyphs.front_glyph_metrics();
     }
 };
 

@@ -4,9 +4,7 @@
 
 #pragma once
 
-#if HI_OPERATING_SYSTEM == HI_OS_WINDOWS
 #include "../win32_headers.hpp"
-#endif
 
 #include "renderdoc_app.h"
 #include "../utility/utility.hpp" // XXX #620

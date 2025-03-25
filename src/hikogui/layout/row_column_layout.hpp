@@ -126,14 +126,14 @@ public:
         return _grid.clear();
     }
 
-    [[nodiscard]] box_constraints constraints(bool left_to_right) const noexcept
+    [[nodiscard]] box_constraints constraints(bool left_to_right, vertical_alignment alignment) const noexcept
     {
-        return _grid.constraints(left_to_right);
+        return _grid.constraints(left_to_right, alignment);
     }
 
-    void set_layout(box_shape const &shape, float guideline) noexcept
+    void set_layout(box_shape const &shape) noexcept
     {
-        return _grid.set_layout(shape, guideline);
+        return _grid.set_layout(shape);
     }
 
 private:

@@ -15,9 +15,6 @@ set_target_properties(vulkan_triangle PROPERTIES MACOSX_BUNDLE TRUE)
 set_target_properties(vulkan_triangle PROPERTIES MACOSX_FRAMEWORK_IDENTIFIER org.hikogui.hikogui.vulkan_triangle)
 set_target_properties(vulkan_triangle PROPERTIES DEBUG_POSTFIX "-dbg")
 set_target_properties(vulkan_triangle PROPERTIES RELWITHDEBINFO_POSTFIX "-rdi")
-if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
-  set_target_properties(vulkan_triangle PROPERTIES BUILD_WITH_INSTALL_RPATH true)
-endif()
 
 target_sources(vulkan_triangle PRIVATE main_impl.cpp triangle_impl.cpp triangle.hpp)
 

@@ -5,7 +5,6 @@
 #pragma once
 
 #include "hitbox.hpp"
-#include "widget_layout.hpp"
 #include "widget_id.hpp"
 #include "widget_state.hpp"
 #include "keyboard_focus_group.hpp"
@@ -24,53 +23,38 @@ class gui_window;
 
 class widget_intf {
 public:
-    /** The numeric identifier of a widget.
-     *
-     * @note This is a uint32_t equal to the operating system's accessibility identifier.
-     */
-    widget_id id = {};
-
     /** The style of this widget.
-     * 
+     *
      * You can assign a style-string to this style variable to change
      * the style's id, class and individual style-attributes.
      * @see hi::parse_style().
      */
     hi::style style = {};
 
-    gui_window *window = nullptr;
-
     /** Notifier which is called after an action is completed by a widget.
      */
     notifier<void()> notifier;
 
-    /** The current state of the widget.
-     */
-    observer<widget_state> state;
-
     virtual ~widget_intf()
     {
-        release_widget_id(id);
+        release_widget_id(_id);
     }
 
-    widget_intf() noexcept : id(make_widget_id())
+    widget_intf() noexcept : _id(make_widget_id())
     {
-        _style_cbt = style.subscribe([&](style_modify_mask mask, bool path_has_changed) {
-            if (path_has_changed) {
-                // When the path has changed of a style, the style of the children
-                // may change as well. Therefor we update the parent-path of the
-                // children to trigger a re-evaluation of the style.
+        ++global_counter<"widget:construct">;
+
+        _style_cbt = style.subscribe([&](style_modify_mask mask, bool restyle) {
+            if (restyle) {
                 ++global_counter<"widget:style:path">;
-                for (auto &child : children()) {
-                    child.style.set_parent_path(style.path());
-                }
+                request_restyle();
             }
 
             if (to_bool(mask & style_modify_mask::layout)) {
                 // The layout has changed which means its size may have changed
                 // which would require a re-layout and re-constrain of the widget.
                 ++global_counter<"widget:style:reconstrain">;
-                process_event({gui_event_type::window_reconstrain});
+                request_reconstrain();
 
             } else if (to_bool(mask & style_modify_mask::redraw)) {
                 // The color attributes, or border magnitude has changed which
@@ -79,48 +63,92 @@ public:
                 request_redraw();
             }
         });
+        this->set_phase(widget_phase::enabled);
+    }
 
-        // This lambda allows the state to be set once before it will trigger
-        // notifications.
-        _state_cbt = state.subscribe([&](widget_state new_state) {
-            style.set_pseudo_class(new_state.pseudo_class());
-
-            static std::optional<widget_state> old_state = std::nullopt;
-
-            if (old_state) {
-                if (need_reconstrain(*old_state, *state)) {
-                    ++global_counter<"widget:state:reconstrain">;
-                    process_event({gui_event_type::window_reconstrain});
-
-                } else if (need_relayout(*old_state, *state)) {
-                    ++global_counter<"widget:state:relayout">;
-                    process_event({gui_event_type::window_relayout});
-
-                } else if (need_redraw(*old_state, *state)) {
-                    ++global_counter<"widget:state:redraw">;
-                    request_redraw();
-                }
-            }
-            old_state = *state;
-        });
+    /** The numeric identifier of a widget.
+     *
+     * @note This is a uint32_t equal to the operating system's accessibility identifier.
+     */
+    [[nodiscard]] virtual widget_id id() const noexcept
+    {
+        return _id;
     }
 
     /** Pointer to the parent widget.
-     * 
+     *
      * May be a nullptr only when this is the top level widget, or when
      * the widget is removed from its parent.
      */
-    [[nodiscard]] widget_intf *parent() const noexcept
+    [[nodiscard]] widget_intf* parent() const noexcept
     {
         return _parent;
     }
 
     /** Set the parent widget.
-     * 
+     *
      * @param new_parent A pointer to an existing parent, or nullptr if the
      *                   widget is removed from the parent.
      */
-    virtual void set_parent(widget_intf *new_parent) noexcept;
+    virtual void set_parent(widget_intf* new_parent) noexcept
+    {
+        _parent = new_parent;
+
+        if (new_parent) {
+            set_window(new_parent->window());
+        } else {
+            set_window(nullptr);
+        }
+    }
+
+    [[nodiscard]] gui_window* window() const noexcept
+    {
+        return _window;
+    }
+
+    virtual void set_window(gui_window* new_window) noexcept
+    {
+        _window = new_window;
+        request_restyle();
+
+        for (auto& child : all_children()) {
+            child.set_window(new_window);
+        }
+    }
+
+    /** Send a event to the window.
+     * 
+     * @param event The event to send to the window.
+     * @return True when the event was handled by the window.
+     */
+    bool send_to_window(gui_event const& event) const noexcept;
+
+    /** Request the window to restyle all the widgets.
+     */
+    void request_restyle() const noexcept;
+
+    /** Request the window to resize based on the preferred size of the widgets.
+     */
+    void request_resize() const noexcept;
+
+    /** Request the window to reconstrain all the widgets.
+     */
+    void request_reconstrain() const noexcept;
+
+    /** Request the window to relayout all the widgets.
+     */
+    void request_relayout() const noexcept;
+
+    /** Request the window to redraw the area used by the widget.
+     */
+    void request_redraw() const noexcept;
+
+    /** Request the window to be fully redrawn.
+     * 
+     * Use this function when a widget has changed in such a way that it
+     * affects the window outside the area of the widget.
+     */
+    void request_redraw_window() const noexcept;
 
     /** Subscribe a callback to be called when an action is completed by the widget.
      */
@@ -139,125 +167,207 @@ public:
 
     [[nodiscard]] size_t layer() const noexcept
     {
-        return state->layer();
+        return _layer;
     }
 
     void set_layer(size_t new_layer) noexcept
     {
-        state->set_layer(new_layer);
+        _layer = new_layer;
     }
 
-    [[nodiscard]] widget_mode mode() const noexcept
+    [[nodiscard]] virtual widget_phase phase() const noexcept
     {
-        return state->mode();
-    }
-
-    void set_mode(widget_mode new_mode) noexcept
-    {
-        state->set_mode(new_mode);
-    }
-
-    [[nodiscard]] widget_value value() const noexcept
-    {
-        return state->value();
-    }
-
-    void set_value(widget_value new_value) noexcept
-    {
-        state->set_value(new_value);
-    }
-
-    [[nodiscard]] widget_phase phase() const noexcept
-    {
-        return state->phase();
-    }
-
-    void set_pressed(bool pressed) noexcept
-    {
-        state->set_pressed(pressed);
-    }
-
-    void set_hover(bool hover) noexcept
-    {
-        state->set_hover(hover);
-    }
-
-    void set_active(bool active) noexcept
-    {
-        state->set_active(active);
-    }
-
-    [[nodiscard]] bool focus() const noexcept
-    {
-        return state->focus();
-    }
-
-    void set_focus(bool new_focus) noexcept
-    {
-        state->set_focus(new_focus);
-    }
-
-    /** Get a list of child widgets.
-     */
-    [[nodiscard]] virtual generator<widget_intf&> children(bool include_invisible = true) noexcept = 0;
-
-    /** Get a list of child widgets.
-     */
-    [[nodiscard]] virtual generator<widget_intf const&> children(bool include_invisible = true) const noexcept final
-    {
-        for (auto& child : const_cast<widget_intf *>(this)->children(include_invisible)) {
-            co_yield child;
+        auto const pc = style.pseudo_class();
+        if ((pc & style_pseudo_class::phase_mask) == style_pseudo_class::disabled) {
+            return widget_phase::disabled;
+        } else if ((pc & style_pseudo_class::phase_mask) == style_pseudo_class::enabled) {
+            return widget_phase::enabled;
+        } else if ((pc & style_pseudo_class::phase_mask) == style_pseudo_class::hover) {
+            return widget_phase::hover;
+        } else if ((pc & style_pseudo_class::phase_mask) == style_pseudo_class::active) {
+            return widget_phase::active;
+        } else {
+            std::unreachable();
         }
     }
 
-    /** Update the constraints of the widget.
-     *
-     * Typically the implementation of this function starts with recursively calling update_constraints()
-     * on its children.
-     *
-     * If the container, due to a change in constraints, wants the window to resize to the minimum size
-     * it should call `request_resize()`.
-     *
-     * @post This function will change what is returned by `widget::minimum_size()`, `widget::preferred_size()`
-     *       and `widget::maximum_size()`.
+    virtual void set_phase(widget_phase const& phase) noexcept
+    {
+        auto pc = style.pseudo_class();
+        pc &= ~style_pseudo_class::phase_mask;
+        pc |= [&] {
+            switch (phase) {
+            case widget_phase::disabled: return style_pseudo_class::disabled;
+            case widget_phase::enabled: return style_pseudo_class::enabled;
+            case widget_phase::hover: return style_pseudo_class::hover;
+            case widget_phase::active: return style_pseudo_class::active;
+            default: std::unreachable();
+            }
+        }();
+        style.set_pseudo_class(pc);
+    }
+
+    [[nodiscard]] virtual bool disabled() const noexcept
+    {
+        return phase() == widget_phase::disabled;
+    }
+
+    [[nodiscard]] virtual bool enabled() const noexcept
+    {
+        return phase() != widget_phase::disabled;
+    }
+
+    [[nodiscard]] virtual bool hover() const noexcept
+    {
+        return phase() == widget_phase::hover or phase() == widget_phase::active;
+    }
+
+    [[nodiscard]] virtual bool active() const noexcept
+    {
+        return phase() == widget_phase::active;
+    }
+
+    void set_enabled(bool value) noexcept
+    {
+        set_phase(value ? widget_phase::enabled : widget_phase::disabled);
+    }
+
+    void set_hover(bool value) noexcept
+    {
+        if (phase() != widget_phase::disabled) {
+            set_phase(value ? widget_phase::hover : widget_phase::enabled);
+        }
+    }
+
+    void set_active(bool value) noexcept
+    {
+        if (phase() != widget_phase::disabled) {
+            set_phase(value ? widget_phase::active : widget_phase::enabled);
+        }
+    }
+    
+    [[nodiscard]] virtual bool focus() const noexcept
+    {
+        return (style.pseudo_class() & style_pseudo_class::focus) != style_pseudo_class{};
+    }
+
+    virtual void set_focus(bool new_focus) noexcept
+    {
+        auto pc = style.pseudo_class();
+        pc &= ~style_pseudo_class::focus;
+        if (new_focus) {
+            pc |= style_pseudo_class::focus;
+        }
+        style.set_pseudo_class(pc);
+    }
+
+    [[nodiscard]] virtual bool checked() const noexcept
+    {
+        return (style.pseudo_class() & style_pseudo_class::checked) != style_pseudo_class{};
+    }
+
+    virtual void set_checked(bool new_checked) noexcept
+    {
+        auto pc = style.pseudo_class();
+        pc &= ~style_pseudo_class::checked;
+        if (new_checked) {
+            pc |= style_pseudo_class::checked;
+        }
+        style.set_pseudo_class(pc);
+    }
+
+    [[nodiscard]] virtual bool front() const noexcept
+    {
+        return (style.pseudo_class() & style_pseudo_class::front) != style_pseudo_class{};
+    }
+
+    virtual void set_front(bool new_front) noexcept
+    {
+        auto pc = style.pseudo_class();
+        pc &= ~style_pseudo_class::front;
+        if (new_front) {
+            pc |= style_pseudo_class::front;
+        }
+        style.set_pseudo_class(pc);
+    }
+
+    /** Get a list of child widgets.
      */
-    [[nodiscard]] virtual box_constraints update_constraints() noexcept = 0;
+    [[nodiscard]] virtual generator<widget_intf&> children(bool include_invisible) const noexcept
+    {
+        co_return;
+    }
+
+    [[nodiscard]] generator<widget_intf&> all_children() const noexcept
+    {
+        return children(true);
+    }
+
+    [[nodiscard]] generator<widget_intf&> visible_children() const noexcept
+    {
+        return children(false);
+    }
+
+    /** Restyle the widgets and its children.
+     *
+     * @param pixel_density The pixel density to use for the restyle.
+     * @param path The path of the parent widget.
+     * @param properties The properties used when this widget will inherit style properties.
+     */
+    virtual void restyle(
+        unit::pixel_density pixel_density,
+        style_path const& path = style_path{},
+        style::properties_array_type const& properties = style::properties_array_type{}) noexcept
+    {
+        auto const [child_path, child_properties] = style.restyle(pixel_density, path, properties);
+
+        for (auto& child : all_children()) {
+            child.restyle(pixel_density, child_path, child_properties);
+        }
+    }
+
+    /** Get the constraints of the widget.
+     *
+     * Although this function is const, it may update the internal state of the
+     * widget. This is because `set_layout()` may need this information to
+     * properly calculate the shape of the widget's internals. The best way to
+     * do this is by making the layout-engine/shaper member variable mutable.
+     */
+    [[nodiscard]] virtual layout::constraints get_constraints() const noexcept = 0;
 
     /** Update the internal layout of the widget.
-     * This function is called when the size of this widget must change, or if any of the
-     * widget request a re-layout.
      *
-     * This function may be used for expensive calculations, such as geometry calculations,
-     * which should only be done when the data or sizes change; it should cache these calculations.
+     * This function is called when the size or position of this widget has
+     * changed.
      *
-     * @post This function will change what is returned by `widget::size()` and the transformation
-     *       matrices.
-     * @param context The layout for this child.
+     * This function may be used for expensive calculations, such as geometry
+     * calculations, which should only be done when the data or style changes;
+     * a widget should cache these calculations.
+     *
+     * @param shape The shape of the child.
      */
-    virtual void set_layout(widget_layout const& context) noexcept = 0;
-
-    /** Get the current layout for this widget.
-     */
-    [[nodiscard]] widget_layout const& layout() const noexcept
-    {
-        return _layout;
-    }
+    virtual void set_layout(layout::shape const& shape) noexcept = 0;
 
     /** Draw the widget.
      *
-     * This function is called by the window (optionally) on every frame.
-     * It should recursively call this function on every visible child.
-     * This function is only called when `updateLayout()` has returned true.
+     * This function is called by the window (optionally) on every frame. It
+     * should recursively call this function on every visible child. This
+     * function is only called when `updateLayout()` has returned true.
      *
      * The overriding function should call the base class's `draw()`, the place
-     * where the call this function will determine the order of the vertices into
-     * each buffer. This is important when needing to do the painters algorithm
-     * for alpha-compositing. However the pipelines are always drawn in the same
-     * order.
+     * where the call this function will determine the order of the vertices
+     * into each buffer. This is important when needing to do the painters
+     * algorithm for alpha-compositing. However the pipelines are always drawn
+     * in the same order.
      *
      * @param context The context to where the widget will draw.
      */
-    virtual void draw(draw_context const& context) noexcept = 0;
+    virtual void draw(draw_context const& context) const noexcept
+    {
+        for (auto const &child : visible_children()) {
+            child.draw(context);
+        }
+    }
 
     /** Find the widget that is under the mouse cursor.
      * This function will recursively test with visual child widgets, when
@@ -266,20 +376,38 @@ public:
      * @param position The coordinate of the mouse local to the widget.
      * @return A hit_box object with the cursor-type and a reference to the widget.
      */
-    [[nodiscard]] virtual hitbox hitbox_test(point2 position) const noexcept = 0;
+    [[nodiscard]] virtual hitbox hitbox_test(point2 position) const noexcept
+    {
+        return {};
+    }
+
+    /** Call hitbox_test from a parent widget.
+     *
+     * This function will transform the position from parent coordinates to local coordinates.
+     *
+     * @param position The coordinate of the mouse local to the parent widget.
+     */
+    [[nodiscard]] virtual hitbox hitbox_test_from_parent(point2 position) const noexcept
+    {
+        return hitbox_test(layout().from_parent * position);
+    }
+
+    /** Call hitbox_test from a parent widget.
+     *
+     * This function will transform the position from parent coordinates to local coordinates.
+     *
+     * @param position The coordinate of the mouse local to the parent widget.
+     * @param sibling_hitbox The hitbox of a sibling to combine with the hitbox of this widget.
+     */
+    [[nodiscard]] virtual hitbox hitbox_test_from_parent(point2 position, hitbox sibling_hitbox) const noexcept
+    {
+        return std::max(sibling_hitbox, hitbox_test(layout().from_parent * position));
+    }
 
     /** Check if the widget will accept keyboard focus.
      *
      */
     [[nodiscard]] virtual bool accepts_keyboard_focus(keyboard_focus_group group) const noexcept = 0;
-
-    /** Request the widget to be redrawn on the next frame.
-     */
-    virtual void request_redraw() const noexcept = 0;
-
-    /** Send a event to the window.
-     */
-    virtual bool process_event(gui_event const& event) const noexcept = 0;
 
     /** Handle command.
      * If a widget does not fully handle a command it should pass the
@@ -310,7 +438,7 @@ public:
      * @return A pointer to the next widget.
      * @retval current_keyboard_widget When current_keyboard_widget was found
      *         but no next widget that accepts keyboard focus was found.
-     * @retval nullptr When current_keyboard_widget is not found in this widget.
+     * @retval 0 When current_keyboard_widget is not found in this widget.
      */
     [[nodiscard]] virtual widget_id find_next_widget(
         widget_id current_keyboard_widget,
@@ -325,9 +453,9 @@ public:
         std::vector<widget_id> chain;
 
         if (auto w = this) {
-            chain.push_back(w->id);
+            chain.push_back(w->id());
             while ((w = w->parent())) {
-                chain.push_back(w->id);
+                chain.push_back(w->id());
             }
         }
 
@@ -349,21 +477,23 @@ public:
         scroll_to_show(layout().rectangle());
     }
 
-protected:
-    callback<void(widget_state)> _state_cbt;
+private:
+    widget_id _id = {};
+    widget_intf* _parent = nullptr;
+    gui_window* _window = nullptr;
+
+    size_t _layer = 0;
+
     hi::style::callback_type _style_cbt;
 
     widget_layout _layout;
-
-private:
-    widget_intf *_parent = nullptr;
 };
 
-inline widget_intf *get_if(widget_intf *start, widget_id id, bool include_invisible) noexcept
+inline widget_intf* get_if(widget_intf* start, widget_id id, bool include_invisible) noexcept
 {
     hi_assert_not_null(start);
 
-    if (start->id == id) {
+    if (start->id() == id) {
         return start;
     }
     for (auto& child : start->children(include_invisible)) {
@@ -383,44 +513,21 @@ inline widget_intf& get(widget_intf& start, widget_id id, bool include_invisible
 }
 
 template<std::invocable<widget_intf&> Func>
-inline void apply(widget_intf& start, Func &&func, bool include_invisible = true)
+inline void apply(widget_intf& start, Func&& func, bool include_invisible = true)
 {
-    auto todo = std::vector<widget_intf *>{&start};
+    auto todo = std::vector<widget_intf*>{&start};
 
     while (not todo.empty()) {
-        auto *tmp = todo.back();
+        auto* tmp = todo.back();
         todo.pop_back();
 
         func(*tmp);
 
-        for (auto &child : tmp->children(include_invisible)) {
+        for (auto& child : tmp->children(include_invisible)) {
             todo.push_back(&child);
         }
     }
 }
-
-inline void apply_window_data(widget_intf& start, gui_window *new_window, unit::pixel_density const& new_density, style::attributes_from_theme_type const& new_attributes_from_theme)
-{
-    apply(start, [&](widget_intf& w) {
-        w.window = new_window;
-        w.style.set_pixel_density(new_density);
-        w.style.set_attributes_from_theme(new_attributes_from_theme);
-    });
-}
-
-inline void widget_intf::set_parent(widget_intf *new_parent) noexcept
-{
-    _parent = new_parent;
-    apply_window_data(
-        *this,
-        new_parent ? new_parent->window : nullptr,
-        new_parent ? new_parent->style.pixel_density() : unit::pixel_density{},
-        new_parent ? new_parent->style.attributes_from_theme() : style::attributes_from_theme_type{});
-
-    // The path will automatically propagate to the child widgets.
-    style.set_parent_path(new_parent ? new_parent->style.path() : style_path{});
-}
-
 
 } // namespace v1
 } // namespace hi

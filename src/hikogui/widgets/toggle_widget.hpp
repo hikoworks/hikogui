@@ -13,14 +13,12 @@
 #include "toggle_delegate.hpp"
 #include "../telemetry/telemetry.hpp"
 #include "../macros.hpp"
+#include <utility>
 
 hi_export_module(hikogui.widgets.toggle_widget);
 
 hi_export namespace hi {
 inline namespace v1 {
-
-template<typename Context>
-concept toggle_widget_attribute = forward_of<Context, observer<hi::alignment>> or forward_of<Context, keyboard_focus_group>;
 
 /** A GUI widget that permits the user to make a binary choice.
  *
@@ -64,53 +62,21 @@ public:
     using super = widget;
     using delegate_type = toggle_delegate;
 
-    struct attributes_type {
-        observer<alignment> alignment = alignment::top_left();
-        keyboard_focus_group focus_group = keyboard_focus_group::normal;
-
-        attributes_type(attributes_type const&) noexcept = default;
-        attributes_type(attributes_type&&) noexcept = default;
-        attributes_type& operator=(attributes_type const&) noexcept = default;
-        attributes_type& operator=(attributes_type&&) noexcept = default;
-
-        template<toggle_widget_attribute... Attributes>
-        explicit attributes_type(Attributes&&...attributes) noexcept
-        {
-            set_attributes(std::forward<Attributes>(attributes)...);
-        }
-
-        void set_attributes() noexcept {}
-
-        template<toggle_widget_attribute First, toggle_widget_attribute... Rest>
-        void set_attributes(First&& first, Rest&&...rest) noexcept
-        {
-            if constexpr (forward_of<First, observer<hi::alignment>>) {
-                alignment = std::forward<First>(first);
-
-            } else if constexpr (forward_of<First, keyboard_focus_group>) {
-                focus_group = std::forward<First>(first);
-
-            } else {
-                hi_static_no_default();
-            }
-
-            set_attributes(std::forward<Rest>(rest)...);
-        }
-    };
-
-    attributes_type attributes;
-
     /** The delegate that controls the button widget.
      */
     std::shared_ptr<delegate_type> delegate;
 
-    hi_num_valid_arguments(consteval static, num_default_delegate_arguments, default_toggle_delegate);
-    hi_call_left_arguments(static, make_default_delegate, make_shared_ctad<default_toggle_delegate>);
-    hi_call_right_arguments(static, make_attributes, attributes_type);
+    keyboard_focus_group focus_group = keyboard_focus_group::normal;
+
+    template<typename... Args>
+    [[nodiscard]] static std::shared_ptr<delegate_type> make_default_delegate(Args&&... args)
+    {
+        return make_shared_ctad<default_toggle_delegate>(std::forward<Args>(args)...);
+    }
 
     ~toggle_widget()
     {
-        this->delegate->deinit(*this);
+        this->delegate->deinit(this);
     }
 
     /** Construct a toggle widget.
@@ -118,17 +84,19 @@ public:
      * @param parent The parent widget that owns this toggle widget.
      * @param delegate The delegate to use to manage the state of the toggle button.
      */
-    toggle_widget(
-        attributes_type attributes,
-        std::shared_ptr<delegate_type> delegate) noexcept :
-        super(), attributes(std::move(attributes)), delegate(std::move(delegate))
+    template<std::derived_from<delegate_type> Delegate>
+    toggle_widget(std::shared_ptr<Delegate> delegate) noexcept : super(), delegate(std::move(delegate))
     {
         hi_axiom_not_null(this->delegate);
-        this->delegate->init(*this);
-        _delegate_cbt = this->delegate->subscribe([&] {
-            set_value(this->delegate->state(*this));
+
+        this->delegate->init(this);
+        _delegate_cbt = this->delegate->subscribe(this, [this] {
+            set_checked(this->delegate->state(this) != widget_value::off);
+            this->notifier();
         });
         _delegate_cbt();
+
+        style.set_name("toggle");
     }
 
     /** Construct a toggle widget with a default button delegate.
@@ -138,51 +106,48 @@ public:
      *                followed by arguments to `attributes_type`
      */
     template<typename... Args>
-    toggle_widget(Args&&...args)
-        requires(num_default_delegate_arguments<Args...>() != 0)
-        :
-        toggle_widget(
-            make_attributes<num_default_delegate_arguments<Args...>()>(std::forward<Args>(args)...),
-            make_default_delegate<num_default_delegate_arguments<Args...>()>(std::forward<Args>(args)...))
+    toggle_widget(Args&&... args) : toggle_widget(make_default_delegate(std::forward<Args>(args)...))
     {
     }
 
     /// @privatesection
-    [[nodiscard]] box_constraints update_constraints() noexcept override
+    [[nodiscard]] layout::constraints get_constraints() const noexcept override
     {
-        _button_size = {theme().size() * 2.0f, theme().size()};
-        return box_constraints{_button_size, _button_size, _button_size, *attributes.alignment, theme().margin()};
+        return style.make_constraints_for_fixed_size();
     }
 
-    void set_layout(widget_layout const& context) noexcept override
+    void set_layout(layout::shape const& shape) noexcept override
     {
-        if (compare_store(_layout, context)) {
-            _button_rectangle = align(context.rectangle(), _button_size, os_settings::alignment(*attributes.alignment));
+        _shape = shape;
 
-            auto const button_square =
-                aarectangle{get<0>(_button_rectangle), extent2{_button_rectangle.height(), _button_rectangle.height()}};
+        auto const midline = shape.get_midline(style.x_height_px);
 
-            _pip_circle = align(button_square, circle{theme().size() * 0.5f - 3.0f}, alignment::middle_center());
+        auto const horizontal_alignment = os_settings::alignment(style.horizontal_alignment);
+        _button_rectangle = align_to_middle(shape.rectangle(), style.size_px, horizontal_alignment, midline);
 
-            auto const pip_to_button_margin_x2 = _button_rectangle.height() - _pip_circle.diameter();
-            _pip_move_range = _button_rectangle.width() - _pip_circle.diameter() - pip_to_button_margin_x2;
-        }
-        super::set_layout(context);
+        auto const pip_square = aarectangle{get<0>(_button_rectangle), extent2{style.height_px, style.height_px}};
+        _pip_circle = align(pip_square, circle{style.height_px * 0.5f - 3.0f}, alignment::middle_center());
+
+        auto const pip_to_button_margin_x2 = style.height_px - _pip_circle.diameter();
+        _pip_move_range = style.width_px - _pip_circle.diameter() - pip_to_button_margin_x2;
     }
 
-    void draw(draw_context const& context) noexcept override
+    void draw(draw_context const& context) const noexcept override
     {
-        if (mode() > widget_mode::invisible and overlaps(context, layout())) {
+        if (overlaps(context, _shape.rectangle)) {
             context.draw_box(
-                layout(),
-                _button_rectangle,
-                background_color(),
-                focus_color(),
-                theme().border_width(),
+                _shape.translate_z() * _button_rectangle,
+                _shape.clipping_rectangle,
+                style.background_color,
+                style.border_color,
+                style.border_width_px,
                 border_side::inside,
-                corner_radii{_button_rectangle.height() * 0.5f});
+                corner_radii{style.height_px * 0.5f});
 
-            switch (_animated_value.update(value() == widget_value::on ? 1.0f : 0.0f, context.display_time_point)) {
+            switch (
+                _animated_value.update(delegate->state(this) != widget_value::off ? 1.0f : 0.0f, context.display_time_point)) {
+            case animator_state::uninitialized:
+                std::unreachable();
             case animator_state::idle:
                 break;
             case animator_state::running:
@@ -190,34 +155,25 @@ public:
                 break;
             case animator_state::end:
                 notifier();
-                break;
-            default:
-                hi_no_default();
             }
 
-            auto const positioned_pip_circle = translate3{_pip_move_range * _animated_value.current_value(), 0.0f, 0.1f} * _pip_circle;
-
-            auto const foreground_color_ = value() == widget_value::on ? accent_color() : foreground_color();
-            context.draw_circle(layout(), positioned_pip_circle * 1.02f, foreground_color_);
+            auto const pip_offset = translate2{_pip_move_range * _animated_value.current_value(), 0.0f};
+            auto const positioned_pip_circle = pip_offset * _pip_circle;
+            context.draw_circle(
+                _shape.translate_z(0.1f) * (positioned_pip_circle * 1.02f),
+                _shape.clipping_rectangle,                
+                style.accent_color);
         }
-    }
 
-    [[nodiscard]] color background_color() const noexcept override
-    {
-        hi_axiom(loop::main().on_thread());
-        if (phase() == widget_phase::pressed) {
-            return theme().fill_color(_layout.layer + 2);
-        } else {
-            return super::background_color();
-        }
+        return super::draw(context);
     }
 
     [[nodiscard]] hitbox hitbox_test(point2 position) const noexcept override
     {
-        hi_axiom(loop::main().on_thread());
+        assert(loop::main().on_thread());
 
-        if (mode() >= widget_mode::partial and layout().contains(position)) {
-            return {id, _layout.elevation, hitbox_type::button};
+        if (enabled() and _shape.contains(position)) {
+            return {id(), _shape.elevation, hitbox_type::button};
         } else {
             return {};
         }
@@ -226,7 +182,7 @@ public:
     [[nodiscard]] bool accepts_keyboard_focus(keyboard_focus_group group) const noexcept override
     {
         hi_axiom(loop::main().on_thread());
-        return mode() >= widget_mode::partial and to_bool(group & hi::keyboard_focus_group::normal);
+        return enabled() and to_bool(group & this->focus_group);
     }
 
     bool handle_event(gui_event const& event) noexcept override
@@ -235,32 +191,10 @@ public:
 
         switch (event.type()) {
         case gui_event_type::gui_activate:
-            if (mode() >= widget_mode::partial) {
-                delegate->activate(*this);
+            if (enabled()) {
+                delegate->activate(this);
                 ++global_counter<"toggle_widget:handle_event:relayout">;
-                process_event({gui_event_type::window_relayout});
-                return true;
-            }
-            break;
-
-        case gui_event_type::mouse_down:
-            if (mode() >= widget_mode::partial and event.mouse().cause.left_button) {
-                set_pressed(true);
-                return true;
-            }
-            break;
-
-        case gui_event_type::mouse_up:
-            if (mode() >= widget_mode::partial and event.mouse().cause.left_button) {
-                set_pressed(false);
-
-                // with_label_widget or other widgets may have accepted the hitbox
-                // for this widget. Which means the widget_id in the mouse-event
-                // may match up with the toggle.
-                if (event.mouse().hitbox.widget_id == id) {
-                    handle_event(gui_event_type::gui_activate);
-                }
-                request_redraw();
+                request_relayout();
                 return true;
             }
             break;
@@ -275,30 +209,13 @@ public:
 private:
     constexpr static std::chrono::nanoseconds _animation_duration = std::chrono::milliseconds(150);
 
-    extent2 _button_size;
+    layout::shape _shape;
     aarectangle _button_rectangle;
-    animator<float> _animated_value = _animation_duration;
+    mutable animator<float> _animated_value = _animation_duration;
     circle _pip_circle;
     float _pip_move_range;
 
     callback<void()> _delegate_cbt;
-
-    /*template<size_t I>
-    void set_attributes() noexcept
-    {
-    }
-
-    template<size_t I, button_widget_attribute First, button_widget_attribute... Rest>
-    void set_attributes(First&& first, Rest&&...rest) noexcept
-    {
-        if constexpr (forward_of<decltype(first), observer<hi::alignment>>) {
-            alignment = std::forward<First>(first);
-            set_attributes<I>(std::forward<Rest>(rest)...);
-
-        } else {
-            hi_static_no_default();
-        }
-    }*/
 };
 
 using toggle_with_label_widget = with_label_widget<toggle_widget>;

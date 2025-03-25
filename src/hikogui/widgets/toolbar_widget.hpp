@@ -18,7 +18,8 @@
 
 hi_export_module(hikogui.widgets.toolbar_widget);
 
-hi_export namespace hi { inline namespace v1 {
+hi_export namespace hi {
+inline namespace v1 {
 
 /** A toolbar widget is located at the top of a window and lays out its children
  * horizontally.
@@ -50,7 +51,9 @@ public:
         auto spacer = std::make_unique<spacer_widget>();
         spacer->set_parent(this);
 
-        _children.push_back(std::move(spacer));
+        _row.push_back(std::move(spacer));
+
+        style.set_name("toolbar");
     }
 
     /** Add a widget directly to this toolbar-widget.
@@ -69,87 +72,74 @@ public:
      * @return A reference to the widget that was created.
      */
     template<typename Widget, horizontal_alignment Alignment = horizontal_alignment::left, typename... Args>
-    Widget& emplace(Args&&...args)
+    Widget& emplace(Args&&... args)
     {
         auto widget = std::make_unique<Widget>(std::forward<Args>(args)...);
-        auto &ref = *widget;
+        auto& ref = *widget;
         insert(Alignment, std::move(widget));
         return ref;
     }
 
     /// @privatesection
-    [[nodiscard]] generator<widget_intf &> children(bool include_invisible) noexcept override
+    [[nodiscard]] generator<widget_intf&> children(bool include_invisible) const noexcept override
     {
-        for (auto const& child : _children) {
+        for (auto const& child : _row) {
             co_yield *child.value;
         }
     }
 
     [[nodiscard]] box_constraints update_constraints() noexcept override
     {
-        _layout = {};
-
-        for (auto& child : _children) {
-            child.set_constraints(child.value->update_constraints());
+        for (auto& cell : _row) {
+            cell.set_constraints(cell.value->update_constraints());
         }
 
-        auto r = _children.constraints(os_settings::left_to_right());
-        _child_height_adjustment = -r.margins.top();
-
-        r.minimum.height() += r.margins.top();
-        r.preferred.height() += r.margins.top();
-        r.maximum.height() += r.margins.top();
-        r.margins.top() = 0;
+        // The margins (off the children) on the outside of the toolbar are ignored.
+        auto r = _row.constraints(os_settings::left_to_right(), style.vertical_alignment);
+        r.margins = style.margins_px;
 
         return r;
     }
+
     void set_layout(widget_layout const& context) noexcept override
     {
-        // Clip directly around the toolbar, so that tab buttons looks proper.
-        if (compare_store(_layout, context)) {
-            auto shape = context.shape;
-            shape.rectangle = aarectangle{shape.x(), shape.y(), shape.width(), shape.height() + _child_height_adjustment};
-            _children.set_layout(shape, theme().baseline_adjustment());
-        }
+        super::set_layout(context);
 
-        auto const overhang = context.redraw_overhang;
+        _row.set_layout(context.shape);
 
-        for (auto const& child : _children) {
-            auto const child_clipping_rectangle =
-                aarectangle{child.shape.x() - overhang, 0, child.shape.width() + overhang * 2, context.height() + overhang * 2};
-
-            child.value->set_layout(context.transform(child.shape, transform_command::menu_item, child_clipping_rectangle));
+        for (auto const& child : _row) {
+            // Use the shape of the child also as the clipping rectangle for
+            // that child, so that drawing outside the child's shape is clipped.
+            child.value->set_layout(context.transform(child.shape, transform_command::menu_item, child.shape.rectangle));
         }
     }
-    void draw(draw_context const& context) noexcept override
+
+    void draw(draw_context const& context) const noexcept override
     {
-        if (mode() > widget_mode::invisible) {
-            if (overlaps(context, layout())) {
-                context.draw_box(layout(), layout().rectangle(), theme().fill_color(_layout.layer));
+        if (overlaps(context, layout())) {
+            context.draw_box(layout(), layout().rectangle(), style.background_color);
 
-                if (tab_button_has_focus()) {
-                    // Draw the line at a higher elevation, so that the tab buttons can draw above or below the focus
-                    // line depending if that specific button is in focus or not.
-                    auto const focus_rectangle = aarectangle{0.0f, 0.0f, layout().rectangle().width(), theme().border_width()};
-                    context.draw_box(layout(), translate3{0.0f, 0.0f, 1.5f} * focus_rectangle, focus_color());
-                }
-            }
-
-            for (auto const& child : _children) {
-                hi_assert_not_null(child.value);
-                child.value->draw(context);
+            if (tab_button_has_focus()) {
+                // Draw the line at a higher elevation (1.5), so that the tab
+                // buttons can draw above or below the focus line depending if
+                // that specific button is in focus or not.
+                auto const focus_rectangle = aarectangle{0.0f, 0.0f, layout().rectangle().width(), theme().border_width()};
+                context.draw_box(layout(), translate3{0.0f, 0.0f, 1.5f} * focus_rectangle, style.accent_color);
             }
         }
+
+        return super::draw(context);
     }
+
     hitbox hitbox_test(point2 position) const noexcept override
     {
         hi_axiom(loop::main().on_thread());
 
         // By default the toolbar is used for dragging the window.
-        if (mode() >= widget_mode::partial) {
-            auto r = layout().contains(position) ? hitbox{id, _layout.elevation, hitbox_type::move_area} : hitbox{};
+        if (enabled()) {
+            auto r = layout().contains(position) ? hitbox{id(), layout().elevation, hitbox_type::move_area} : hitbox{};
 
-            for (auto const& child : _children) {
+            for (auto const& child : _row) {
                 hi_assert_not_null(child.value);
                 r = child.value->hitbox_test_from_parent(position, r);
             }
@@ -159,18 +149,18 @@ public:
             return {};
         }
     }
+    
     [[nodiscard]] color focus_color() const noexcept override
     {
-        if (mode() >= widget_mode::partial) {
+        if (enabled()) {
             return theme().accent_color();
         } else {
-            return theme().border_color(_layout.layer - 1);
+            return theme().disabled_color();
         }
     }
     /// @endprivatesection
 private:
-    mutable row_layout<std::unique_ptr<widget>> _children;
-    mutable float _child_height_adjustment = 0.0f;
+    mutable row_layout<std::unique_ptr<widget>> _row;
     size_t _spacer_index = 0;
 
     void update_layout_for_child(widget& child, ssize_t index, widget_layout const& context) const noexcept;
@@ -184,12 +174,12 @@ private:
             using enum horizontal_alignment;
         case left:
             widget->set_parent(this);
-            _children.insert(_children.cbegin() + _spacer_index, std::move(widget));
+            _row.insert(_row.cbegin() + _spacer_index, std::move(widget));
             ++_spacer_index;
             break;
         case right:
             widget->set_parent(this);
-            _children.insert(_children.cbegin() + _spacer_index + 1, std::move(widget));
+            _row.insert(_row.cbegin() + _spacer_index + 1, std::move(widget));
             break;
         default:
             hi_no_default();
@@ -204,9 +194,9 @@ private:
      */
     bool tab_button_has_focus() const noexcept
     {
-        for (auto const& cell : _children) {
-            if (auto const *const c = dynamic_cast<toolbar_tab_button_widget *>(cell.value.get())) {
-                if (c->focus() and c->value() == widget_value::on) {
+        for (auto const& child : visible_children()) {
+            if (auto tab_child = dynamic_cast<toolbar_tab_button_widget const*>(std::addressof(child))) {
+                if (tab_child->focus() and tab_child->checked()) {
                     return true;
                 }
             }
@@ -216,4 +206,5 @@ private:
     }
 };
 
-}} // namespace hi::v1
+} // namespace v1
+} // namespace hi::v1

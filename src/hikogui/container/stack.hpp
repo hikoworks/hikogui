@@ -119,8 +119,8 @@ public:
         return MaxSize;
     }
 
-    /** The number of elements that fit on the stack.
-     * @return the number of elements that fit on the stack.
+    /** The number of elements on the stack.
+     * @return the number of elements on the stack.
      */
     [[nodiscard]] constexpr size_type size() const noexcept
     {

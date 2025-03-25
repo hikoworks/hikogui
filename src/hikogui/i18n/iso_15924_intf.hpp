@@ -102,7 +102,7 @@ public:
 
     /** Get the 4-letter code used by open-type.
      */
-    [[nodiscard]] constexpr std::string code4_open_type() const noexcept;
+    [[nodiscard]] constexpr uint32_t code4_open_type() const noexcept;
 
     [[nodiscard]] constexpr friend std::string to_string(iso_15924 const &rhs) noexcept
     {

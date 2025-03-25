@@ -122,7 +122,7 @@ public:
      */
     [[nodiscard]] std::vector<language_tag> all_variants() const noexcept
     {
-        auto r = make_vector(variants());
+        auto r = std::ranges::to<std::vector>(variants());
 
         // And languages variants from expanded variants.
         for (auto const variant : variants()) {

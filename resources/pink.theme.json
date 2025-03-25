@@ -21,10 +21,12 @@
     "icon-size": 7,
 
     // Size of icons representing the length of am average word of a label's text.
-    "large-icon-size": 23,
+    "large-icon-size": 25,
 
     // Size of icons being inline with a label's text.
     "label-icon-size": 15,
+
+    "font-size": 10,
 
     // The colors values are either:
     // - integers are in sRGB
@@ -63,17 +65,10 @@
         [252, 173, 197]
     ],
 
-    // Colors used by widgets for internal elements and disabled icons.
-    "border-color": [
-        [252, 173, 197],
-        [251, 140, 173],
-        [249,  96, 141],
-        [247,  40, 102]
-    ],
 
     // Color for textual or primary elements like icons.
-    "foreground-color":       [62, 2, 20],
-
+    "color":       [62, 2, 20],
+    "disabled-color": [142, 142, 147],
     // Accent color used by widgets, to show icons, hover and keyboard focus
     "accent-color":           [169,  24,  28],
     "text-select-color":      [156, 143, 209],
@@ -83,44 +78,44 @@
     "small-label-style": {
         "family": "Corbel",
         "weight": "regular",
-        "size": 10,
+        "scale": 1,
         "color": [62, 2, 20]
     },
 
     "label-style": {
         "family": "Corbel",
         "weight": "regular",
-        "size": 12,
+        "scale": 1,
         "color": [62, 2, 20]
     },
     "warning-label-style": {
         "family": "Corbel",
         "weight": "regular",
-        "size": 12,
+        "scale": 1,
         "color": [62, 2, 20]
     },
     "error-label-style": {
         "family": "Corbel",
         "weight": "regular",
-        "size": 12,
-        "color": "red"
+        "scale": 1,
+        "color": [255,  59,  48]
     },
     "help-label-style": {
         "family": "Corbel",
         "weight": "regular",
-        "size": 12,
+        "scale": 1,
         "color": [88, 86, 214]
     },
     "placeholder-label-style": {
         "family": "Corbel",
         "weight": "regular",
-        "size": 12,
+        "scale": 1,
         "color": [142, 142, 147]
     },
     "link-label-style": {
         "family": "Corbel",
         "weight": "regular",
-        "size": 12,
+        "scale": 1,
         "color": [0, 122, 255]
     }
 }

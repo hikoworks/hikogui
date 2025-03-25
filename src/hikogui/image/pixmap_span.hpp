@@ -85,25 +85,25 @@ public:
     constexpr pixmap_span& operator=(pixmap_span&&) noexcept = default;
     [[nodiscard]] constexpr pixmap_span() noexcept = default;
 
-    [[nodiscard]] constexpr pixmap_span(value_type *data, size_type width, size_type height, size_type stride) noexcept :
-        _data(data), _width(width), _height(height), _stride(stride)
+    [[nodiscard]] constexpr pixmap_span(value_type *data, size_type width, size_type height, size_type stride, size_type scale = 1) noexcept :
+        _data(data), _width(width), _height(height), _stride(stride), _scale(1)
     {
     }
 
     [[nodiscard]] constexpr pixmap_span(value_type *data, size_type width, size_type height) noexcept :
-        pixmap_span(data, width, height, width)
+        pixmap_span(data, width, height, width, 1)
     {
     }
 
     template<std::same_as<std::remove_const_t<value_type>> O, typename Allocator>
     [[nodiscard]] constexpr pixmap_span(pixmap<O, Allocator> const& other) noexcept :
-        pixmap_span(other.data(), other.width(), other.height())
+        pixmap_span(other.data(), other.width(), other.height(), other.width(), other.scale())
     {
     }
 
     template<std::same_as<std::remove_const_t<value_type>> O, typename Allocator>
     [[nodiscard]] constexpr pixmap_span(pixmap<O, Allocator>& other) noexcept :
-        pixmap_span(other.data(), other.width(), other.height())
+        pixmap_span(other.data(), other.width(), other.height(), other.width(), other.scale())
     {
     }
 
@@ -128,6 +128,27 @@ public:
     [[nodiscard]] constexpr size_type stride() const noexcept
     {
         return _stride;
+    }
+
+    constexpr pixmap_span& set_scale(size_type scale) noexcept
+    {
+        _scale = scale;
+        return *this;
+    }
+
+    [[nodiscard]] constexpr size_type scale() const noexcept
+    {
+        return _scale;
+    }
+
+    [[nodiscard]] constexpr size_type size() const noexcept
+    {
+        return _width * _height;
+    }
+
+    [[nodiscard]] constexpr size_type capacity() const noexcept
+    {
+        return _stride * _height;
     }
 
     [[nodiscard]] constexpr pointer data() noexcept
@@ -178,13 +199,13 @@ public:
 
     [[nodiscard]] constexpr pixmap_span subimage(size_type x, size_type y, size_type new_width, size_type new_height) noexcept
     {
-        return {_data + y * _stride + x, new_width, new_height, _stride};
+        return {_data + y * _stride + x, new_width, new_height, _stride, _scale};
     }
 
     [[nodiscard]] constexpr pixmap_span<value_type const>
     subimage(size_type x, size_type y, size_type new_width, size_type new_height) const noexcept
     {
-        return {_data + y * _stride + x, new_width, new_height, _stride};
+        return {_data + y * _stride + x, new_width, new_height, _stride, _scale};
     }
 
     constexpr friend void copy(pixmap_span src, pixmap_span<std::remove_const_t<value_type>> dst) noexcept
@@ -206,7 +227,7 @@ public:
     constexpr friend void fill(pixmap_span dst, value_type value = value_type{}) noexcept
     {
         if (dst._width == dst._stride) {
-            std::fill_n(dst._data, dst._width, dst._height, value);
+            std::fill_n(dst._data, dst._width * dst._height, value);
         } else {
             for (auto line: dst.rows()) {
                 std::fill(line.begin(), line.end(), value);
@@ -219,6 +240,7 @@ private:
     size_type _width = 0;
     size_type _height = 0;
     size_type _stride = 0;
+    size_type _scale = 1;
 };
 
 template<typename T, typename Allocator>

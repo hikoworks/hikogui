@@ -14,12 +14,8 @@
 #include <exception>
 #include <cstddef>
 #include <type_traits>
-#include <stdint.h>
 #if defined(__APPLE__)
 #include <TargetConditionals.h>
-#endif
-#if HI_OPERATING_SYSTEM == HI_OS_LINUX || HI_OPERATING_SYSTEM == HI_OS_MACOS
-#include <sched.h>
 #endif
 
 hi_export_module(hikogui.utility.architecture);

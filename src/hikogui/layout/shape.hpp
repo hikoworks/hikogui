@@ -1,0 +1,87 @@
+// Copyright Take Vos 2022.
+// Distributed under the Boost Software License, Version 1.0.
+// (See accompanying file LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt)
+
+#pragma once
+
+#include "baseline_priority.hpp"
+#include "../geometry/geometry.hpp"
+#include "../utility/utility.hpp"
+#include "../macros.hpp"
+#include <limits>
+#include <optional>
+
+hi_export_module(hikogui.layout.shape);
+
+hi_export namespace hi::inline v1::layout {
+
+struct shape {
+    /** Rectangle of the widget.
+     * 
+     * The rectangle is in window coordinates.
+     */
+    aarectangle rectangle;
+
+    /** Clipping rectangle.
+     * 
+     * The widget is only allowed to draw inside this rectangle.
+     * The clipping rectangle is in window coordinates.
+     */
+    aarectangle clip_rectangle;
+
+    /** The size of the window.
+     * 
+     * This is used when creating overlay widgets, to determine the size and
+     * location of the overlay.
+     */
+    extent2 window_size;
+
+    /** The elevation of the widget above the window.
+     * 
+     * The elevation is used to determine the order of drawing widgets.
+     */
+    float elevation = 0.0f;
+
+    /** The baseline of the widget.
+     * 
+     * The baseline is used to align text in the widget.
+     * The baseline is the y-coordinate on the window.
+     */
+    float baseline;
+
+    /** The priority of the baseline.
+     * This value is used for children to inherit the baseline of the parent
+     */
+    hi::layout::baseline_priority baseline_priority = baseline_priority::none;
+
+    /** Get a translate object for the elevation of this shape.
+     *
+     * This function will return a translate object that will translate the
+     * the z-coordinate to the elevation of the shape. This is used to draw
+     * geometric shapes at the correct elevation.
+     * 
+     * @param offset The offset to add to the elevation.
+     * @return A translate object that will translate the z-coordinate to the
+     *         elevation.
+     */
+    [[nodiscard]] translate3 translate_z(float offset = 0.0f) const noexcept
+    {
+        return {0.0f, 0.0f, elevation + offset};
+    }
+
+    /** Get the middle-line based on the baseline.
+     */
+    [[nodiscard]] float get_midline(float x_height) const noexcept
+    {
+        return baseline + x_height / 2.0f;
+    }
+
+    /** Check if a point is inside the shape.
+     */
+    [[nodiscard]] bool contains(point2 position) const noexcept
+    {
+        return rectangle.contains(position);
+    }
+};
+
+} // namespace v1

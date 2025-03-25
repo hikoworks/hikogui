@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "icon.hpp" // export
 #include "label.hpp" // export
 #include "po_parser.hpp" // export
 #include "po_translations.hpp" // export

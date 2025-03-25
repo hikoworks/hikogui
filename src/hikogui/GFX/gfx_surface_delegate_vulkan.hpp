@@ -93,7 +93,7 @@ public:
      * @param finish The semaphore used to signal when finishing drawing into the swapchain-image.
      * @param render_area The area of the window that is being drawn.
      */
-    virtual void draw(uint32_t swapchain_index, vk::Semaphore start, vk::Semaphore finish, vk::Rect2D render_area) noexcept {}
+    virtual void draw(uint32_t swapchain_index, vk::Semaphore start, vk::Semaphore finish, vk::Rect2D render_area) const noexcept {}
 };
 
 } // namespace hi::inline v1

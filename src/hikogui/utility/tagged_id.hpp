@@ -6,6 +6,7 @@
 
 #include "../macros.hpp"
 #include "terminate.hpp"
+#include <gsl/gsl>
 #include <limits>
 #include <typeinfo>
 #include <typeindex>
@@ -16,6 +17,7 @@
 #include <string>
 #include <ostream>
 #include <cstddef>
+#include <utility>
 
 hi_export_module(hikogui.utility.tagged_id);
 
@@ -51,7 +53,14 @@ public:
 
     constexpr tagged_id(value_type rhs) : _v(rhs) {
         if (rhs == empty_value) {
-            throw std::overflow_error("The given identifier was the empty-value");
+            throw std::domain_error("The given identifier was the empty-value");
+        }
+    }
+
+    template<std::integral RHS>
+    constexpr tagged_id(RHS rhs) : _v(gsl::narrow<value_type>(rhs)) {
+        if (rhs == empty_value) {
+            throw std::domain_error("The given identifier was the empty-value");
         }
     }
 
@@ -108,7 +117,6 @@ public:
 
     [[nodiscard]] constexpr friend auto operator<=>(tagged_id const&, tagged_id const &) noexcept = default;
     [[nodiscard]] constexpr friend bool operator==(tagged_id const&, tagged_id const &) noexcept = default;
-
 private:
     value_type _v = empty_value;
 };

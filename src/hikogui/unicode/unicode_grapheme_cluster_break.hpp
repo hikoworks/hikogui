@@ -142,9 +142,9 @@ struct grapheme_break_state {
 } // namespace detail
 
 template<typename It, typename ItEnd>
-[[nodiscard]] constexpr std::vector<unicode_break_opportunity> unicode_grapheme_break(It first, ItEnd last) noexcept
+[[nodiscard]] constexpr unicode_grapheme_break_vector unicode_grapheme_break(It first, ItEnd last) noexcept
 {
-    auto r = std::vector<unicode_break_opportunity>{};
+    auto r = unicode_grapheme_break_vector{};
     auto state = detail::grapheme_break_state{};
 
     for (auto it = first; it != last; ++it) {

@@ -22,7 +22,6 @@
 hi_export_module(hikogui.GFX : gfx_device_intf);
 
 hi_export namespace hi::inline v1 {
-
 class gfx_device {
 public:
     std::string deviceName = "<no device>";
@@ -38,6 +37,8 @@ public:
     vk::PhysicalDeviceProperties physicalProperties;
 
     std::vector<gfx_queue_vulkan> _queues;
+
+    std::vector<uint32_t> queue_family_indices;
 
     /** The device features that have been turned on for this device.
      */
@@ -64,7 +65,7 @@ public:
 
     /*! List if extension required on this device.
      */
-    std::vector<const char *> requiredExtensions;
+    std::vector<const char*> requiredExtensions;
 
     bool supportsLazyTransientImages = false;
     vk::ImageUsageFlags transientImageUsageFlags = vk::ImageUsageFlags{};
@@ -114,6 +115,7 @@ public:
         return std::format("{0:04x}:{1:04x} {2} {3}", vendorID, deviceID, deviceName, deviceUUID.uuid_string());
     }
 
+
     /** Get a graphics queue.
      * Always returns the first queue that can handle graphics.
      */
@@ -134,7 +136,7 @@ public:
     [[nodiscard]] gfx_queue_vulkan const& get_graphics_queue(vk::SurfaceKHR surface) const noexcept
     {
         // First try to find a graphics queue which can also present.
-        gfx_queue_vulkan const *graphics_queue = nullptr;
+        gfx_queue_vulkan const* graphics_queue = nullptr;
         for (auto& queue : _queues) {
             if (queue.flags & vk::QueueFlagBits::eGraphics) {
                 if (physicalIntrinsic.getSurfaceSupportKHR(queue.family_queue_index, surface)) {
@@ -157,7 +159,7 @@ public:
     [[nodiscard]] gfx_queue_vulkan const& get_present_queue(vk::SurfaceKHR surface) const noexcept
     {
         // First try to find a graphics queue which can also present.
-        gfx_queue_vulkan const *present_queue = nullptr;
+        gfx_queue_vulkan const* present_queue = nullptr;
         for (auto& queue : _queues) {
             if (physicalIntrinsic.getSurfaceSupportKHR(queue.family_queue_index, surface)) {
                 if (queue.flags & vk::QueueFlagBits::eGraphics) {
@@ -181,7 +183,7 @@ public:
      * @param surface The surface to determine the surface format for.
      * @param[out] score Optional return parameter for the quality of the surface format.
      */
-    [[nodiscard]] vk::SurfaceFormatKHR get_surface_format(vk::SurfaceKHR surface, int *score = nullptr) const noexcept
+    [[nodiscard]] vk::SurfaceFormatKHR get_surface_format(vk::SurfaceKHR surface, int* score = nullptr) const noexcept
     {
         auto best_surface_format = vk::SurfaceFormatKHR{};
         auto best_surface_format_score = 0;
@@ -274,7 +276,7 @@ public:
      * @param surface The surface to determine the present mode for.
      * @param[out] score Optional return parameter for the quality of the present mode.
      */
-    [[nodiscard]] vk::PresentModeKHR get_present_mode(vk::SurfaceKHR surface, int *score = nullptr) const noexcept
+    [[nodiscard]] vk::PresentModeKHR get_present_mode(vk::SurfaceKHR surface, int* score = nullptr) const noexcept
     {
         auto best_present_mode = vk::PresentModeKHR{};
         auto best_present_mode_score = 0;
@@ -322,15 +324,6 @@ public:
      * \returns -1 When not viable, 0 when not presentable, positive values for increasing score.
      */
     int score(vk::SurfaceKHR surface) const;
-
-    /*! Find the minimum number of queue families to instantiate for a window.
-     * This will give priority for having the Graphics and Present in the same
-     * queue family.
-     *
-     * It is possible this method returns an incomplete queue family set. For
-     * example without Present.
-     */
-    std::vector<std::pair<uint32_t, uint8_t>> find_best_queue_family_indices(vk::SurfaceKHR surface) const;
 
     std::pair<vk::Buffer, VmaAllocation>
     createBuffer(const vk::BufferCreateInfo& bufferCreateInfo, const VmaAllocationCreateInfo& allocationCreateInfo) const
@@ -430,8 +423,8 @@ public:
     {
         hi_axiom(gfx_system_mutex.recurse_lock_count());
 
-        auto const[srcAccessMask, srcStage] = access_and_stage_from_layout(src_layout);
-        auto const[dstAccessMask, dstStage] = access_and_stage_from_layout(dst_layout);
+        auto const [srcAccessMask, srcStage] = access_and_stage_from_layout(src_layout);
+        auto const [dstAccessMask, dstStage] = access_and_stage_from_layout(dst_layout);
 
         std::vector<vk::ImageMemoryBarrier> barriers = {
             {srcAccessMask,
@@ -488,6 +481,21 @@ public:
         endSingleTimeCommands(commandBuffer);
     }
 
+    void copyBufferToImage(
+        vk::Buffer srcBuffer,
+        vk::Image dstImage,
+        vk::ImageLayout dstLayout,
+        vk::ArrayProxy<vk::BufferImageCopy const> regions) const
+    {
+        hi_axiom(gfx_system_mutex.recurse_lock_count());
+
+        auto const commandBuffer = beginSingleTimeCommands();
+
+        commandBuffer.copyBufferToImage(srcBuffer, dstImage, dstLayout, regions);
+
+        endSingleTimeCommands(commandBuffer);
+    }
+
     void clearColorImage(
         vk::Image image,
         vk::ImageLayout layout,
@@ -508,7 +516,7 @@ public:
     {
         hi_axiom(gfx_system_mutex.recurse_lock_count());
 
-        void *mapping;
+        void* mapping;
         auto const result = vk::Result{vmaMapMemory(allocator, allocation, &mapping)};
         if (result != vk::Result::eSuccess) {
             throw gui_error(std::format("vmaMapMemory failed {}", to_string(result)));
@@ -518,7 +526,7 @@ public:
         vmaGetAllocationInfo(allocator, allocation, &allocationInfo);
 
         // Should we launder the pointer? The GPU has created the objects, not the C++ application.
-        T *mappingT = static_cast<T *>(mapping);
+        T* mappingT = static_cast<T*>(mapping);
         return std::span<T>{mappingT, allocationInfo.size / sizeof(T)};
     }
 
@@ -542,7 +550,7 @@ public:
         vmaFlushAllocation(allocator, allocation, alignedOffset, alignedSize);
     }
 
-    vk::ShaderModule loadShader(uint32_t const *data, std::size_t size) const
+    vk::ShaderModule loadShader(uint32_t const* data, std::size_t size) const
     {
         hi_axiom(gfx_system_mutex.recurse_lock_count());
 
@@ -562,7 +570,7 @@ public:
         auto const address = reinterpret_cast<uintptr_t>(shaderObjectBytes.data());
         hi_assert((address & 2) == 0);
 
-        auto const shaderObjectBytes32 = reinterpret_cast<uint32_t const *>(shaderObjectBytes.data());
+        auto const shaderObjectBytes32 = reinterpret_cast<uint32_t const*>(shaderObjectBytes.data());
         return loadShader(shaderObjectBytes32, shaderObjectBytes.size());
     }
 
@@ -590,7 +598,7 @@ public:
         uint64_t timeout,
         vk::Semaphore semaphore,
         vk::Fence fence,
-        uint32_t *pImageIndex) const
+        uint32_t* pImageIndex) const
     {
         hi_axiom(gfx_system_mutex.recurse_lock_count());
         return intrinsic.acquireNextImageKHR(swapchain, timeout, semaphore, fence, pImageIndex);
@@ -603,9 +611,9 @@ public:
     }
 
     vk::Result createSwapchainKHR(
-        const vk::SwapchainCreateInfoKHR *pCreateInfo,
-        const vk::AllocationCallbacks *pAllocator,
-        vk::SwapchainKHR *pSwapchain) const
+        const vk::SwapchainCreateInfoKHR* pCreateInfo,
+        const vk::AllocationCallbacks* pAllocator,
+        vk::SwapchainKHR* pSwapchain) const
     {
         hi_axiom(gfx_system_mutex.recurse_lock_count());
         return intrinsic.createSwapchainKHR(pCreateInfo, pAllocator, pSwapchain);
@@ -713,25 +721,25 @@ public:
 
     void setDebugUtilsObjectNameEXT(vk::DebugUtilsObjectNameInfoEXT const& name_info) const;
 
-    void setDebugUtilsObjectNameEXT(vk::Image image, char const *name) const
+    void setDebugUtilsObjectNameEXT(vk::Image image, char const* name) const
     {
         return setDebugUtilsObjectNameEXT(
             vk::DebugUtilsObjectNameInfoEXT{vk::ObjectType::eImage, std::bit_cast<uint64_t>(image), name});
     }
 
-    void setDebugUtilsObjectNameEXT(vk::Buffer buffer, char const *name) const
+    void setDebugUtilsObjectNameEXT(vk::Buffer buffer, char const* name) const
     {
         return setDebugUtilsObjectNameEXT(
             vk::DebugUtilsObjectNameInfoEXT{vk::ObjectType::eBuffer, std::bit_cast<uint64_t>(buffer), name});
     }
 
-    void setDebugUtilsObjectNameEXT(vk::Sampler sampler, char const *name) const
+    void setDebugUtilsObjectNameEXT(vk::Sampler sampler, char const* name) const
     {
         return setDebugUtilsObjectNameEXT(
             vk::DebugUtilsObjectNameInfoEXT{vk::ObjectType::eSampler, std::bit_cast<uint64_t>(sampler), name});
     }
 
-    void setDebugUtilsObjectNameEXT(vk::ShaderModule shader_module, char const *name) const
+    void setDebugUtilsObjectNameEXT(vk::ShaderModule shader_module, char const* name) const
     {
         return setDebugUtilsObjectNameEXT(
             vk::DebugUtilsObjectNameInfoEXT{vk::ObjectType::eShaderModule, std::bit_cast<uint64_t>(shader_module), name});
@@ -741,7 +749,7 @@ public:
 
     void cmdEndDebugUtilsLabelEXT(vk::CommandBuffer buffer) const;
 
-    void cmdBeginDebugUtilsLabelEXT(vk::CommandBuffer buffer, char const *name) const
+    void cmdBeginDebugUtilsLabelEXT(vk::CommandBuffer buffer, char const* name) const
     {
         return cmdBeginDebugUtilsLabelEXT(buffer, vk::DebugUtilsLabelEXT{name});
     }
@@ -763,7 +771,7 @@ public:
     {
         hi_log_info("Memory usage for gfx device {}:", string());
 
-        char *stat_string;
+        char* stat_string;
         vmaBuildStatsString(allocator, &stat_string, VK_TRUE);
         hi_log_info(" * {}", stat_string);
         vmaFreeStatsString(allocator, stat_string);
@@ -771,7 +779,7 @@ public:
 
 private:
     static bool
-    hasRequiredExtensions(const vk::PhysicalDevice& physicalDevice, const std::vector<const char *>& requiredExtensions)
+    hasRequiredExtensions(const vk::PhysicalDevice& physicalDevice, const std::vector<const char*>& requiredExtensions)
     {
         auto availableExtensions = std::unordered_set<std::string>();
         for (auto availableExtensionProperties : physicalDevice.enumerateDeviceExtensionProperties()) {
@@ -910,20 +918,6 @@ private:
         return meetsRequirements;
     }
 
-    [[nodiscard]] std::vector<vk::DeviceQueueCreateInfo> make_device_queue_create_infos() const noexcept
-    {
-        auto const default_queue_priority = std::array{1.0f};
-        uint32_t queue_family_index = 0;
-
-        auto r = std::vector<vk::DeviceQueueCreateInfo>{};
-        for (auto queue_family_properties : physicalIntrinsic.getQueueFamilyProperties()) {
-            auto const num_queues = 1;
-            hi_assert(size(default_queue_priority) >= num_queues);
-            r.emplace_back(vk::DeviceQueueCreateFlags(), queue_family_index++, num_queues, default_queue_priority.data());
-        }
-        return r;
-    }
-
     static std::pair<vk::AccessFlags, vk::PipelineStageFlags> access_and_stage_from_layout(vk::ImageLayout layout) noexcept
     {
         switch (layout) {
@@ -961,17 +955,26 @@ private:
     {
         auto const queue_family_properties = physicalIntrinsic.getQueueFamilyProperties();
 
+        _queues.clear();
+        queue_family_indices.clear();
         for (auto const& device_queue_create_info : device_queue_create_infos) {
             auto const queue_family_index = device_queue_create_info.queueFamilyIndex;
             auto const& queue_family_property = queue_family_properties[queue_family_index];
             auto const queue_flags = queue_family_property.queueFlags;
+
+            if (queue_family_property.minImageTransferGranularity.width != 1 or
+                queue_family_property.minImageTransferGranularity.height != 1) {
+                hi_log_fatal(
+                    "Queue family {} has a non-1 image transfer granularity. This may cause issues with image transfers.",
+                    queue_family_index);
+            }
 
             for (uint32_t queue_index = 0; queue_index != device_queue_create_info.queueCount; ++queue_index) {
                 auto queue = intrinsic.getQueue(queue_family_index, queue_index);
                 auto command_pool = intrinsic.createCommandPool(
                     {vk::CommandPoolCreateFlagBits::eTransient | vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
                      queue_family_index});
-
+                
                 _queues.emplace_back(queue_family_index, queue_index, queue_flags, std::move(queue), std::move(command_pool));
             }
         }
@@ -998,7 +1001,7 @@ private:
                 vk::SharingMode::eExclusive};
             VmaAllocationCreateInfo allocationCreateInfo = {};
             allocationCreateInfo.flags = VMA_ALLOCATION_CREATE_USER_DATA_COPY_STRING_BIT;
-            allocationCreateInfo.pUserData = const_cast<char *>("vertex index buffer");
+            allocationCreateInfo.pUserData = const_cast<char*>("vertex index buffer");
             allocationCreateInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
             std::tie(quadIndexBuffer, quadIndexBufferAllocation) = createBuffer(bufferCreateInfo, allocationCreateInfo);
             setDebugUtilsObjectNameEXT(quadIndexBuffer, "vertex index buffer");
@@ -1014,9 +1017,9 @@ private:
                 vk::SharingMode::eExclusive};
             VmaAllocationCreateInfo allocationCreateInfo = {};
             allocationCreateInfo.flags = VMA_ALLOCATION_CREATE_USER_DATA_COPY_STRING_BIT;
-            allocationCreateInfo.pUserData = const_cast<char *>("staging vertex index buffer");
+            allocationCreateInfo.pUserData = const_cast<char*>("staging vertex index buffer");
             allocationCreateInfo.usage = VMA_MEMORY_USAGE_CPU_ONLY;
-            auto const[stagingvertexIndexBuffer, stagingvertexIndexBufferAllocation] =
+            auto const [stagingvertexIndexBuffer, stagingvertexIndexBufferAllocation] =
                 createBuffer(bufferCreateInfo, allocationCreateInfo);
             setDebugUtilsObjectNameEXT(stagingvertexIndexBuffer, "staging vertex index buffer");
 

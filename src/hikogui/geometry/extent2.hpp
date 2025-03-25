@@ -319,9 +319,78 @@ public:
         return extent2{max(static_cast<array_type>(lhs), static_cast<array_type>(rhs))};
     }
 
+    template<std::convertible_to<extent2>... Rest>
+    [[nodiscard]] constexpr friend extent2 min(extent2 const& lhs, extent2 const& rhs, Rest const&... rest) noexcept
+    {
+        return min(lhs, min(rhs, rest...));
+    }
+
+    template<std::convertible_to<extent2>... Rest>
+    [[nodiscard]] constexpr friend extent2 max(extent2 const& lhs, extent2 const& rhs, Rest const&... rest) noexcept
+    {
+        return max(lhs, max(rhs, rest...));
+    }
+
     [[nodiscard]] constexpr friend extent2 clamp(extent2 const& value, extent2 const& min, extent2 const& max) noexcept
     {
         return extent2{clamp(static_cast<array_type>(value), static_cast<array_type>(min), static_cast<array_type>(max))};
+    }
+
+    /**
+     * @brief Clamp an extent to fit inside another extent while maintaining the
+     * aspect ratio.
+     *
+     * This function returns a new extent that fits the @a needle extent into
+     * the @a haystack extent without distorting the aspect ratio.
+     *
+     * @param needle The extent to fit into the @a haystack extent.
+     * @param haystack The extent to fit the @a needle extent into.
+     * @return The new extent that fits the @a needle extent into the @a haystack extent.
+     */
+    [[nodiscard]] constexpr friend extent2 aspect_clamp(extent2 const &needle, extent2 const& haystack) noexcept
+    {
+        auto const needle_aspect = needle.width() / needle.height();
+
+        auto r = needle;
+
+        if (r.width() > haystack.width()) {
+            r.width() = haystack.width();
+            r.height() = r.width() / needle_aspect;
+        }
+        if (r.height() > haystack.height()) {
+            r.height() = haystack.height();
+            r.width() = r.height() * needle_aspect;
+        }
+        
+        return r;
+    }
+
+    /**
+     * @brief Fit an extent into another extent while maintaining the aspect ratio.
+     *
+     * This function returns a new extent that fits the @a needle extent into
+     * the @a haystack extent without distorting the aspect ratio.
+     *
+     * @param needle The extent to fit into the @a haystack extent.
+     * @param haystack The extent to fit the @a needle extent into.
+     * @return The new extent that fits the @a needle extent into the @a haystack extent.
+     */
+    [[nodiscard]] constexpr friend extent2 aspect_fit(extent2 const& needle, extent2 const &haystack) noexcept
+    {
+        auto const needle_aspect = needle.width() / needle.height();
+        auto const haystack_aspect = haystack.width() / haystack.height();
+
+        auto r = needle;
+
+        if (needle_aspect > haystack_aspect) {
+            r.width() = haystack.width();
+            r.height() = r.width() / needle_aspect;
+        } else {
+            r.height() = haystack.height();
+            r.width() = r.height() * needle_aspect;
+        }
+
+        return r;
     }
 
     /** Check if the extent is valid.

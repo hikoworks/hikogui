@@ -105,8 +105,6 @@ public:
         {
         }
 
-        paged_image(gfx_surface const *surface, png const& image) noexcept;
-
         [[nodiscard]] constexpr explicit operator bool() const noexcept
         {
             return device != nullptr;
@@ -134,10 +132,6 @@ public:
         /** Upload image to atlas.
          */
         void upload(pixmap_span<sfloat_rgba16 const> image) noexcept;
-
-        /** Upload image to atlas.
-         */
-        void upload(png const& image) noexcept;
     };
 
     struct device_shared {

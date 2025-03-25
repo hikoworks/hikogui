@@ -283,7 +283,7 @@ public:
 
         [[nodiscard]] constexpr static std::vector<std::string> parse(std::string_view str)
         {
-            auto r = make_vector<std::string>(std::views::transform(std::views::split(str, std::string_view{"/"}), [](auto&& x) {
+            auto r = std::ranges::to<std::vector>(std::views::transform(std::views::split(str, std::string_view{"/"}), [](auto&& x) {
                 return URI::decode(std::string_view{std::ranges::begin(x), std::ranges::end(x)});
             }));
 
@@ -730,13 +730,17 @@ public:
 
         for (auto i = r.find('%'); i != std::string::npos; i = r.find('%', i)) {
             // This may throw a parse_error, if not hexadecimal
-            auto c = from_string<uint8_t>(r.substr(i + 1, 2), 16);
+            if (auto c = from_string<uint8_t>(r.substr(i + 1, 2), 16)) {
 
-            // Replace the % encoded character.
-            r.replace(i, 3, 1, char_cast<char>(c));
+                // Replace the % encoded character.
+                r.replace(i, 3, 1, char_cast<char>(*c));
 
-            // Skip over encoded-character.
-            ++i;
+                // Skip over encoded-character.
+                ++i;
+
+            } else {
+                throw uri_error("Invalid percent-encoded character.");
+            }
         }
 
         return r;

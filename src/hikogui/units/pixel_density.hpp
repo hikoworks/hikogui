@@ -19,6 +19,8 @@ struct pixel_density {
     pixels_per_inch_f ppi;
     device_type type;
 
+    [[nodiscard]] constexpr friend bool operator==(pixel_density const&, pixel_density const&) noexcept = default;
+
     template<typename T>
     [[nodiscard]] constexpr friend au::Quantity<Pixels, std::common_type_t<float, T>>
     operator*(pixel_density const& lhs, au::Quantity<Dips, T> const& rhs) noexcept
@@ -147,13 +149,12 @@ struct pixel_density {
         return rhs * lhs;
     }
 
-private:
     /** Return a density-scale to convert device independet pixels to normal pixels.
      */
     [[nodiscard]] constexpr float density_scale() const noexcept
     {
         constexpr auto scale_table = std::array{
-            0.5f,
+            0.5f, // 80 dpi
             0.5f,
             0.5f,
 
@@ -195,6 +196,57 @@ private:
             return scale_table.back();
         }
     }
+
+    /** Return the scale of the image used for searching the best image.
+     * 
+     * @return The scale of the best image to load. The values are 1, 2, 4, or 8.
+     */
+    [[nodiscard]] int image_scale() const noexcept
+    {
+        constexpr auto scale_table = std::array{
+            1, // 80 dpi
+            1,
+            1,
+
+            2, // 120 dpi
+
+            2, // 160 dpi
+            2,
+
+            4, // 240 dpi
+            4,
+
+            4, // 320 dpi
+            4,
+            4,
+            4,
+
+            8, // 480 dpi
+            8,
+            8,
+            8,
+            8, // 640 dpi
+        };
+
+        // The base density is based on the device type which determines
+        // the viewing distance. We strip off the last three bits as there
+        // are multiple devices that need unique values but have the same
+        // base density.
+        auto const base_density = std::to_underlying(type) & 0xf8;
+
+        // casting to unsigned int is faster than size_t.
+        auto const index = static_cast<unsigned int>(ppi.in(pixels_per_inch)) * 4 / base_density;
+
+        // Using a table here is faster than the compiler will generate with
+        // a switch statement. The bound check here will result in a conditional
+        // move instead of a conditional jump.
+        if (index < scale_table.size()) {
+            return scale_table[index];
+        } else {
+            return scale_table.back();
+        }
+    }
+
 };
 
 }}} // namespace hi::v1

@@ -39,9 +39,7 @@
 #include "units/units.hpp" // export
 #include "utility/utility.hpp" // export
 #include "widgets/widgets.hpp" // export
-#if HI_OPERATING_SYSTEM == HI_OS_WINDOWS
 #include "win32/win32.hpp" // export
-#endif
 
 hi_export_module(hikogui);
 
@@ -49,8 +47,8 @@ hi_export_module(hikogui);
 // Never include "crt.hpp"
 
 /** @file module.hpp
-*
-*
+* 
+* 
 * Dependencies:
 *  - utility: -
 *  - SIMD: utility
@@ -58,7 +56,7 @@ hi_export_module(hikogui);
 *  - color: geometry, SIMD, utility
 *  - image: geometry, SIMD, color, utility
 *  - char_maps: utility
-*
+* 
 */
 
 /** @namespace hi The HikoGUI namespace.

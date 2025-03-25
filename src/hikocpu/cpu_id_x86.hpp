@@ -15,11 +15,11 @@
 #include <cstdint>
 #include <format>
 #include <bit>
+#include <print>
 #include <iostream>
 
 #if HI_COMPILER == HI_CC_MSVC
 #include <intrin.h>
-#include <print>
 #elif HI_COMPILER == HI_CC_GCC || HI_COMPILER == HI_CC_CLANG
 #include <cpuid.h>
 #else

@@ -18,6 +18,7 @@
 #include "margins.hpp" // export
 #include "matrix2.hpp" // export
 #include "matrix3.hpp" // export
+#include "object_fit.hpp" // export
 #include "perspective.hpp" // export
 #include "point2.hpp" // export
 #include "point3.hpp" // export
